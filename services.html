@@ -15,9 +15,19 @@
   <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
-      <a href="index.html" class="nav__logo">
-        <img src="images/logo.png" alt="TideVenture CPA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
-        <span class="nav__logo-text" style="display:none">Tide<span>Venture</span></span>
+      <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+        <svg class="nav__logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <path d="M4 36.5 Q10 32.5 16 36.5 T28 36.5 T36 36.5" stroke="rgba(26,127,160,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="nav__logo-words">
+          <span class="nav__logo-name">Tide<em>Venture</em></span>
+          <span class="nav__logo-sub">CPA</span>
+        </span>
       </a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>

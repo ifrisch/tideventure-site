@@ -121,13 +121,20 @@ p  { color: var(--text); line-height: 1.7; }
   justify-content: space-between;
   padding-block: 0.6rem;
 }
-.nav__logo img { height: 60px; width: auto; display: block; }
-.nav__logo-text {
+.nav__logo { display: flex; align-items: center; gap: 0.65rem; }
+.nav__logo-icon { flex-shrink: 0; display: block; }
+.nav__logo-words { display: flex; flex-direction: column; line-height: 1; }
+.nav__logo-name {
   font-family: var(--font-heading);
-  font-size: 1.35rem; font-weight: 800;
+  font-size: 1.3rem; font-weight: 800;
   color: var(--brand-dark); letter-spacing: -0.03em; line-height: 1;
 }
-.nav__logo-text span { color: var(--brand-teal); font-weight: 400; }
+.nav__logo-name em { font-style: normal; font-weight: 400; color: var(--brand-teal); }
+.nav__logo-sub {
+  font-family: var(--font-heading); font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted);
+  margin-top: 3px;
+}
 .nav__links {
   display: flex; gap: 2rem; list-style: none; align-items: center;
 }
