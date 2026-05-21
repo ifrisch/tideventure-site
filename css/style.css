@@ -119,9 +119,9 @@ p  { color: var(--text); line-height: 1.7; }
 .nav__inner {
   display: flex; align-items: center;
   justify-content: space-between;
-  padding-block: 0.85rem;
+  padding-block: 0.6rem;
 }
-.nav__logo img { height: 44px; width: auto; display: block; }
+.nav__logo img { height: 60px; width: auto; display: block; }
 .nav__logo-text {
   font-family: var(--font-heading);
   font-size: 1.35rem; font-weight: 800;
