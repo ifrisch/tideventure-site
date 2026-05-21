@@ -7,7 +7,7 @@
   <meta name="description" content="Explore TideVenture CPA's full range of services: tax planning, accounting, payroll, and business advisory." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -15,7 +15,10 @@
   <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
-      <a href="index.html" class="nav__logo">Tide<span>Venture</span> CPA</a>
+      <a href="index.html" class="nav__logo">
+        <img src="images/logo.png" alt="TideVenture CPA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <span class="nav__logo-text" style="display:none">Tide<span>Venture</span></span>
+      </a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -31,7 +34,8 @@
 
   <!-- PAGE HEADER -->
   <section class="page-header">
-    <div class="container">
+    <div class="container page-header__inner">
+      <span class="label" style="color:rgba(255,255,255,0.5)">What We Offer</span>
       <h1>Our Services</h1>
       <p>Everything your finances need — under one roof.</p>
     </div>
@@ -41,7 +45,7 @@
   <section class="section" id="tax">
     <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
       <div>
-        <span class="section-header__label" style="display:inline-block;color:var(--teal);font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;">Tax Services</span>
+        <span class="label">Tax Services</span>
         <h2 style="margin-bottom:1rem;">Tax Planning &amp; Preparation</h2>
         <p style="margin-bottom:1rem;">Tax season shouldn't be stressful. We prepare accurate federal and state returns for individuals, families, and businesses while identifying every deduction and credit you're entitled to.</p>
         <p style="margin-bottom:1.5rem;">Year-round proactive tax planning means fewer surprises and more savings over time.</p>
@@ -72,7 +76,7 @@
         <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Get Started</a>
       </div>
       <div style="order:2;">
-        <span class="section-header__label" style="display:inline-block;color:var(--teal);font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;">Accounting</span>
+        <span class="label">Accounting</span>
         <h2 style="margin-bottom:1rem;">Accounting &amp; Bookkeeping</h2>
         <p style="margin-bottom:1rem;">Accurate books are the foundation of every smart financial decision. We handle your monthly accounting so you can focus on running your business.</p>
         <p style="margin-bottom:1.5rem;">We work with QuickBooks, Xero, and other popular platforms and deliver clean financial statements every month.</p>
@@ -91,7 +95,7 @@
   <section class="section" id="advisory">
     <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
       <div>
-        <span class="section-header__label" style="display:inline-block;color:var(--teal);font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;">Business Advisory</span>
+        <span class="label">Business Advisory</span>
         <h2 style="margin-bottom:1rem;">Business Formation &amp; Advisory</h2>
         <p style="margin-bottom:1rem;">Starting or growing a business? We help you choose the right structure, build financial projections, and stay on the right side of compliance so you can scale with confidence.</p>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
@@ -121,7 +125,7 @@
         <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Get Payroll Help</a>
       </div>
       <div style="order:2;">
-        <span class="section-header__label" style="display:inline-block;color:var(--teal);font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;">Payroll</span>
+        <span class="label">Payroll</span>
         <h2 style="margin-bottom:1rem;">Payroll Services</h2>
         <p style="margin-bottom:1rem;">Payroll compliance is complex and the penalties for errors are steep. We manage your entire payroll process — from processing checks to filing payroll tax returns.</p>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
@@ -137,10 +141,12 @@
 
   <!-- CTA -->
   <section class="cta-banner">
-    <div class="container">
-      <h2>Not Sure Which Service You Need?</h2>
-      <p>Schedule a free consultation and we'll help you figure out the best fit for your situation.</p>
-      <a href="contact.html" class="btn btn--outline">Book a Free Consultation</a>
+    <div class="container cta-banner__inner">
+      <div>
+        <h2>Not Sure Which Service You Need?</h2>
+        <p>Schedule a free consultation and we'll help you figure out the best fit for your situation.</p>
+      </div>
+      <a href="contact.html" class="btn btn--ghost">Book a Free Consultation</a>
     </div>
   </section>
 
@@ -149,7 +155,8 @@
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__brand">Tide<span>Venture</span> CPA</div>
+          <img src="images/logo.png" alt="TideVenture CPA" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
+        <span class="footer__logo-text">Tide<span>Venture</span></span>
           <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>

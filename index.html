@@ -7,7 +7,7 @@
   <meta name="description" content="TideVenture CPA provides expert tax planning, accounting, and financial advisory services for individuals and businesses." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -15,7 +15,10 @@
   <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
-      <a href="index.html" class="nav__logo">Tide<span>Venture</span> CPA</a>
+      <a href="index.html" class="nav__logo">
+        <img src="images/logo.png" alt="TideVenture CPA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <span class="nav__logo-text" style="display:none">Tide<span>Venture</span></span>
+      </a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -34,12 +37,13 @@
     <div class="container hero__inner">
       <div>
         <span class="hero__badge">Licensed CPA Firm</span>
-        <h1>Financial Clarity.<br/>Strategic Growth.</h1>
-        <p>We help individuals and businesses navigate taxes, streamline accounting, and build lasting financial confidence.</p>
+        <h1>Financial Clarity.<br/><span>Strategic Growth.</span></h1>
+        <p class="hero__lead">We help individuals and businesses navigate taxes, streamline accounting, and build lasting financial confidence.</p>
         <div class="hero__actions">
-          <a href="contact.html" class="btn btn--primary">Get a Free Consultation</a>
-          <a href="services.html" class="btn btn--outline">Explore Services</a>
+          <a href="contact.html" class="btn btn--teal">Get a Free Consultation</a>
+          <a href="services.html" class="btn btn--ghost">Explore Services</a>
         </div>
+        <div class="hero__rule"></div>
         <div class="hero__stats">
           <div class="hero__stat"><strong>15+</strong><span>Years Experience</span></div>
           <div class="hero__stat"><strong>500+</strong><span>Clients Served</span></div>
@@ -52,35 +56,35 @@
   <!-- SERVICES OVERVIEW -->
   <section class="section">
     <div class="container">
-      <div class="section-header">
-        <span class="section-header__label">What We Do</span>
+      <div class="section-header section-header--center">
+        <span class="label">What We Do</span>
         <h2>Comprehensive Financial Services</h2>
-        <p>From tax preparation to business advisory, we offer everything you need in one trusted firm.</p>
+        <p class="section-header__lead">From tax preparation to business advisory, we offer everything you need in one trusted firm.</p>
       </div>
       <div class="services-grid">
         <div class="service-card">
-          <div class="service-card__icon">🧾</div>
-          <h3>Tax Planning & Preparation</h3>
+          <span class="service-card__icon">🧾</span>
+          <h3>Tax Planning &amp; Preparation</h3>
           <p>Strategic tax planning and accurate filing for individuals, families, and businesses of all sizes.</p>
-          <a href="services.html" style="font-weight:600;font-size:.9rem;display:inline-block;margin-top:.75rem;">Learn more →</a>
+          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
-          <div class="service-card__icon">📊</div>
-          <h3>Accounting & Bookkeeping</h3>
+          <span class="service-card__icon">📊</span>
+          <h3>Accounting &amp; Bookkeeping</h3>
           <p>Reliable monthly accounting, financial statements, and bookkeeping so you always know where you stand.</p>
-          <a href="services.html" style="font-weight:600;font-size:.9rem;display:inline-block;margin-top:.75rem;">Learn more →</a>
+          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
-          <div class="service-card__icon">🏢</div>
+          <span class="service-card__icon">🏢</span>
           <h3>Business Advisory</h3>
           <p>Entity formation, financial forecasting, and growth strategy to help your business thrive.</p>
-          <a href="services.html" style="font-weight:600;font-size:.9rem;display:inline-block;margin-top:.75rem;">Learn more →</a>
+          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
-          <div class="service-card__icon">📋</div>
+          <span class="service-card__icon">📋</span>
           <h3>Payroll Services</h3>
           <p>Accurate, timely payroll processing and compliance to keep your team paid and your business protected.</p>
-          <a href="services.html" style="font-weight:600;font-size:.9rem;display:inline-block;margin-top:.75rem;">Learn more →</a>
+          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
       </div>
     </div>
@@ -89,39 +93,31 @@
   <!-- WHY US -->
   <section class="section section--alt">
     <div class="container">
-      <div class="section-header">
-        <span class="section-header__label">Why TideVenture</span>
+      <div class="section-header section-header--center">
+        <span class="label">Why TideVenture</span>
         <h2>A Partner You Can Count On</h2>
-        <p>We bring professional-grade expertise with the personal attention your finances deserve.</p>
+        <p class="section-header__lead">We bring professional-grade expertise with the personal attention your finances deserve.</p>
       </div>
-      <div class="why-list">
+      <div class="why-grid">
         <div class="why-item">
-          <div class="why-item__check">✓</div>
-          <div>
-            <h3>Certified & Licensed CPAs</h3>
-            <p>Our team holds active CPA licenses with ongoing professional education.</p>
-          </div>
+          <div class="why-item__num">01</div>
+          <h3>Certified &amp; Licensed CPAs</h3>
+          <p>Our team holds active CPA licenses with ongoing professional education.</p>
         </div>
         <div class="why-item">
-          <div class="why-item__check">✓</div>
-          <div>
-            <h3>Year-Round Support</h3>
-            <p>We're available beyond tax season — your questions never have to wait.</p>
-          </div>
+          <div class="why-item__num">02</div>
+          <h3>Year-Round Support</h3>
+          <p>We're available beyond tax season — your questions never have to wait.</p>
         </div>
         <div class="why-item">
-          <div class="why-item__check">✓</div>
-          <div>
-            <h3>Transparent Pricing</h3>
-            <p>No surprises. Clear, upfront fees so you can plan your budget with confidence.</p>
-          </div>
+          <div class="why-item__num">03</div>
+          <h3>Transparent Pricing</h3>
+          <p>No surprises. Clear, upfront fees so you can plan your budget with confidence.</p>
         </div>
         <div class="why-item">
-          <div class="why-item__check">✓</div>
-          <div>
-            <h3>Tailored to Your Situation</h3>
-            <p>Every client gets a strategy built around their unique goals and tax circumstances.</p>
-          </div>
+          <div class="why-item__num">04</div>
+          <h3>Tailored to Your Situation</h3>
+          <p>Every client gets a strategy built around their unique goals and tax circumstances.</p>
         </div>
       </div>
     </div>
@@ -129,10 +125,12 @@
 
   <!-- CTA -->
   <section class="cta-banner">
-    <div class="container">
-      <h2>Ready to Take Control of Your Finances?</h2>
-      <p>Schedule a free 30-minute consultation with our team and see how we can help.</p>
-      <a href="contact.html" class="btn btn--outline">Book a Free Consultation</a>
+    <div class="container cta-banner__inner">
+      <div>
+        <h2>Ready to Take Control of Your Finances?</h2>
+        <p>Schedule a free 30-minute consultation with our team and see how we can help.</p>
+      </div>
+      <a href="contact.html" class="btn btn--ghost">Book a Free Consultation</a>
     </div>
   </section>
 
@@ -141,7 +139,10 @@
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__brand">Tide<span>Venture</span> CPA</div>
+          <div>
+          <img src="images/logo.png" alt="TideVenture CPA" class="footer__logo-img" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
+          <span class="footer__logo-text">Tide<span>Venture</span></span>
+      </div>
           <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>

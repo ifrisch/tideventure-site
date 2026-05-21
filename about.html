@@ -7,7 +7,7 @@
   <meta name="description" content="Learn about TideVenture CPA — our mission, values, and the team dedicated to your financial success." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -15,7 +15,10 @@
   <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
-      <a href="index.html" class="nav__logo">Tide<span>Venture</span> CPA</a>
+      <a href="index.html" class="nav__logo">
+        <img src="images/logo.png" alt="TideVenture CPA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <span class="nav__logo-text" style="display:none">Tide<span>Venture</span></span>
+      </a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -31,7 +34,8 @@
 
   <!-- PAGE HEADER -->
   <section class="page-header">
-    <div class="container">
+    <div class="container page-header__inner">
+      <span class="label" style="color:rgba(255,255,255,0.5)">About Us</span>
       <h1>About TideVenture CPA</h1>
       <p>Dedicated to your financial clarity and long-term success.</p>
     </div>
@@ -41,7 +45,7 @@
   <section class="section">
     <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:center;">
       <div>
-        <span class="section-header__label" style="display:inline-block;color:var(--teal);font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;">Our Mission</span>
+        <span class="label">Our Mission</span>
         <h2 style="margin-bottom:1rem;">Financial Guidance You Can Trust</h2>
         <p style="margin-bottom:1rem;">TideVenture CPA was founded on a simple belief: every individual and business deserves access to expert financial guidance delivered with honesty, clarity, and care.</p>
         <p style="margin-bottom:1rem;">We combine the expertise of a large firm with the personal attention of a boutique practice. Our clients aren't account numbers — they're long-term relationships we invest in year after year.</p>
@@ -77,7 +81,7 @@
   <section class="section section--alt">
     <div class="container">
       <div class="section-header">
-        <span class="section-header__label">Our Team</span>
+        <span class="label">Our Team</span>
         <h2>Meet the People Behind the Numbers</h2>
         <p>A team of experienced CPAs and financial professionals committed to your success.</p>
       </div>
@@ -106,10 +110,12 @@
 
   <!-- CTA -->
   <section class="cta-banner">
-    <div class="container">
-      <h2>Let's Start a Conversation</h2>
-      <p>Reach out today to learn how TideVenture CPA can support your financial goals.</p>
-      <a href="contact.html" class="btn btn--outline">Contact Us</a>
+    <div class="container cta-banner__inner">
+      <div>
+        <h2>Let's Start a Conversation</h2>
+        <p>Reach out today to learn how TideVenture CPA can support your financial goals.</p>
+      </div>
+      <a href="contact.html" class="btn btn--ghost">Contact Us</a>
     </div>
   </section>
 
@@ -118,7 +124,8 @@
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__brand">Tide<span>Venture</span> CPA</div>
+          <img src="images/logo.png" alt="TideVenture CPA" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
+        <span class="footer__logo-text">Tide<span>Venture</span></span>
           <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>

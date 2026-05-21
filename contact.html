@@ -7,7 +7,7 @@
   <meta name="description" content="Get in touch with TideVenture CPA. Schedule a free consultation or ask us a question." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -15,7 +15,10 @@
   <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
-      <a href="index.html" class="nav__logo">Tide<span>Venture</span> CPA</a>
+      <a href="index.html" class="nav__logo">
+        <img src="images/logo.png" alt="TideVenture CPA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <span class="nav__logo-text" style="display:none">Tide<span>Venture</span></span>
+      </a>
       <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -31,7 +34,8 @@
 
   <!-- PAGE HEADER -->
   <section class="page-header">
-    <div class="container">
+    <div class="container page-header__inner">
+      <span class="label" style="color:rgba(255,255,255,0.5)">Get In Touch</span>
       <h1>Contact Us</h1>
       <p>We'd love to hear from you. Reach out and we'll respond within one business day.</p>
     </div>
@@ -43,7 +47,7 @@
 
       <!-- Contact Info -->
       <div class="contact-info">
-        <h3>Get In Touch</h3>
+        <h3 class="contact-info__heading">Get In Touch</h3>
         <p>Whether you have a question, want to schedule a consultation, or are ready to become a client — we're here to help.</p>
 
         <div class="contact-detail">
@@ -81,7 +85,7 @@
 
       <!-- Contact Form -->
       <div>
-        <div id="form-success" hidden style="background:var(--light-teal);border:1.5px solid var(--teal);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.5rem;color:var(--navy);font-weight:500;">
+        <div id="form-success" hidden class="form-success">
           ✅ Thanks for reaching out! We'll be in touch within one business day.
         </div>
 
@@ -135,7 +139,8 @@
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__brand">Tide<span>Venture</span> CPA</div>
+          <img src="images/logo.png" alt="TideVenture CPA" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
+        <span class="footer__logo-text">Tide<span>Venture</span></span>
           <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
