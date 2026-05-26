@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Services — TideVenture CPA</title>
-  <meta name="description" content="Explore TideVenture CPA's full range of services: tax planning, accounting, payroll, and business advisory." />
+  <meta name="description" content="TideVenture CPA offers business tax returns, quarterly tax planning, and monthly financial health reviews for business owners." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -36,9 +36,16 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Services</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
-      <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      <div class="nav__actions">
+        <a href="portal.html" class="btn--portal">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Client Login
+        </a>
+        <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      </div>
     </div>
   </nav>
 
@@ -47,104 +54,81 @@
     <div class="container page-header__inner">
       <span class="label" style="color:rgba(255,255,255,0.5)">What We Offer</span>
       <h1>Our Services</h1>
-      <p>Everything your finances need — under one roof.</p>
+      <p>Focused CPA services for business owners — nothing unnecessary, everything essential.</p>
     </div>
   </section>
 
-  <!-- TAX -->
+  <!-- BUSINESS TAX RETURNS -->
   <section class="section" id="tax">
-    <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
+    <div class="container service-section">
       <div>
-        <span class="label">Tax Services</span>
-        <h2 style="margin-bottom:1rem;">Tax Planning &amp; Preparation</h2>
-        <p style="margin-bottom:1rem;">Tax season shouldn't be stressful. We prepare accurate federal and state returns for individuals, families, and businesses while identifying every deduction and credit you're entitled to.</p>
-        <p style="margin-bottom:1.5rem;">Year-round proactive tax planning means fewer surprises and more savings over time.</p>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
-          <li style="display:flex;gap:.5rem;">✅ <span>Individual &amp; family tax returns (1040)</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Business tax returns (S-Corp, C-Corp, Partnership, LLC)</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Estimated tax planning &amp; quarterly filings</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>IRS notice response &amp; representation</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Multi-state tax filings</span></li>
+        <span class="label">Business Tax Returns</span>
+        <h2 style="margin-bottom:1rem;">Annual Business Tax Filing</h2>
+        <p style="margin-bottom:1rem;">Tax season shouldn't be stressful. We prepare accurate federal and state business tax returns — filed correctly the first time, with every applicable deduction identified.</p>
+        <p style="margin-bottom:1.5rem;">We handle S-Corps, C-Corps, Partnerships, and LLCs with the same level of precision and care, regardless of entity size.</p>
+        <ul class="service-checklist">
+          <li>Federal &amp; state business tax returns (1120-S, 1120, 1065, 1040 Sch C)</li>
+          <li>Full deduction review and tax minimization strategy</li>
+          <li>Multi-state filings where applicable</li>
+          <li>Year-over-year comparison and planning notes</li>
+          <li>IRS notice response and representation support</li>
         </ul>
       </div>
-      <div style="background:var(--light-teal);border-radius:16px;padding:2rem;text-align:center;">
-        <div style="font-size:4rem;margin-bottom:1rem;">🧾</div>
-        <h3 style="color:var(--navy);margin-bottom:.5rem;">Tax Season Ready</h3>
-        <p>We begin preparing early and keep you informed at every step — no scrambling at the deadline.</p>
-        <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Schedule a Tax Review</a>
+      <div class="service-section__visual">
+        <div class="service-section__visual-icon">🧾</div>
+        <h3>Filed right. Every year.</h3>
+        <p>We review every return for accuracy before it's filed — no rushing at the deadline.</p>
+        <a href="contact.html" class="btn btn--primary" style="margin-top:1.5rem;display:inline-flex;">Schedule a Tax Review</a>
       </div>
     </div>
   </section>
 
-  <!-- ACCOUNTING -->
-  <section class="section section--alt" id="accounting">
-    <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
-      <div style="background:var(--white);border-radius:16px;padding:2rem;text-align:center;order:1;">
-        <div style="font-size:4rem;margin-bottom:1rem;">📊</div>
-        <h3 style="color:var(--navy);margin-bottom:.5rem;">Always Up to Date</h3>
-        <p>Clean books mean better decisions. We keep your financials accurate and audit-ready year-round.</p>
-        <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Get Started</a>
-      </div>
-      <div style="order:2;">
-        <span class="label">Accounting</span>
-        <h2 style="margin-bottom:1rem;">Accounting &amp; Bookkeeping</h2>
-        <p style="margin-bottom:1rem;">Accurate books are the foundation of every smart financial decision. We handle your monthly accounting so you can focus on running your business.</p>
-        <p style="margin-bottom:1.5rem;">We work with QuickBooks, Xero, and other popular platforms and deliver clean financial statements every month.</p>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
-          <li style="display:flex;gap:.5rem;">✅ <span>Monthly bookkeeping &amp; reconciliation</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Financial statement preparation (P&amp;L, Balance Sheet)</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>QuickBooks setup &amp; cleanup</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Accounts payable &amp; receivable management</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Annual compilations &amp; reviews</span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- BUSINESS ADVISORY -->
-  <section class="section" id="advisory">
-    <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
+  <!-- QUARTERLY PLANNING -->
+  <section class="section section--alt" id="quarterly">
+    <div class="container service-section service-section--flip">
       <div>
-        <span class="label">Business Advisory</span>
-        <h2 style="margin-bottom:1rem;">Business Formation &amp; Advisory</h2>
-        <p style="margin-bottom:1rem;">Starting or growing a business? We help you choose the right structure, build financial projections, and stay on the right side of compliance so you can scale with confidence.</p>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
-          <li style="display:flex;gap:.5rem;">✅ <span>LLC, S-Corp, C-Corp entity formation guidance</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Business financial planning &amp; forecasting</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Cash flow management strategies</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Budget creation &amp; variance analysis</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Exit planning &amp; business valuation support</span></li>
+        <span class="label">Quarterly Planning</span>
+        <h2 style="margin-bottom:1rem;">Quarterly Tax Planning &amp; Estimated Payments</h2>
+        <p style="margin-bottom:1rem;">Avoid underpayment penalties and year-end tax surprises. Every quarter we review your financials, project your tax liability, and calculate the right estimated payment amount.</p>
+        <p style="margin-bottom:1.5rem;">This is proactive tax management — not reactive filing. We stay ahead of the IRS so you can stay focused on running your business.</p>
+        <ul class="service-checklist">
+          <li>Quarterly income &amp; expense review</li>
+          <li>Projected annual tax liability calculation</li>
+          <li>Estimated payment amounts and due dates</li>
+          <li>Tax-saving strategies identified each quarter</li>
+          <li>Year-end planning recommendations in Q4</li>
         </ul>
       </div>
-      <div style="background:var(--light-teal);border-radius:16px;padding:2rem;text-align:center;">
-        <div style="font-size:4rem;margin-bottom:1rem;">🏢</div>
-        <h3 style="color:var(--navy);margin-bottom:.5rem;">Built for Business Owners</h3>
-        <p>We speak your language and understand the financial pressures of running a business.</p>
-        <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Talk to an Advisor</a>
+      <div class="service-section__visual">
+        <div class="service-section__visual-icon">📅</div>
+        <h3>No more year-end surprises.</h3>
+        <p>Quarterly check-ins mean you always know what you owe before the IRS does.</p>
+        <a href="contact.html" class="btn btn--primary" style="margin-top:1.5rem;display:inline-flex;">Get Started</a>
       </div>
     </div>
   </section>
 
-  <!-- PAYROLL -->
-  <section class="section section--alt" id="payroll">
-    <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:start;">
-      <div style="background:var(--white);border-radius:16px;padding:2rem;text-align:center;order:1;">
-        <div style="font-size:4rem;margin-bottom:1rem;">📋</div>
-        <h3 style="color:var(--navy);margin-bottom:.5rem;">Never Miss a Payroll</h3>
-        <p>We handle the complexity so your team gets paid accurately and on time, every time.</p>
-        <a href="contact.html" class="btn btn--primary" style="margin-top:1.25rem;">Get Payroll Help</a>
-      </div>
-      <div style="order:2;">
-        <span class="label">Payroll</span>
-        <h2 style="margin-bottom:1rem;">Payroll Services</h2>
-        <p style="margin-bottom:1rem;">Payroll compliance is complex and the penalties for errors are steep. We manage your entire payroll process — from processing checks to filing payroll tax returns.</p>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:.65rem;">
-          <li style="display:flex;gap:.5rem;">✅ <span>Weekly, bi-weekly, or monthly payroll processing</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Direct deposit setup &amp; management</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Payroll tax filings (941, 940, W-2s, 1099s)</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>New hire reporting &amp; compliance</span></li>
-          <li style="display:flex;gap:.5rem;">✅ <span>Workers' comp audit support</span></li>
+  <!-- MONTHLY FINANCIAL REVIEW -->
+  <section class="section" id="monthly">
+    <div class="container service-section">
+      <div>
+        <span class="label">Monthly Financial Review</span>
+        <h2 style="margin-bottom:1rem;">Monthly Financial Health &amp; Statements</h2>
+        <p style="margin-bottom:1rem;">Clean, timely financial statements every month — paired with a brief review of your business's financial health so you always know where you stand.</p>
+        <p style="margin-bottom:1.5rem;">We prepare your Profit &amp; Loss statement, Balance Sheet, and cash flow summary, then highlight any trends or concerns you should be aware of.</p>
+        <ul class="service-checklist">
+          <li>Monthly Profit &amp; Loss statement</li>
+          <li>Balance Sheet as of month-end</li>
+          <li>Cash flow summary and working capital review</li>
+          <li>KPI highlights and trend notes</li>
+          <li>Brief written commentary on financial health</li>
         </ul>
+      </div>
+      <div class="service-section__visual">
+        <div class="service-section__visual-icon">📊</div>
+        <h3>Know your numbers every month.</h3>
+        <p>Don't wait until year-end to understand your business's financial position.</p>
+        <a href="contact.html" class="btn btn--primary" style="margin-top:1.5rem;display:inline-flex;">Learn More</a>
       </div>
     </div>
   </section>
@@ -153,10 +137,10 @@
   <section class="cta-banner">
     <div class="container cta-banner__inner">
       <div>
-        <h2>Not Sure Which Service You Need?</h2>
-        <p>Schedule a free consultation and we'll help you figure out the best fit for your situation.</p>
+        <h2>Not Sure Where to Start?</h2>
+        <p>Schedule a free 30-minute consultation and we'll map out exactly what your business needs.</p>
       </div>
-      <a href="contact.html" class="btn btn--ghost">Book a Free Consultation</a>
+      <a href="pricing.html" class="btn btn--ghost">See Pricing Estimates</a>
     </div>
   </section>
 
@@ -166,24 +150,25 @@
       <div class="footer__grid">
         <div>
           <img src="images/logo.png" alt="TideVenture CPA" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
-        <span class="footer__logo-text">Tide<span>Venture</span></span>
-          <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
+          <span class="footer__logo-text">Tide<span>Venture</span></span>
+          <p class="footer__desc">Focused CPA services for business owners who want real answers and real results.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
         <div class="footer__col">
           <h4>Services</h4>
           <ul>
-            <li><a href="services.html#tax">Tax Planning</a></li>
-            <li><a href="services.html#accounting">Accounting</a></li>
-            <li><a href="services.html#advisory">Business Advisory</a></li>
-            <li><a href="services.html#payroll">Payroll</a></li>
+            <li><a href="services.html#tax">Business Tax Returns</a></li>
+            <li><a href="services.html#quarterly">Quarterly Planning</a></li>
+            <li><a href="services.html#monthly">Monthly Financial Review</a></li>
+            <li><a href="pricing.html">Pricing Tool</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul>
-            <li><a href="about.html">About Us</a></li>
+            <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
+            <li><a href="portal.html">Client Login</a></li>
           </ul>
         </div>
       </div>

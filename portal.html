@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Portal — TideVenture CPA</title>
+  <meta name="description" content="Secure client login for TideVenture CPA." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="portal-page">
+
+  <!--
+    AUTHENTICATION NOTE:
+    This is a static login UI. To add real authentication, choose one of:
+
+    Option A — Cloudflare Access (recommended for Cloudflare Pages):
+      Protect this page behind a Cloudflare Access policy in your Cloudflare dashboard.
+      Cloudflare handles all auth; no code changes needed.
+      https://developers.cloudflare.com/cloudflare-one/policies/access/
+
+    Option B — Third-party auth service (Clerk, Auth0, Firebase Auth):
+      Replace the form below with the provider's drop-in component/SDK.
+      These services manage sessions, passwords, and SSO securely.
+
+    Most clients use QuickBooks Online directly — this portal is
+    a future-facing hub and can be expanded to link out to QBO,
+    document storage, and communication tools as needs grow.
+  -->
+
+  <!-- NAV (minimal) -->
+  <nav class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+        <svg class="nav__logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <path d="M4 36.5 Q10 32.5 16 36.5 T28 36.5 T36 36.5" stroke="rgba(26,127,160,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="nav__logo-words">
+          <span class="nav__logo-name">Tide<em>Venture</em></span>
+          <span class="nav__logo-sub">CPA</span>
+        </span>
+      </a>
+      <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
+    </div>
+  </nav>
+
+  <!-- PORTAL BODY -->
+  <div class="portal-body">
+    <div class="portal-card">
+
+      <!-- Logo mark -->
+      <div class="portal-card__logo">
+        <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="portal-card__logo-name">Tide<em>Venture</em> CPA</div>
+      </div>
+
+      <h1 class="portal-card__title">Client Portal</h1>
+      <p class="portal-card__sub">Sign in to access your documents and financial dashboard.</p>
+
+      <!-- Secure badge -->
+      <div class="portal-secure-badge">
+        <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="1" y="4.5" width="8" height="7" rx="1.5" stroke="#2d7a40" stroke-width="1.3"/><path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" stroke="#2d7a40" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Secure Connection
+      </div>
+
+      <!-- Login form -->
+      <form class="portal-form" id="portalForm" onsubmit="handleLogin(event)" novalidate>
+        <div class="form-group">
+          <label for="portalEmail">Email Address</label>
+          <input
+            type="email"
+            id="portalEmail"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="portalPassword">Password</label>
+          <input
+            type="password"
+            id="portalPassword"
+            name="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+        <a href="#" class="portal-forgot" onclick="return false;">Forgot your password?</a>
+        <button type="submit" class="portal-submit">Sign In</button>
+      </form>
+
+      <!-- SSO divider -->
+      <div class="portal-divider"><span>or continue with</span></div>
+
+      <!-- Google SSO (placeholder — wire up with your auth provider) -->
+      <button class="portal-sso" type="button" onclick="alert('Google sign-in will be available once authentication is configured. See HTML comment for setup options.')">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.25-.164-1.84H9v3.48h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.585 14.016 17.64 11.82 17.64 9.2z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <!-- Footer -->
+      <div class="portal-card__footer">
+        <p>
+          Need access? <a href="contact.html">Contact us</a> to set up your account.<br/>
+          <small>Your connection to this portal is encrypted. We never store passwords in plain text. This portal is intended for TideVenture CPA clients only.</small>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      // Placeholder — replace with real auth once Cloudflare Access or
+      // a third-party auth provider (Clerk, Auth0) is configured.
+      alert('Authentication is not yet configured.\n\nTo set up real login, see the HTML comment at the top of portal.html for implementation options.');
+    }
+  </script>
+</body>
+</html>

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Us — TideVenture CPA</title>
-  <meta name="description" content="Learn about TideVenture CPA — our mission, values, and the team dedicated to your financial success." />
+  <title>About — TideVenture CPA</title>
+  <meta name="description" content="Meet the CPA behind TideVenture — a licensed professional dedicated to helping business owners build financial clarity and lasting confidence." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -36,83 +36,131 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Services</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
-      <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      <div class="nav__actions">
+        <a href="portal.html" class="btn--portal">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Client Login
+        </a>
+        <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      </div>
     </div>
   </nav>
 
-  <!-- PAGE HEADER -->
-  <section class="page-header">
-    <div class="container page-header__inner">
-      <span class="label" style="color:rgba(255,255,255,0.5)">About Us</span>
-      <h1>About TideVenture CPA</h1>
-      <p>Dedicated to your financial clarity and long-term success.</p>
+  <!-- ABOUT HERO -->
+  <section class="about-hero">
+    <div class="container about-hero__inner">
+      <div class="about-photo">
+        <!--
+          REPLACE THIS PLACEHOLDER:
+          Upload your headshot to images/headshot.jpg and use:
+          <img src="images/headshot.jpg" alt="[Your Name], CPA" />
+        -->
+        <div class="about-photo__placeholder">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="14" stroke="white" stroke-width="1.5" opacity="0.5"/><path d="M8 58c0-13.3 10.7-24 24-24s24 10.7 24 24" stroke="white" stroke-width="1.5" opacity="0.3"/></svg>
+          <span>Add your photo<br/><small>images/headshot.jpg</small></span>
+        </div>
+      </div>
+      <div class="about-hero__text">
+        <span class="label" style="color:rgba(26,127,160,0.9)">Your CPA</span>
+        <h1 class="about-hero__name">[Your Name], CPA</h1>
+        <div class="about-hero__title">Certified Public Accountant &nbsp;·&nbsp; TideVenture CPA</div>
+        <p class="about-hero__bio">
+          <!-- PERSONALIZE THIS: Replace with your own bio, background, and story. -->
+          I founded TideVenture CPA to give business owners something most accounting firms don't: a real relationship with a CPA who actually understands their business.
+        </p>
+        <p class="about-hero__bio">
+          My work is built on one belief — that when you truly understand your numbers, you make better decisions. My job is to make that possible.
+        </p>
+        <div class="cred-chips">
+          <span class="cred-chip">✓ Licensed CPA</span>
+          <span class="cred-chip">✓ [Your State] Licensed</span>
+          <span class="cred-chip">✓ [X]+ Years Experience</span>
+          <span class="cred-chip">✓ Small Business Specialist</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- MISSION -->
+  <!-- PHILOSOPHY -->
   <section class="section">
-    <div class="container" style="display:grid;gap:3rem;grid-template-columns:1fr 1fr;align-items:center;">
-      <div>
-        <span class="label">Our Mission</span>
-        <h2 style="margin-bottom:1rem;">Financial Guidance You Can Trust</h2>
-        <p style="margin-bottom:1rem;">TideVenture CPA was founded on a simple belief: every individual and business deserves access to expert financial guidance delivered with honesty, clarity, and care.</p>
-        <p style="margin-bottom:1rem;">We combine the expertise of a large firm with the personal attention of a boutique practice. Our clients aren't account numbers — they're long-term relationships we invest in year after year.</p>
-        <p>Whether you're filing your first return, growing a small business, or planning for retirement, we bring the same level of dedication to every engagement.</p>
+    <div class="container">
+      <div class="section-header section-header--center">
+        <span class="label">My Approach</span>
+        <h2>How I Work With Clients</h2>
+        <p class="section-header__lead">Three principles that guide every engagement.</p>
       </div>
-      <div style="background:var(--light-teal);border-radius:16px;padding:2.5rem;display:flex;flex-direction:column;gap:1.5rem;">
-        <div style="display:flex;gap:1rem;align-items:flex-start;">
-          <div style="font-size:1.75rem;">🎯</div>
-          <div>
-            <h3 style="color:var(--navy);margin-bottom:.25rem;">Accuracy First</h3>
-            <p style="font-size:.95rem;">Every number we touch is reviewed for precision and compliance.</p>
-          </div>
+      <div class="philosophy-grid">
+        <div class="philosophy-card">
+          <div class="philosophy-card__icon">🎯</div>
+          <h3>Proactive, Not Reactive</h3>
+          <p>I don't wait for year-end to surface problems. We stay in close communication throughout the year so there are no surprises.</p>
         </div>
-        <div style="display:flex;gap:1rem;align-items:flex-start;">
-          <div style="font-size:1.75rem;">🤝</div>
-          <div>
-            <h3 style="color:var(--navy);margin-bottom:.25rem;">Client-Centered</h3>
-            <p style="font-size:.95rem;">We listen first, then craft solutions that fit your specific needs.</p>
-          </div>
+        <div class="philosophy-card">
+          <div class="philosophy-card__icon">🔍</div>
+          <h3>Clarity Over Complexity</h3>
+          <p>Your financial picture should be clear and understandable — not buried in jargon. I translate numbers into decisions you can act on.</p>
         </div>
-        <div style="display:flex;gap:1rem;align-items:flex-start;">
-          <div style="font-size:1.75rem;">📚</div>
-          <div>
-            <h3 style="color:var(--navy);margin-bottom:.25rem;">Always Learning</h3>
-            <p style="font-size:.95rem;">Tax laws change. We stay current so you stay compliant and ahead.</p>
-          </div>
+        <div class="philosophy-card">
+          <div class="philosophy-card__icon">🤝</div>
+          <h3>A Real Relationship</h3>
+          <p>You get direct access to me — not a rotating staff of associates. I know your business because I work with it personally.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- TEAM -->
+  <!-- CREDENTIALS -->
   <section class="section section--alt">
     <div class="container">
-      <div class="section-header">
-        <span class="label">Our Team</span>
-        <h2>Meet the People Behind the Numbers</h2>
-        <p>A team of experienced CPAs and financial professionals committed to your success.</p>
+      <div class="section-header section-header--center">
+        <span class="label">Credentials</span>
+        <h2>Qualifications &amp; Background</h2>
       </div>
-      <div class="team-grid">
-        <div class="team-card">
-          <div class="team-card__avatar">👤</div>
-          <h3>Your Name, CPA</h3>
-          <p>Founding Partner</p>
-          <p style="margin-top:.5rem;font-size:.875rem;">Over 15 years of experience in tax planning, business accounting, and financial strategy.</p>
+      <div class="credentials-grid">
+        <div class="credential-item">
+          <div class="credential-item__icon">🎓</div>
+          <div>
+            <strong>Certified Public Accountant (CPA)</strong>
+            <span>Licensed — [Your State] Board of Accountancy</span>
+          </div>
         </div>
-        <div class="team-card">
-          <div class="team-card__avatar">👤</div>
-          <h3>Team Member, CPA</h3>
-          <p>Senior Tax Advisor</p>
-          <p style="margin-top:.5rem;font-size:.875rem;">Specializes in small business tax strategy and IRS representation.</p>
+        <div class="credential-item">
+          <div class="credential-item__icon">🏛️</div>
+          <div>
+            <strong>[Your Degree], Accounting</strong>
+            <span>[Your University]</span>
+          </div>
         </div>
-        <div class="team-card">
-          <div class="team-card__avatar">👤</div>
-          <h3>Team Member</h3>
-          <p>Bookkeeping & Payroll</p>
-          <p style="margin-top:.5rem;font-size:.875rem;">Handles client bookkeeping, payroll processing, and QuickBooks management.</p>
+        <div class="credential-item">
+          <div class="credential-item__icon">📘</div>
+          <div>
+            <strong>AICPA Member</strong>
+            <span>American Institute of Certified Public Accountants</span>
+          </div>
+        </div>
+        <div class="credential-item">
+          <div class="credential-item__icon">💼</div>
+          <div>
+            <strong>[X]+ Years in Practice</strong>
+            <span>Specializing in small and mid-size business clients</span>
+          </div>
+        </div>
+        <div class="credential-item">
+          <div class="credential-item__icon">🔐</div>
+          <div>
+            <strong>QuickBooks ProAdvisor</strong>
+            <span>Certified in QuickBooks Online</span>
+          </div>
+        </div>
+        <div class="credential-item">
+          <div class="credential-item__icon">🗓️</div>
+          <div>
+            <strong>IRS Enrolled Agent (EA)</strong>
+            <span>Authorized to represent clients before the IRS</span>
+          </div>
         </div>
       </div>
     </div>
@@ -122,10 +170,10 @@
   <section class="cta-banner">
     <div class="container cta-banner__inner">
       <div>
-        <h2>Let's Start a Conversation</h2>
-        <p>Reach out today to learn how TideVenture CPA can support your financial goals.</p>
+        <h2>Let's Work Together</h2>
+        <p>Schedule a free 30-minute intro call and let's talk about where your business is headed.</p>
       </div>
-      <a href="contact.html" class="btn btn--ghost">Contact Us</a>
+      <a href="contact.html" class="btn btn--ghost">Book a Free Consultation</a>
     </div>
   </section>
 
@@ -135,24 +183,25 @@
       <div class="footer__grid">
         <div>
           <img src="images/logo.png" alt="TideVenture CPA" style="height:32px;margin-bottom:.85rem;filter:brightness(0) invert(1) opacity(.8);" onerror="this.style.display='none'" />
-        <span class="footer__logo-text">Tide<span>Venture</span></span>
-          <p style="font-size:.9rem;max-width:280px;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
+          <span class="footer__logo-text">Tide<span>Venture</span></span>
+          <p class="footer__desc">Focused CPA services for business owners who want real answers and real results.</p>
           <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
         <div class="footer__col">
           <h4>Services</h4>
           <ul>
-            <li><a href="services.html">Tax Planning</a></li>
-            <li><a href="services.html">Accounting</a></li>
-            <li><a href="services.html">Business Advisory</a></li>
-            <li><a href="services.html">Payroll</a></li>
+            <li><a href="services.html#tax">Business Tax Returns</a></li>
+            <li><a href="services.html#quarterly">Quarterly Planning</a></li>
+            <li><a href="services.html#monthly">Monthly Financial Review</a></li>
+            <li><a href="pricing.html">Pricing Tool</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul>
-            <li><a href="about.html">About Us</a></li>
+            <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
+            <li><a href="portal.html">Client Login</a></li>
           </ul>
         </div>
       </div>

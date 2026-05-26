@@ -36,9 +36,16 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Services</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
-      <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      <div class="nav__actions">
+        <a href="portal.html" class="btn--portal">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Client Login
+        </a>
+        <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+      </div>
     </div>
   </nav>
 
@@ -52,6 +59,9 @@
         <div class="hero__actions">
           <a href="contact.html" class="btn btn--teal">Get a Free Consultation</a>
           <a href="services.html" class="btn btn--ghost">Explore Services</a>
+        </div>
+        <div class="hero__slogan">
+          <span>Steady through every tide of your business.</span>
         </div>
         <div class="hero__rule"></div>
         <div class="hero__stats">
@@ -68,32 +78,26 @@
     <div class="container">
       <div class="section-header section-header--center">
         <span class="label">What We Do</span>
-        <h2>Comprehensive Financial Services</h2>
-        <p class="section-header__lead">From tax preparation to business advisory, we offer everything you need in one trusted firm.</p>
+        <h2>Services Built for Business Owners</h2>
+        <p class="section-header__lead">Focused, high-value CPA services — no unnecessary add-ons, just what your business actually needs.</p>
       </div>
       <div class="services-grid">
         <div class="service-card">
           <span class="service-card__icon">🧾</span>
-          <h3>Tax Planning &amp; Preparation</h3>
-          <p>Strategic tax planning and accurate filing for individuals, families, and businesses of all sizes.</p>
+          <h3>Business Tax Returns</h3>
+          <p>Accurate federal &amp; state business tax filing — S-Corps, C-Corps, Partnerships, and LLCs done right.</p>
+          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
+        </div>
+        <div class="service-card">
+          <span class="service-card__icon">📅</span>
+          <h3>Quarterly Tax Planning</h3>
+          <p>Proactive estimated payment planning every quarter so you avoid surprises and stay ahead of the IRS.</p>
           <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
           <span class="service-card__icon">📊</span>
-          <h3>Accounting &amp; Bookkeeping</h3>
-          <p>Reliable monthly accounting, financial statements, and bookkeeping so you always know where you stand.</p>
-          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
-        </div>
-        <div class="service-card">
-          <span class="service-card__icon">🏢</span>
-          <h3>Business Advisory</h3>
-          <p>Entity formation, financial forecasting, and growth strategy to help your business thrive.</p>
-          <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
-        </div>
-        <div class="service-card">
-          <span class="service-card__icon">📋</span>
-          <h3>Payroll Services</h3>
-          <p>Accurate, timely payroll processing and compliance to keep your team paid and your business protected.</p>
+          <h3>Monthly Financial Review</h3>
+          <p>Monthly review of your financial health with clean financial statements to keep you informed and in control.</p>
           <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
       </div>
@@ -133,6 +137,35 @@
     </div>
   </section>
 
+  <!-- VIDEO SECTION -->
+  <section class="video-section">
+    <div class="container video-section__inner">
+      <div class="video-section__text">
+        <span class="label">Our Approach</span>
+        <h2>Built for Business Owners Who Want Real Answers</h2>
+        <p>We don't just file your taxes — we help you understand your numbers, plan your next move, and build a business that weathers every tide.</p>
+        <a href="about.html" class="btn btn--teal">Meet Your CPA</a>
+      </div>
+      <div class="video-frame">
+        <!--
+          ADD YOUR VIDEO:
+          Option A — Upload a video file to images/intro.mp4 and uncomment:
+          <video autoplay muted loop playsinline poster="images/video-poster.jpg">
+            <source src="images/intro.mp4" type="video/mp4" />
+          </video>
+
+          Option B — Paste a YouTube embed URL (replace VIDEO_ID):
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID"
+            allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        -->
+        <div class="video-frame__placeholder">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" stroke="white" stroke-width="1.5"/><path d="M21 18l14 8-14 8V18z" fill="white" opacity="0.6"/></svg>
+          <span>Add your intro video here<br/><small>See comment in HTML for instructions</small></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="cta-banner">
     <div class="container cta-banner__inner">
@@ -159,17 +192,18 @@
         <div class="footer__col">
           <h4>Services</h4>
           <ul>
-            <li><a href="services.html">Tax Planning</a></li>
-            <li><a href="services.html">Accounting</a></li>
-            <li><a href="services.html">Business Advisory</a></li>
-            <li><a href="services.html">Payroll</a></li>
+            <li><a href="services.html#tax">Business Tax Returns</a></li>
+            <li><a href="services.html#quarterly">Quarterly Planning</a></li>
+            <li><a href="services.html#monthly">Monthly Financial Review</a></li>
+            <li><a href="pricing.html">Pricing Tool</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h4>Company</h4>
           <ul>
-            <li><a href="about.html">About Us</a></li>
+            <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
+            <li><a href="portal.html">Client Login</a></li>
           </ul>
         </div>
       </div>
