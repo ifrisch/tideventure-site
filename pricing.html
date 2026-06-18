@@ -518,9 +518,19 @@
     function clearQuarterlyRecommendationState() {
       document.querySelectorAll('.service-option--recommended').forEach(option => {
         option.classList.remove('service-option--recommended');
-        option.style.removeProperty('background');
-        option.style.removeProperty('border-color');
-        option.style.removeProperty('animation');
+        // Hard-reset visual state so the card always returns to default after flashing.
+        option.style.setProperty('animation', 'none', 'important');
+        option.style.setProperty('background', 'var(--white)', 'important');
+        option.style.setProperty('border-color', 'var(--border)', 'important');
+        option.style.setProperty('box-shadow', 'none', 'important');
+
+        // Re-enable normal stylesheet-driven rendering on next paint.
+        requestAnimationFrame(() => {
+          option.style.removeProperty('animation');
+          option.style.removeProperty('background');
+          option.style.removeProperty('border-color');
+          option.style.removeProperty('box-shadow');
+        });
       });
 
       const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
