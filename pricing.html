@@ -430,8 +430,8 @@
     let selectedEntity   = null;
     let selectedServices = new Set();
     let selectedRevenue  = null;
-    let recommendationTimer   = null;
-    let quarterlyFlashInterval = null;
+    let quarterlyFlashRaf = null;
+    let quarterlyFlashStartedAt = 0;
 
     // --- Helpers ---
     function fmt(n) {
@@ -476,10 +476,6 @@
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
       const otherServiceDetails = document.getElementById('otherServiceDetails');
       if (otherServiceDetails) otherServiceDetails.value = '';
-      if (recommendationTimer) {
-        clearTimeout(recommendationTimer);
-        recommendationTimer = null;
-      }
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
@@ -487,19 +483,16 @@
     }
 
     function stopQuarterlyFlash() {
-      if (quarterlyFlashInterval) {
-        clearInterval(quarterlyFlashInterval);
-        quarterlyFlashInterval = null;
-      }
-      if (recommendationTimer) {
-        clearTimeout(recommendationTimer);
-        recommendationTimer = null;
+      if (quarterlyFlashRaf) {
+        cancelAnimationFrame(quarterlyFlashRaf);
+        quarterlyFlashRaf = null;
       }
       const el = document.querySelector('.service-option[data-service="quarterly"]');
       if (!el) return;
-      el.style.background = '';
-      el.style.borderColor = '';
-      el.style.boxShadow = '';
+      // Force default card state after flash completes.
+      el.style.background = '#ffffff';
+      el.style.borderColor = '#e2e8ed';
+      el.style.boxShadow = 'none';
       const hint = el.querySelector('.service-option__hint');
       if (hint) hint.classList.remove('service-option__hint--visible');
     }
@@ -513,19 +506,26 @@
 
       if (hint) hint.classList.add('service-option__hint--visible');
 
-      let flashOn = true;
-      el.style.background  = '#ffeb3b';
-      el.style.borderColor = '#d2a100';
+      quarterlyFlashStartedAt = performance.now();
+      const flashDurationMs = 5000;
+      const flashCycleMs = 400;
 
-      quarterlyFlashInterval = setInterval(() => {
-        flashOn = !flashOn;
-        el.style.background  = flashOn ? '#ffeb3b' : '#ffffff';
+      const tick = (now) => {
+        const elapsed = now - quarterlyFlashStartedAt;
+        if (elapsed >= flashDurationMs) {
+          stopQuarterlyFlash();
+          return;
+        }
+
+        const flashOn = Math.floor(elapsed / flashCycleMs) % 2 === 0;
+        el.style.background = flashOn ? '#ffeb3b' : '#ffffff';
         el.style.borderColor = flashOn ? '#d2a100' : '#e2e8ed';
-      }, 400);
+        el.style.boxShadow = flashOn ? '0 0 0 8px rgba(255, 235, 59, 0.18)' : 'none';
 
-      recommendationTimer = setTimeout(() => {
-        stopQuarterlyFlash();
-      }, 5000);
+        quarterlyFlashRaf = requestAnimationFrame(tick);
+      };
+
+      quarterlyFlashRaf = requestAnimationFrame(tick);
     }
 
     // --- Step 1: entity selection ---
