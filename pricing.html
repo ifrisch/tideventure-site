@@ -23,6 +23,11 @@
       color: #cc1f1f;
     }
 
+    .service-option__hint--persistent {
+      display: block !important;
+      color: #111111;
+    }
+
     .service-other-wrap {
       margin-top: 1rem;
       padding: 1rem 1.1rem;
@@ -430,9 +435,7 @@
     let selectedEntity   = null;
     let selectedServices = new Set();
     let selectedRevenue  = null;
-    let quarterlyFlashRaf = null;
-    let quarterlyFlashStartedAt = 0;
-    let quarterlyForceResetTimer = null;
+    let recommendationTimer = null;
 
     // --- Helpers ---
     function fmt(n) {
@@ -471,7 +474,7 @@
       document.querySelectorAll('.service-option').forEach(o => {
         o.classList.remove('selected');
         const hint = o.querySelector('.service-option__hint');
-        if (hint) hint.classList.remove('service-option__hint--visible');
+        if (hint) hint.classList.remove('service-option__hint--visible', 'service-option__hint--persistent');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
@@ -483,26 +486,16 @@
       goToStep(1);
     }
 
-    function forceQuarterlyDefaultState() {
-      const el = document.querySelector('.service-option[data-service="quarterly"]');
-      if (!el) return;
-      el.style.background = '#ffffff';
-      el.style.borderColor = '#e2e8ed';
-      el.style.boxShadow = 'none';
-    }
-
     function stopQuarterlyFlash() {
-      if (quarterlyFlashRaf) {
-        cancelAnimationFrame(quarterlyFlashRaf);
-        quarterlyFlashRaf = null;
-      }
-      if (quarterlyForceResetTimer) {
-        clearTimeout(quarterlyForceResetTimer);
-        quarterlyForceResetTimer = null;
+      if (recommendationTimer) {
+        clearTimeout(recommendationTimer);
+        recommendationTimer = null;
       }
       const el = document.querySelector('.service-option[data-service="quarterly"]');
       if (!el) return;
-      forceQuarterlyDefaultState();
+      el.style.background = '';
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
       const hint = el.querySelector('.service-option__hint');
       if (hint) hint.classList.remove('service-option__hint--visible');
     }
@@ -515,37 +508,14 @@
       stopQuarterlyFlash();
 
       if (hint) hint.classList.add('service-option__hint--visible');
-
-      quarterlyFlashStartedAt = performance.now();
-      const flashDurationMs = 5000;
-      const flashCycleMs = 400;
-
-      // Keep the card fill white throughout; only border/glow should flash.
-      el.style.background = '#ffffff';
-
-      const tick = (now) => {
-        const elapsed = now - quarterlyFlashStartedAt;
-        if (elapsed >= flashDurationMs) {
-          stopQuarterlyFlash();
-          return;
+      recommendationTimer = setTimeout(() => {
+        const persistentHint = el.querySelector('.service-option__hint');
+        if (persistentHint) {
+          persistentHint.classList.remove('service-option__hint--visible');
+          persistentHint.classList.add('service-option__hint--persistent');
         }
-
-        const flashOn = Math.floor(elapsed / flashCycleMs) % 2 === 0;
-        el.style.borderColor = flashOn ? '#d2a100' : '#e2e8ed';
-        el.style.boxShadow = flashOn ? '0 0 0 8px rgba(255, 235, 59, 0.18)' : 'none';
-
-        quarterlyFlashRaf = requestAnimationFrame(tick);
-      };
-
-      quarterlyFlashRaf = requestAnimationFrame(tick);
-
-      // Hard fail-safe: even if animation frames are interrupted, force default state.
-      quarterlyForceResetTimer = setTimeout(() => {
-        forceQuarterlyDefaultState();
-        const forceHint = el.querySelector('.service-option__hint');
-        if (forceHint) forceHint.classList.remove('service-option__hint--visible');
-        quarterlyForceResetTimer = null;
-      }, 5500);
+        recommendationTimer = null;
+      }, 5000);
     }
 
     // --- Step 1: entity selection ---
@@ -580,6 +550,8 @@
 
         if (svc === 'quarterly') {
           stopQuarterlyFlash();
+          const hint = option.querySelector('.service-option__hint');
+          if (hint) hint.classList.remove('service-option__hint--persistent');
         }
 
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
