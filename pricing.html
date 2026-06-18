@@ -10,6 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
+    /* Hard override: Step 2 service cards must remain white at all times. */
+    .pricing-tool .service-option,
+    .pricing-tool .service-option:hover,
+    .pricing-tool .service-option.selected,
+    .pricing-tool .service-option:focus,
+    .pricing-tool .service-option:focus-visible {
+      background: #ffffff !important;
+      animation: none !important;
+      box-shadow: none !important;
+    }
+
     .service-other-wrap {
       margin-top: 1rem;
       padding: 1rem 1.1rem;
@@ -426,6 +437,14 @@
       return fmt(low) + ' – ' + fmt(high);
     }
 
+    function normalizeServiceOptionStyles() {
+      document.querySelectorAll('.pricing-tool .service-option').forEach((el) => {
+        el.style.background = '#ffffff';
+        el.style.boxShadow = 'none';
+        el.style.animation = 'none';
+      });
+    }
+
     // --- Progress bar ---
     function updateProgress(currentStep) {
       for (let i = 1; i <= 3; i++) {
@@ -460,6 +479,7 @@
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
+      normalizeServiceOptionStyles();
       goToStep(1);
     }
 
@@ -489,11 +509,15 @@
           option.setAttribute('aria-checked', 'true');
         }
 
+        normalizeServiceOptionStyles();
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
       }
       option.addEventListener('click', toggleService);
       option.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleService(); } });
     });
+
+    // Ensure stale inline styles from previous deployed scripts never persist.
+    normalizeServiceOptionStyles();
 
     // --- Step 3: revenue radios ---
     document.querySelectorAll('.revenue-option').forEach(option => {
