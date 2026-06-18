@@ -432,6 +432,7 @@
     let selectedRevenue  = null;
     let quarterlyFlashRaf = null;
     let quarterlyFlashStartedAt = 0;
+    let quarterlyForceResetTimer = null;
 
     // --- Helpers ---
     function fmt(n) {
@@ -482,17 +483,26 @@
       goToStep(1);
     }
 
+    function forceQuarterlyDefaultState() {
+      const el = document.querySelector('.service-option[data-service="quarterly"]');
+      if (!el) return;
+      el.style.background = '#ffffff';
+      el.style.borderColor = '#e2e8ed';
+      el.style.boxShadow = 'none';
+    }
+
     function stopQuarterlyFlash() {
       if (quarterlyFlashRaf) {
         cancelAnimationFrame(quarterlyFlashRaf);
         quarterlyFlashRaf = null;
       }
+      if (quarterlyForceResetTimer) {
+        clearTimeout(quarterlyForceResetTimer);
+        quarterlyForceResetTimer = null;
+      }
       const el = document.querySelector('.service-option[data-service="quarterly"]');
       if (!el) return;
-      // Force default card state after flash completes.
-      el.style.background = '#ffffff';
-      el.style.borderColor = '#e2e8ed';
-      el.style.boxShadow = 'none';
+      forceQuarterlyDefaultState();
       const hint = el.querySelector('.service-option__hint');
       if (hint) hint.classList.remove('service-option__hint--visible');
     }
@@ -528,6 +538,14 @@
       };
 
       quarterlyFlashRaf = requestAnimationFrame(tick);
+
+      // Hard fail-safe: even if animation frames are interrupted, force default state.
+      quarterlyForceResetTimer = setTimeout(() => {
+        forceQuarterlyDefaultState();
+        const forceHint = el.querySelector('.service-option__hint');
+        if (forceHint) forceHint.classList.remove('service-option__hint--visible');
+        quarterlyForceResetTimer = null;
+      }, 5500);
     }
 
     // --- Step 1: entity selection ---
