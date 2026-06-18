@@ -9,6 +9,68 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .service-option__hint {
+      display: none;
+      margin-top: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--brand-dark);
+    }
+
+    .service-option--recommended {
+      border-color: var(--brand-teal);
+      background: rgba(26, 127, 160, 0.09);
+      animation: servicePulse 0.95s ease-in-out 2;
+    }
+
+    .service-option--recommended .service-option__hint {
+      display: block;
+    }
+
+    .service-other-wrap {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      background: #fcfdfe;
+    }
+
+    .service-other-wrap label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-size: 0.78rem;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .service-other-wrap textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--ink);
+      background: var(--white);
+    }
+
+    .service-other-wrap textarea:focus {
+      outline: none;
+      border-color: var(--brand-teal);
+      box-shadow: 0 0 0 3px rgba(26, 127, 160, 0.12);
+    }
+
+    @keyframes servicePulse {
+      0% { box-shadow: 0 0 0 0 rgba(26, 127, 160, 0.42); }
+      100% { box-shadow: 0 0 0 14px rgba(26, 127, 160, 0); }
+    }
+  </style>
 </head>
 <body>
 
@@ -133,6 +195,7 @@
             <div class="service-option__body">
               <h3>Quarterly Planning &amp; Estimated Payments</h3>
               <p>Proactive quarterly tax planning and estimated payment calculation</p>
+              <p class="service-option__hint">Commonly chosen with Business Tax Returns</p>
             </div>
           </label>
 
@@ -145,6 +208,31 @@
               <p>Monthly P&amp;L, Balance Sheet, and financial health commentary</p>
             </div>
           </label>
+
+          <label class="service-option" data-service="bookkeeping" tabindex="0" role="checkbox" aria-checked="false">
+            <div class="service-option__check" aria-hidden="true">
+              <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="service-option__body">
+              <h3>Bookkeeping with Financial Statement Maintenance</h3>
+              <p>Monthly bookkeeping upkeep and clean statements. Requires QuickBooks Online for this service.</p>
+            </div>
+          </label>
+
+          <label class="service-option" data-service="other" tabindex="0" role="checkbox" aria-checked="false">
+            <div class="service-option__check" aria-hidden="true">
+              <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="service-option__body">
+              <h3>Other / Custom Service Need</h3>
+              <p>Tell us what you need and we will scope it during your consultation.</p>
+            </div>
+          </label>
+
+          <div class="service-other-wrap">
+            <label for="otherServiceDetails">Other Service Details (optional)</label>
+            <textarea id="otherServiceDetails" placeholder="Ex: Sales tax cleanup, historical catch-up bookkeeping, 1099 filings, etc."></textarea>
+          </div>
 
           <div class="pricing-nav">
             <button class="btn--back" onclick="goToStep(1)">← Back</button>
@@ -328,6 +416,16 @@
       soleprop:    { low: 275, high: 575 },
     };
 
+    // --- Bookkeeping with financial statement maintenance: per-month base × 12 = annual ---
+    const ENTITY_BOOKKEEPING_BASE = {
+      scorp:       { low: 425, high: 900 },
+      ccorp:       { low: 500, high: 1050 },
+      partnership: { low: 400, high: 850 },
+      mmllc:       { low: 375, high: 800 },
+      smllc:       { low: 325, high: 700 },
+      soleprop:    { low: 275, high: 600 },
+    };
+
     // --- Revenue multipliers ---
     const REVENUE_MULTIPLIER = {
       under500k: 1.0,
@@ -340,6 +438,7 @@
     let selectedEntity   = null;
     let selectedServices = new Set();
     let selectedRevenue  = null;
+    let recommendationTimer = null;
 
     // --- Helpers ---
     function fmt(n) {
@@ -375,14 +474,35 @@
       selectedRevenue  = null;
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
-        o.classList.remove('selected');
+        o.classList.remove('selected', 'service-option--recommended');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
+      const otherServiceDetails = document.getElementById('otherServiceDetails');
+      if (otherServiceDetails) otherServiceDetails.value = '';
+      if (recommendationTimer) {
+        clearTimeout(recommendationTimer);
+        recommendationTimer = null;
+      }
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
       goToStep(1);
+    }
+
+    function suggestQuarterlyPairing() {
+      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
+      if (!quarterlyOption || selectedServices.has('quarterly')) return;
+
+      quarterlyOption.classList.remove('service-option--recommended');
+      void quarterlyOption.offsetWidth;
+      quarterlyOption.classList.add('service-option--recommended');
+
+      if (recommendationTimer) clearTimeout(recommendationTimer);
+      recommendationTimer = setTimeout(() => {
+        quarterlyOption.classList.remove('service-option--recommended');
+        recommendationTimer = null;
+      }, 2600);
     }
 
     // --- Step 1: entity selection ---
@@ -409,7 +529,16 @@
           selectedServices.add(svc);
           option.classList.add('selected');
           option.setAttribute('aria-checked', 'true');
+
+          if (svc === 'tax') {
+            suggestQuarterlyPairing();
+          }
         }
+
+        if (svc === 'quarterly') {
+          option.classList.remove('service-option--recommended');
+        }
+
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
       }
       option.addEventListener('click', toggleService);
@@ -443,6 +572,8 @@
         tax:       'Business Tax Return',
         quarterly: 'Quarterly Tax Planning (annual)',
         monthly:   'Monthly Financial Review (annual)',
+        bookkeeping: 'Bookkeeping with Financial Statement Maintenance (annual)',
+        other: 'Other / Custom Service Need',
       };
 
       if (selectedServices.has('tax')) {
@@ -490,6 +621,37 @@
               <div class="result-line__period">${fmtRange(base.low * mult, base.high * mult)} /month × 12</div>
             </div>
             <div class="result-line__price">${fmtRange(low, high)}</div>
+          </div>`;
+      }
+
+      if (selectedServices.has('bookkeeping')) {
+        const base = ENTITY_BOOKKEEPING_BASE[selectedEntity];
+        const low  = base.low  * mult * 12;
+        const high = base.high * mult * 12;
+        totalLow  += low;
+        totalHigh += high;
+        breakdown.innerHTML += `
+          <div class="result-line">
+            <div>
+              <div class="result-line__label">${SERVICE_LABELS.bookkeeping}</div>
+              <div class="result-line__period">${fmtRange(base.low * mult, base.high * mult)} /month × 12</div>
+            </div>
+            <div class="result-line__price">${fmtRange(low, high)}</div>
+          </div>`;
+      }
+
+      if (selectedServices.has('other')) {
+        const otherServiceDetails = document.getElementById('otherServiceDetails');
+        const details = otherServiceDetails && otherServiceDetails.value.trim()
+          ? otherServiceDetails.value.trim()
+          : 'Custom scope discussed during consultation';
+        breakdown.innerHTML += `
+          <div class="result-line">
+            <div>
+              <div class="result-line__label">${SERVICE_LABELS.other}</div>
+              <div class="result-line__period">${details}</div>
+            </div>
+            <div class="result-line__price">Custom</div>
           </div>`;
       }
 
