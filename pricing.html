@@ -32,9 +32,9 @@
     .service-option__hint--persistent {
       display: inline-block;
       color: #111111;
-      background: #ffe566;
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
     }
 
     .service-other-wrap {
@@ -490,6 +490,9 @@
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
         o.classList.remove('selected', 'service-option--recommended');
+        o.style.removeProperty('background');
+        o.style.removeProperty('border-color');
+        o.style.removeProperty('animation');
         const hint = o.querySelector('.service-option__hint');
         if (hint) hint.classList.remove('service-option__hint--persistent');
         o.setAttribute('aria-checked', 'false');
@@ -520,6 +523,9 @@
       if (recommendationTimer) clearTimeout(recommendationTimer);
       recommendationTimer = setTimeout(() => {
         quarterlyOption.classList.remove('service-option--recommended');
+        quarterlyOption.style.removeProperty('background');
+        quarterlyOption.style.removeProperty('border-color');
+        quarterlyOption.style.removeProperty('animation');
         if (quarterlyHint) quarterlyHint.classList.add('service-option__hint--persistent');
         recommendationTimer = null;
       }, 5000);
@@ -557,6 +563,9 @@
 
         if (svc === 'quarterly') {
           option.classList.remove('service-option--recommended');
+          option.style.removeProperty('background');
+          option.style.removeProperty('border-color');
+          option.style.removeProperty('animation');
           const hint = option.querySelector('.service-option__hint');
           if (hint) hint.classList.remove('service-option__hint--persistent');
         }
