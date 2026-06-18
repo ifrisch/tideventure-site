@@ -19,9 +19,7 @@
     }
 
     .service-option--recommended {
-      border-color: #d2a100;
-      background: #fff59d;
-      animation: servicePulse 0.5s ease-in-out 10;
+      animation: servicePulse 5s ease-in-out 1;
     }
 
     .service-option--recommended .service-option__hint {
@@ -77,11 +75,13 @@
 
     @keyframes servicePulse {
       0%, 100% {
-        background: #fff59d;
-        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.38);
+        background: var(--white);
+        border-color: var(--border);
+        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0);
       }
-      50% {
+      10%, 30%, 50%, 70%, 90% {
         background: #ffeb3b;
+        border-color: #d2a100;
         box-shadow: 0 0 0 8px rgba(255, 235, 59, 0.18);
       }
     }
@@ -537,6 +537,11 @@
       quarterlyOption.classList.remove('service-option--recommended');
       void quarterlyOption.offsetWidth;
       quarterlyOption.classList.add('service-option--recommended');
+
+      quarterlyOption.addEventListener('animationend', (event) => {
+        if (event.animationName !== 'servicePulse') return;
+        clearQuarterlyRecommendationState();
+      }, { once: true });
 
       if (recommendationTimer) clearTimeout(recommendationTimer);
       if (recommendationBackupTimer) clearTimeout(recommendationBackupTimer);
