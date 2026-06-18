@@ -510,6 +510,9 @@
       const flashDurationMs = 5000;
       const flashCycleMs = 400;
 
+      // Keep the card fill white throughout; only border/glow should flash.
+      el.style.background = '#ffffff';
+
       const tick = (now) => {
         const elapsed = now - quarterlyFlashStartedAt;
         if (elapsed >= flashDurationMs) {
@@ -518,7 +521,6 @@
         }
 
         const flashOn = Math.floor(elapsed / flashCycleMs) % 2 === 0;
-        el.style.background = flashOn ? '#ffeb3b' : '#ffffff';
         el.style.borderColor = flashOn ? '#d2a100' : '#e2e8ed';
         el.style.boxShadow = flashOn ? '0 0 0 8px rgba(255, 235, 59, 0.18)' : 'none';
 
