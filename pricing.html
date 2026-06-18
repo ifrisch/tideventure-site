@@ -29,12 +29,7 @@
       color: #cc1f1f;
     }
 
-    .service-option--recommended-static {
-      border-color: var(--border);
-      background: var(--white);
-    }
-
-    .service-option--recommended-static .service-option__hint {
+    .service-option__hint--persistent {
       display: inline-block;
       color: #111111;
       background: #ffe566;
@@ -494,7 +489,9 @@
       selectedRevenue  = null;
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
-        o.classList.remove('selected', 'service-option--recommended', 'service-option--recommended-static');
+        o.classList.remove('selected', 'service-option--recommended');
+        const hint = o.querySelector('.service-option__hint');
+        if (hint) hint.classList.remove('service-option__hint--persistent');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
@@ -513,8 +510,9 @@
     function suggestQuarterlyPairing() {
       const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
       if (!quarterlyOption || selectedServices.has('quarterly')) return;
+      const quarterlyHint = quarterlyOption.querySelector('.service-option__hint');
 
-      quarterlyOption.classList.remove('service-option--recommended-static');
+      if (quarterlyHint) quarterlyHint.classList.remove('service-option__hint--persistent');
       quarterlyOption.classList.remove('service-option--recommended');
       void quarterlyOption.offsetWidth;
       quarterlyOption.classList.add('service-option--recommended');
@@ -522,7 +520,7 @@
       if (recommendationTimer) clearTimeout(recommendationTimer);
       recommendationTimer = setTimeout(() => {
         quarterlyOption.classList.remove('service-option--recommended');
-        quarterlyOption.classList.add('service-option--recommended-static');
+        if (quarterlyHint) quarterlyHint.classList.add('service-option__hint--persistent');
         recommendationTimer = null;
       }, 5000);
     }
@@ -558,7 +556,9 @@
         }
 
         if (svc === 'quarterly') {
-          option.classList.remove('service-option--recommended', 'service-option--recommended-static');
+          option.classList.remove('service-option--recommended');
+          const hint = option.querySelector('.service-option__hint');
+          if (hint) hint.classList.remove('service-option__hint--persistent');
         }
 
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
