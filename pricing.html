@@ -15,17 +15,31 @@
       margin-top: 0.45rem;
       font-size: 0.78rem;
       font-weight: 600;
-      color: var(--brand-dark);
+      color: #cc1f1f;
     }
 
     .service-option--recommended {
-      border-color: var(--brand-teal);
-      background: rgba(26, 127, 160, 0.09);
-      animation: servicePulse 0.95s ease-in-out 2;
+      border-color: #d2a100;
+      background: #fff59d;
+      animation: servicePulse 0.5s ease-in-out 10;
     }
 
     .service-option--recommended .service-option__hint {
       display: block;
+      color: #cc1f1f;
+    }
+
+    .service-option--recommended-static {
+      border-color: #d2a100;
+      background: #fff59d;
+    }
+
+    .service-option--recommended-static .service-option__hint {
+      display: inline-block;
+      color: #111111;
+      background: #ffe566;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
     }
 
     .service-other-wrap {
@@ -67,8 +81,14 @@
     }
 
     @keyframes servicePulse {
-      0% { box-shadow: 0 0 0 0 rgba(26, 127, 160, 0.42); }
-      100% { box-shadow: 0 0 0 14px rgba(26, 127, 160, 0); }
+      0%, 100% {
+        background: #fff59d;
+        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.38);
+      }
+      50% {
+        background: #ffeb3b;
+        box-shadow: 0 0 0 8px rgba(255, 235, 59, 0.18);
+      }
     }
   </style>
 </head>
@@ -474,7 +494,7 @@
       selectedRevenue  = null;
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
-        o.classList.remove('selected', 'service-option--recommended');
+        o.classList.remove('selected', 'service-option--recommended', 'service-option--recommended-static');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
@@ -494,6 +514,7 @@
       const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
       if (!quarterlyOption || selectedServices.has('quarterly')) return;
 
+      quarterlyOption.classList.remove('service-option--recommended-static');
       quarterlyOption.classList.remove('service-option--recommended');
       void quarterlyOption.offsetWidth;
       quarterlyOption.classList.add('service-option--recommended');
@@ -501,8 +522,9 @@
       if (recommendationTimer) clearTimeout(recommendationTimer);
       recommendationTimer = setTimeout(() => {
         quarterlyOption.classList.remove('service-option--recommended');
+        quarterlyOption.classList.add('service-option--recommended-static');
         recommendationTimer = null;
-      }, 2600);
+      }, 5000);
     }
 
     // --- Step 1: entity selection ---
@@ -536,7 +558,7 @@
         }
 
         if (svc === 'quarterly') {
-          option.classList.remove('service-option--recommended');
+          option.classList.remove('service-option--recommended', 'service-option--recommended-static');
         }
 
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
