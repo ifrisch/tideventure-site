@@ -454,6 +454,7 @@
     let selectedServices = new Set();
     let selectedRevenue  = null;
     let recommendationTimer = null;
+    let recommendationBackupTimer = null;
 
     // --- Helpers ---
     function fmt(n) {
@@ -504,10 +505,27 @@
         clearTimeout(recommendationTimer);
         recommendationTimer = null;
       }
+      if (recommendationBackupTimer) {
+        clearTimeout(recommendationBackupTimer);
+        recommendationBackupTimer = null;
+      }
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
       goToStep(1);
+    }
+
+    function clearQuarterlyRecommendationState() {
+      document.querySelectorAll('.service-option--recommended').forEach(option => {
+        option.classList.remove('service-option--recommended');
+        option.style.removeProperty('background');
+        option.style.removeProperty('border-color');
+        option.style.removeProperty('animation');
+      });
+
+      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
+      const quarterlyHint = quarterlyOption ? quarterlyOption.querySelector('.service-option__hint') : null;
+      if (quarterlyHint) quarterlyHint.classList.add('service-option__hint--persistent');
     }
 
     function suggestQuarterlyPairing() {
@@ -521,14 +539,17 @@
       quarterlyOption.classList.add('service-option--recommended');
 
       if (recommendationTimer) clearTimeout(recommendationTimer);
+      if (recommendationBackupTimer) clearTimeout(recommendationBackupTimer);
       recommendationTimer = setTimeout(() => {
-        quarterlyOption.classList.remove('service-option--recommended');
-        quarterlyOption.style.removeProperty('background');
-        quarterlyOption.style.removeProperty('border-color');
-        quarterlyOption.style.removeProperty('animation');
-        if (quarterlyHint) quarterlyHint.classList.add('service-option__hint--persistent');
+        clearQuarterlyRecommendationState();
         recommendationTimer = null;
       }, 5000);
+
+      // Backup cleanup in case the main timeout is interrupted by rapid UI interactions.
+      recommendationBackupTimer = setTimeout(() => {
+        clearQuarterlyRecommendationState();
+        recommendationBackupTimer = null;
+      }, 5300);
     }
 
     // --- Step 1: entity selection ---
@@ -562,10 +583,7 @@
         }
 
         if (svc === 'quarterly') {
-          option.classList.remove('service-option--recommended');
-          option.style.removeProperty('background');
-          option.style.removeProperty('border-color');
-          option.style.removeProperty('animation');
+          clearQuarterlyRecommendationState();
           const hint = option.querySelector('.service-option__hint');
           if (hint) hint.classList.remove('service-option__hint--persistent');
         }
