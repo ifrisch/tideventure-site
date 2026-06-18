@@ -496,6 +496,11 @@
       el.style.background = '';
       el.style.borderColor = '';
       el.style.boxShadow = '';
+      // If quarterly was only highlighted as a suggestion, force it back to unselected visuals.
+      if (!selectedServices.has('quarterly')) {
+        el.classList.remove('selected');
+        el.setAttribute('aria-checked', 'false');
+      }
       const hint = el.querySelector('.service-option__hint');
       if (hint) hint.classList.remove('service-option__hint--visible');
     }
@@ -506,6 +511,11 @@
       const hint = el.querySelector('.service-option__hint');
 
       stopQuarterlyFlash();
+
+      // Guard against quarterly inheriting selected visuals when user only chose tax.
+      selectedServices.delete('quarterly');
+      el.classList.remove('selected');
+      el.setAttribute('aria-checked', 'false');
 
       if (hint) hint.classList.add('service-option__hint--visible');
       recommendationTimer = setTimeout(() => {
