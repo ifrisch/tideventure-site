@@ -18,21 +18,9 @@
       color: #cc1f1f;
     }
 
-    .service-option--recommended {
-      animation: servicePulse 5s ease-in-out 1;
-    }
-
-    .service-option--recommended .service-option__hint {
-      display: block;
+    .service-option__hint--visible {
+      display: block !important;
       color: #cc1f1f;
-    }
-
-    .service-option__hint--persistent {
-      display: inline-block;
-      color: #111111;
-      background: transparent;
-      padding: 0;
-      border-radius: 0;
     }
 
     .service-other-wrap {
@@ -73,18 +61,7 @@
       box-shadow: 0 0 0 3px rgba(26, 127, 160, 0.12);
     }
 
-    @keyframes servicePulse {
-      0%, 100% {
-        background: var(--white);
-        border-color: var(--border);
-        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0);
-      }
-      10%, 30%, 50%, 70%, 90% {
-        background: #ffeb3b;
-        border-color: #d2a100;
-        box-shadow: 0 0 0 8px rgba(255, 235, 59, 0.18);
-      }
-    }
+
   </style>
 </head>
 <body>
@@ -453,8 +430,8 @@
     let selectedEntity   = null;
     let selectedServices = new Set();
     let selectedRevenue  = null;
-    let recommendationTimer = null;
-    let recommendationBackupTimer = null;
+    let recommendationTimer   = null;
+    let quarterlyFlashInterval = null;
 
     // --- Helpers ---
     function fmt(n) {
@@ -489,13 +466,11 @@
       selectedServices = new Set();
       selectedRevenue  = null;
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
+      stopQuarterlyFlash();
       document.querySelectorAll('.service-option').forEach(o => {
-        o.classList.remove('selected', 'service-option--recommended');
-        o.style.removeProperty('background');
-        o.style.removeProperty('border-color');
-        o.style.removeProperty('animation');
+        o.classList.remove('selected');
         const hint = o.querySelector('.service-option__hint');
-        if (hint) hint.classList.remove('service-option__hint--persistent');
+        if (hint) hint.classList.remove('service-option__hint--visible');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
@@ -505,66 +480,52 @@
         clearTimeout(recommendationTimer);
         recommendationTimer = null;
       }
-      if (recommendationBackupTimer) {
-        clearTimeout(recommendationBackupTimer);
-        recommendationBackupTimer = null;
-      }
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
       goToStep(1);
     }
 
-    function clearQuarterlyRecommendationState() {
-      document.querySelectorAll('.service-option--recommended').forEach(option => {
-        option.classList.remove('service-option--recommended');
-        // Hard-reset visual state so the card always returns to default after flashing.
-        option.style.setProperty('animation', 'none', 'important');
-        option.style.setProperty('background', 'var(--white)', 'important');
-        option.style.setProperty('border-color', 'var(--border)', 'important');
-        option.style.setProperty('box-shadow', 'none', 'important');
-
-        // Re-enable normal stylesheet-driven rendering on next paint.
-        requestAnimationFrame(() => {
-          option.style.removeProperty('animation');
-          option.style.removeProperty('background');
-          option.style.removeProperty('border-color');
-          option.style.removeProperty('box-shadow');
-        });
-      });
-
-      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
-      const quarterlyHint = quarterlyOption ? quarterlyOption.querySelector('.service-option__hint') : null;
-      if (quarterlyHint) quarterlyHint.classList.add('service-option__hint--persistent');
+    function stopQuarterlyFlash() {
+      if (quarterlyFlashInterval) {
+        clearInterval(quarterlyFlashInterval);
+        quarterlyFlashInterval = null;
+      }
+      if (recommendationTimer) {
+        clearTimeout(recommendationTimer);
+        recommendationTimer = null;
+      }
+      const el = document.querySelector('.service-option[data-service="quarterly"]');
+      if (!el) return;
+      el.style.background = '';
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+      const hint = el.querySelector('.service-option__hint');
+      if (hint) hint.classList.remove('service-option__hint--visible');
     }
 
     function suggestQuarterlyPairing() {
-      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
-      if (!quarterlyOption || selectedServices.has('quarterly')) return;
-      const quarterlyHint = quarterlyOption.querySelector('.service-option__hint');
+      const el = document.querySelector('.service-option[data-service="quarterly"]');
+      if (!el || selectedServices.has('quarterly')) return;
+      const hint = el.querySelector('.service-option__hint');
 
-      if (quarterlyHint) quarterlyHint.classList.remove('service-option__hint--persistent');
-      quarterlyOption.classList.remove('service-option--recommended');
-      void quarterlyOption.offsetWidth;
-      quarterlyOption.classList.add('service-option--recommended');
+      stopQuarterlyFlash();
 
-      quarterlyOption.addEventListener('animationend', (event) => {
-        if (event.animationName !== 'servicePulse') return;
-        clearQuarterlyRecommendationState();
-      }, { once: true });
+      if (hint) hint.classList.add('service-option__hint--visible');
 
-      if (recommendationTimer) clearTimeout(recommendationTimer);
-      if (recommendationBackupTimer) clearTimeout(recommendationBackupTimer);
+      let flashOn = true;
+      el.style.background  = '#ffeb3b';
+      el.style.borderColor = '#d2a100';
+
+      quarterlyFlashInterval = setInterval(() => {
+        flashOn = !flashOn;
+        el.style.background  = flashOn ? '#ffeb3b' : '#ffffff';
+        el.style.borderColor = flashOn ? '#d2a100' : '#e2e8ed';
+      }, 400);
+
       recommendationTimer = setTimeout(() => {
-        clearQuarterlyRecommendationState();
-        recommendationTimer = null;
+        stopQuarterlyFlash();
       }, 5000);
-
-      // Backup cleanup in case the main timeout is interrupted by rapid UI interactions.
-      recommendationBackupTimer = setTimeout(() => {
-        clearQuarterlyRecommendationState();
-        recommendationBackupTimer = null;
-      }, 5300);
     }
 
     // --- Step 1: entity selection ---
@@ -598,9 +559,7 @@
         }
 
         if (svc === 'quarterly') {
-          clearQuarterlyRecommendationState();
-          const hint = option.querySelector('.service-option__hint');
-          if (hint) hint.classList.remove('service-option__hint--persistent');
+          stopQuarterlyFlash();
         }
 
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
