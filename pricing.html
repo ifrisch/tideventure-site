@@ -38,45 +38,6 @@
       display: inline-block !important;
     }
 
-    .service-other-wrap {
-      margin-top: 1rem;
-      padding: 1rem 1.1rem;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-      background: #fcfdfe;
-    }
-
-    .service-other-wrap label {
-      display: block;
-      margin-bottom: 0.4rem;
-      font-size: 0.78rem;
-      font-family: var(--font-heading);
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--ink);
-    }
-
-    .service-other-wrap textarea {
-      width: 100%;
-      min-height: 92px;
-      resize: vertical;
-      padding: 0.7rem 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: var(--font-body);
-      font-size: 0.88rem;
-      color: var(--ink);
-      background: var(--white);
-    }
-
-    .service-other-wrap textarea:focus {
-      outline: none;
-      border-color: var(--brand-teal);
-      box-shadow: 0 0 0 3px rgba(26, 127, 160, 0.12);
-    }
-
-
   </style>
 </head>
 <body>
@@ -238,7 +199,21 @@
 
           <div class="pricing-nav">
             <button class="btn--back" onclick="goToStep(1)">← Back</button>
-            <button class="btn btn--primary" id="step2Next" disabled onclick="goToStep(3)">Next: Revenue Range →</button>
+            <button class="btn btn--primary" id="step2Next" disabled onclick="handleStep2Next()">Next: Revenue Range →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Other Service Details -->
+        <div class="pricing-step" id="step4">
+          <div class="pricing-step-header">
+            <div class="pricing-step-header__num">Describe Your Needs</div>
+            <h2>Tell us about the services you need</h2>
+            <p>Describe the custom services you're looking for so we can factor them into your estimate.</p>
+          </div>
+          <textarea id="otherServiceDetails" placeholder="Ex: Sales tax cleanup, historical catch-up bookkeeping, 1099 filings, etc." style="width:100%;min-height:120px;resize:vertical;padding:0.7rem 0.8rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:0.88rem;color:var(--ink);background:var(--white);margin-bottom:1.5rem;"></textarea>
+          <div class="pricing-nav">
+            <button class="btn--back" onclick="goToStep(2)">← Back</button>
+            <button class="btn btn--primary" onclick="goToStep(3)">Next: Revenue Range →</button>
           </div>
         </div>
 
@@ -471,8 +446,18 @@
       }
     }
 
+    // --- Navigation helpers ---
+    function handleStep2Next() {
+      if (selectedServices.has('other')) {
+        goToStep(4);
+      } else {
+        goToStep(3);
+      }
+    }
+
     // --- Progress bar ---
     function updateProgress(currentStep) {
+      if (currentStep === 4) currentStep = 2;
       for (let i = 1; i <= 3; i++) {
         const el = document.getElementById('prog' + i);
         el.classList.remove('active', 'done');
@@ -502,6 +487,8 @@
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
+      const otherInput = document.getElementById('otherServiceDetails');
+      if (otherInput) otherInput.value = '';
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
@@ -525,10 +512,6 @@
     document.querySelectorAll('.service-option').forEach(option => {
       function toggleService() {
         const svc = option.dataset.service;
-        if (svc === 'other') {
-          window.location.href = 'contact.html';
-          return;
-        }
         if (selectedServices.has(svc)) {
           selectedServices.delete(svc);
           option.classList.remove('selected');
