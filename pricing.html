@@ -232,14 +232,9 @@
             </div>
             <div class="service-option__body">
               <h3>Other / Custom Service Need</h3>
-              <p>Tell us what you need and we will scope it during your strategy session.</p>
+              <p>Tell us what you need and we'll help you scope it out.</p>
             </div>
           </label>
-
-          <div class="service-other-wrap">
-            <label for="otherServiceDetails">Other Service Details (optional)</label>
-            <textarea id="otherServiceDetails" placeholder="Ex: Sales tax cleanup, historical catch-up bookkeeping, 1099 filings, etc."></textarea>
-          </div>
 
           <div class="pricing-nav">
             <button class="btn--back" onclick="goToStep(1)">← Back</button>
@@ -507,8 +502,6 @@
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
-      const otherServiceDetails = document.getElementById('otherServiceDetails');
-      if (otherServiceDetails) otherServiceDetails.value = '';
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
@@ -532,6 +525,10 @@
     document.querySelectorAll('.service-option').forEach(option => {
       function toggleService() {
         const svc = option.dataset.service;
+        if (svc === 'other') {
+          window.location.href = 'contact.html';
+          return;
+        }
         if (selectedServices.has(svc)) {
           selectedServices.delete(svc);
           option.classList.remove('selected');
