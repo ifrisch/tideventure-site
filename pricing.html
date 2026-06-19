@@ -21,6 +21,23 @@
       box-shadow: none !important;
     }
 
+    .service-option__hint {
+      display: none;
+      margin-top: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #111111;
+      background: #ffe566;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      line-height: 1.4;
+      width: fit-content;
+    }
+
+    .service-option__hint--visible {
+      display: inline-block !important;
+    }
+
     .service-other-wrap {
       margin-top: 1rem;
       padding: 1rem 1.1rem;
@@ -96,7 +113,7 @@
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Client Login
         </a>
-        <a href="contact.html" class="btn btn--primary nav__cta">Free Consultation</a>
+        <a href="contact.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
       </div>
     </div>
   </nav>
@@ -185,6 +202,7 @@
             <div class="service-option__body">
               <h3>Quarterly Planning &amp; Estimated Payments</h3>
               <p>Proactive quarterly tax planning and estimated payment calculation</p>
+              <p class="service-option__hint">Commonly chosen with Business Tax Returns</p>
             </div>
           </label>
 
@@ -214,7 +232,7 @@
             </div>
             <div class="service-option__body">
               <h3>Other / Custom Service Need</h3>
-              <p>Tell us what you need and we will scope it during your consultation.</p>
+              <p>Tell us what you need and we will scope it during your strategy session.</p>
             </div>
           </label>
 
@@ -278,11 +296,11 @@
           </div>
 
           <p class="result-disclaimer">
-            ⚠️ These are estimates only. Actual pricing is determined after a free consultation and may vary based on the complexity of your specific situation. No commitment required.
+            ⚠️ These are estimates only. Actual pricing is determined after a free strategy session and may vary based on the complexity of your specific situation. No commitment required.
           </p>
 
           <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-            <a href="contact.html" class="btn btn--primary">Schedule a Free Consultation</a>
+            <a href="contact.html" class="btn btn--primary">Schedule a Free Strategy Session</a>
             <button class="btn--back" onclick="resetTool()">← Start Over</button>
           </div>
         </div>
@@ -308,7 +326,7 @@
         <div class="why-card">
           <div class="why-card__num">02</div>
           <h3>Book a Free Call</h3>
-          <p>Schedule a 30-minute consultation — no commitment, no cost.</p>
+          <p>Schedule a 30-minute strategy session — no commitment, no cost.</p>
         </div>
         <div class="why-card">
           <div class="why-card__num">03</div>
@@ -329,9 +347,9 @@
     <div class="container cta-banner__inner">
       <div>
         <h2>Ready to Get a Real Quote?</h2>
-        <p>The estimate above is just a starting point. A free consultation gives you the full picture.</p>
+        <p>The estimate above is just a starting point. A free strategy session gives you the full picture.</p>
       </div>
-      <a href="contact.html" class="btn btn--ghost">Book a Free Consultation</a>
+      <a href="contact.html" class="btn btn--ghost">Book a Free Strategy Session</a>
     </div>
   </section>
 
@@ -445,6 +463,19 @@
       });
     }
 
+    function updateQuarterlySuggestionHint() {
+      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
+      if (!quarterlyOption) return;
+      const hint = quarterlyOption.querySelector('.service-option__hint');
+      if (!hint) return;
+
+      if (selectedServices.has('tax') && !selectedServices.has('quarterly')) {
+        hint.classList.add('service-option__hint--visible');
+      } else {
+        hint.classList.remove('service-option__hint--visible');
+      }
+    }
+
     // --- Progress bar ---
     function updateProgress(currentStep) {
       for (let i = 1; i <= 3; i++) {
@@ -471,6 +502,8 @@
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
         o.classList.remove('selected');
+        const hint = o.querySelector('.service-option__hint');
+        if (hint) hint.classList.remove('service-option__hint--visible');
         o.setAttribute('aria-checked', 'false');
       });
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
@@ -510,6 +543,7 @@
         }
 
         normalizeServiceOptionStyles();
+        updateQuarterlySuggestionHint();
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
       }
       option.addEventListener('click', toggleService);
@@ -518,6 +552,7 @@
 
     // Ensure stale inline styles from previous deployed scripts never persist.
     normalizeServiceOptionStyles();
+    updateQuarterlySuggestionHint();
 
     // --- Step 3: revenue radios ---
     document.querySelectorAll('.revenue-option').forEach(option => {
@@ -618,7 +653,7 @@
         const otherServiceDetails = document.getElementById('otherServiceDetails');
         const details = otherServiceDetails && otherServiceDetails.value.trim()
           ? otherServiceDetails.value.trim()
-          : 'Custom scope discussed during consultation';
+          : 'Custom scope discussed during strategy session';
         breakdown.innerHTML += `
           <div class="result-line">
             <div>
