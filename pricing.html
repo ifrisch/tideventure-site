@@ -432,6 +432,12 @@
       over5m:     2.3,
     };
 
+    // --- Member multiplier ---
+    function getMemberMultiplier(count) {
+      const mult = 1 + (Math.max(count, 1) - 1) * 0.15;
+      return Math.min(mult, 1.9);
+    }
+
     // --- State ---
     let selectedEntity   = null;
     let selectedServices = new Set();
@@ -585,7 +591,12 @@
     function showResult() {
       if (!selectedEntity || selectedServices.size === 0 || !selectedRevenue) return;
 
-      const mult = REVENUE_MULTIPLIER[selectedRevenue];
+      const memberInput = document.getElementById('memberCount');
+      const memberCount = memberInput ? parseInt(memberInput.value) || 1 : 1;
+      const memberMult = getMemberMultiplier(memberCount);
+      const revMult = REVENUE_MULTIPLIER[selectedRevenue];
+      const mult = revMult * memberMult;
+
       const breakdown = document.getElementById('resultBreakdown');
       breakdown.innerHTML = '';
 
@@ -676,6 +687,17 @@
               <div class="result-line__period">${details}</div>
             </div>
             <div class="result-line__price">Custom</div>
+          </div>`;
+      }
+
+      if (memberCount > 1 && (selectedEntity === 'scorp' || selectedEntity === 'ccorp' || selectedEntity === 'partnership' || selectedEntity === 'mmllc')) {
+        breakdown.innerHTML += `
+          <div class="result-line">
+            <div>
+              <div class="result-line__label">Member/Partner Count</div>
+              <div class="result-line__period">${memberCount} members × ${memberMult.toFixed(2)} multiplier</div>
+            </div>
+            <div class="result-line__price">Included above</div>
           </div>`;
       }
 
