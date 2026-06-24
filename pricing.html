@@ -98,12 +98,13 @@
           <div class="pricing-progress__step active" id="prog1"></div>
           <div class="pricing-progress__step" id="prog2"></div>
           <div class="pricing-progress__step" id="prog3"></div>
+          <div class="pricing-progress__step" id="prog4"></div>
         </div>
 
         <!-- STEP 1: Entity Type -->
         <div class="pricing-step active" id="step1">
           <div class="pricing-step-header">
-            <div class="pricing-step-header__num">Step 1 of 3</div>
+            <div class="pricing-step-header__num">Step 1 of 4</div>
             <h2>What type of business entity are you?</h2>
             <p>Select the legal structure that best describes your business.</p>
           </div>
@@ -141,7 +142,7 @@
         <!-- STEP 2: Services -->
         <div class="pricing-step" id="step2">
           <div class="pricing-step-header">
-            <div class="pricing-step-header__num">Step 2 of 3</div>
+            <div class="pricing-step-header__num">Step 2 of 4</div>
             <h2>Which services do you need?</h2>
             <p>Select all that apply. You can always add or remove services later.</p>
           </div>
@@ -220,7 +221,7 @@
         <!-- STEP 3: Revenue -->
         <div class="pricing-step" id="step3">
           <div class="pricing-step-header">
-            <div class="pricing-step-header__num">Step 3 of 3</div>
+            <div class="pricing-step-header__num">Step 3 of 4</div>
             <h2>What is your annual business revenue?</h2>
             <p>Revenue affects complexity — be as accurate as you can for the best estimate.</p>
           </div>
@@ -244,7 +245,27 @@
           </div>
           <div class="pricing-nav">
             <button class="btn--back" onclick="goToStep(2)">← Back</button>
-            <button class="btn btn--primary" id="step3Next" disabled onclick="showResult()">See My Estimate →</button>
+            <button class="btn btn--primary" id="step3Next" disabled onclick="handleStep3Next()">See My Estimate →</button>
+          </div>
+        </div>
+
+        <!-- STEP 5: Shareholders / Members / Partners count -->
+        <div class="pricing-step" id="step5">
+          <div class="pricing-step-header">
+            <div class="pricing-step-header__num">Step 4 of 4</div>
+            <h2>How many shareholders, members, or partners are there (including you)?</h2>
+            <p>This helps us understand the complexity of your return.</p>
+          </div>
+          <div style="max-width:320px;margin:0 auto 2rem;">
+            <input type="number" id="memberCount" min="1" max="999" value="1"
+              style="width:100%;padding:0.85rem 1rem;font-size:1.25rem;font-weight:600;text-align:center;border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--ink);background:var(--white);outline:none;transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='var(--primary)'"
+              onblur="this.style.borderColor='var(--border)'"
+              oninput="document.getElementById('step5Next').disabled = !this.value || parseInt(this.value) < 1" />
+          </div>
+          <div class="pricing-nav">
+            <button class="btn--back" onclick="goToStep(3)">← Back</button>
+            <button class="btn btn--primary" id="step5Next" onclick="showResult()">See My Estimate →</button>
           </div>
         </div>
 
@@ -455,14 +476,25 @@
       }
     }
 
+    function handleStep3Next() {
+      if (selectedEntity === 'scorp' || selectedEntity === 'ccorp' || selectedEntity === 'partnership' || selectedEntity === 'mmllc') {
+        goToStep(5);
+      } else {
+        showResult();
+      }
+    }
+
     // --- Progress bar ---
     function updateProgress(currentStep) {
-      if (currentStep === 4) currentStep = 2;
-      for (let i = 1; i <= 3; i++) {
+      // Map step4 (other details) → progress position 2; step5 → position 4
+      let progStep = currentStep;
+      if (currentStep === 4) progStep = 2;
+      if (currentStep === 5) progStep = 4;
+      for (let i = 1; i <= 4; i++) {
         const el = document.getElementById('prog' + i);
         el.classList.remove('active', 'done');
-        if (i < currentStep)  el.classList.add('done');
-        if (i === currentStep) el.classList.add('active');
+        if (i < progStep)  el.classList.add('done');
+        if (i === progStep) el.classList.add('active');
       }
     }
 
@@ -489,9 +521,12 @@
       document.querySelectorAll('.revenue-option').forEach(o => o.classList.remove('selected'));
       const otherInput = document.getElementById('otherServiceDetails');
       if (otherInput) otherInput.value = '';
+      const memberInput = document.getElementById('memberCount');
+      if (memberInput) { memberInput.value = 1; }
       document.getElementById('step1Next').disabled = true;
       document.getElementById('step2Next').disabled = true;
       document.getElementById('step3Next').disabled = true;
+      document.getElementById('step5Next').disabled = false;
       normalizeServiceOptionStyles();
       goToStep(1);
     }
