@@ -64,6 +64,19 @@ export default {
       }
     }
 
+    // ── Serve static assets (with key material injection for portal pages) ──
+    if (url.pathname === '/portal.html' || url.pathname === '/admin.html') {
+      const response = await env.ASSETS.fetch(request);
+      if (!email) return response;
+
+      const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
+      const html = await response.text();
+      const injected = html.replace('</head>', `<script>window.__KEY_MATERIAL__='${keyMaterial}';window.__USER_EMAIL__='${email}';</script></head>`);
+      return new Response(injected, {
+        headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
     if (url.pathname.startsWith('/.git') || url.pathname.startsWith('/.wrangler') || url.pathname.startsWith('/node_modules')) {
       return new Response('Not found', { status: 404 });
     }

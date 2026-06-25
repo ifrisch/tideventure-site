@@ -285,21 +285,13 @@
   </div>
 
   <script>
-    let adminKeyMaterial = null;
-
-    (async function init() {
-      try {
-        const res = await fetch('/api/key-material');
-        if (!res.ok) throw new Error('Auth failed');
-        const data = await res.json();
-        adminKeyMaterial = data.keyMaterial;
-      } catch (err) {
-        document.getElementById('adminDocErr').textContent = 'Encryption key not loaded.';
-        document.getElementById('adminDocErr').style.display = 'block';
-      }
-      loadAdminDocuments();
-      loadAuditLog();
-    })();
+    const adminKeyMaterial = window.__KEY_MATERIAL__;
+    if (!adminKeyMaterial) {
+      document.getElementById('adminDocErr').textContent = 'Authentication failed.';
+      document.getElementById('adminDocErr').style.display = 'block';
+    }
+    loadAdminDocuments();
+    loadAuditLog();
 
     async function loadAdminDocuments() {
       const listEl = document.getElementById('adminDocList');

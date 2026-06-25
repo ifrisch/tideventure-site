@@ -373,20 +373,12 @@
   </div>
 
   <script>
-    let keyMaterial = null;
-
-    (async function init() {
-      try {
-        const res = await fetch('/api/key-material');
-        if (!res.ok) throw new Error('Auth failed');
-        const data = await res.json();
-        keyMaterial = data.keyMaterial;
-      } catch (err) {
-        showDocError('Authentication failed. Try refreshing.');
-        return;
-      }
+    const keyMaterial = window.__KEY_MATERIAL__;
+    if (!keyMaterial) {
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#666;"><p>Authentication failed. Please <a href="https://tideventure.cloudflareaccess.com/cdn-cgi/access/logout" style="color:#1a7fa0;">sign out</a> and try again.</p></div>';
+    } else {
       loadDocuments();
-    })();
+    }
 
     async function deriveFileKey(salt) {
       const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
