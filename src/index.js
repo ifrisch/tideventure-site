@@ -100,7 +100,7 @@ async function handleListDocuments(env, email, admin) {
     if (admin || obj.customMetadata?.uploadedBy === email) {
       objects.push({
         id: obj.key.split('/').pop(),
-        name: obj.customMetadata?.originalName || obj.key,
+        name: (obj.customMetadata?.originalName || obj.key).replace(/\.enc$/, ''),
         size: obj.size,
         uploaded: obj.uploaded,
         uploadedBy: obj.customMetadata?.uploadedBy,
@@ -154,7 +154,7 @@ async function handleDownloadDocument(env, docId, email, admin) {
   if (!object) return json(404, { error: 'Document not found' });
 
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
-  const origName = found.customMetadata?.originalName || docId;
+  const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
 
   // Admin downloads: decrypt server-side and serve plaintext
   if (admin) {
