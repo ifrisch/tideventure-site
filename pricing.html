@@ -626,7 +626,7 @@
         tax:       'Business Tax Return',
         quarterly: 'Quarterly Tax Planning (annual)',
         monthly:   'Monthly Financial Review (annual)',
-        bookkeeping: 'Bookkeeping with Financial Statement Maintenance (annual)',
+        bookkeeping: 'Bookkeeping with Financial Statement Maintenance',
         other: 'Other / Custom Service Need',
       };
 
@@ -680,15 +680,15 @@
 
       if (selectedServices.has('bookkeeping')) {
         const base = ENTITY_BOOKKEEPING_BASE[selectedEntity];
-        const low  = base.low  * mult * 12;
-        const high = base.high * mult * 12;
-        totalLow  += low;
-        totalHigh += high;
+        const low  = base.low  * mult;
+        const high = base.high * mult;
+        totalLow  += low * 12;
+        totalHigh += high * 12;
         breakdown.innerHTML += `
           <div class="result-line">
             <div>
               <div class="result-line__label">${SERVICE_LABELS.bookkeeping}</div>
-              <div class="result-line__period">${fmtRange(base.low * mult, base.high * mult)} /month × 12</div>
+              <div class="result-line__period">Billed monthly</div>
             </div>
             <div class="result-line__price">${fmtRange(low, high)}</div>
           </div>`;
