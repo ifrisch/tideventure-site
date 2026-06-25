@@ -256,6 +256,98 @@
     @media (max-width: 500px) {
       .admin-stats { grid-template-columns: 1fr; }
     }
+
+    /* ─── Admin Document Manager ─── */
+    .admin-docs {
+      margin-top: 1.5rem;
+    }
+
+    .admin-docs .doc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1.25rem;
+      border-bottom: 1px solid var(--sand);
+      font-size: 0.82rem;
+    }
+
+    .admin-docs .doc-row:hover {
+      background: var(--sand);
+    }
+
+    .admin-docs .doc-row:last-child {
+      border-bottom: none;
+    }
+
+    .admin-docs .doc-client {
+      font-weight: 600;
+      color: var(--ink);
+      min-width: 9rem;
+    }
+
+    .admin-docs .doc-name {
+      flex: 1;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .admin-docs .doc-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      min-width: 5rem;
+    }
+
+    .admin-docs .doc-actions {
+      display: flex;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .admin-docs .doc-actions a,
+    .admin-docs .doc-actions button {
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .admin-docs .doc-actions .dl-link {
+      color: var(--brand-teal);
+      text-decoration: none;
+    }
+
+    .admin-docs .doc-actions .dl-link:hover {
+      text-decoration: underline;
+    }
+
+    .admin-docs .doc-actions .del-btn {
+      color: #c00;
+    }
+
+    .admin-docs .doc-actions .del-btn:hover {
+      text-decoration: underline;
+    }
+
+    .admin-docs .doc-empty {
+      text-align: center;
+      padding: 2rem 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .admin-docs .doc-err {
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.78rem;
+      color: #c00;
+      display: none;
+    }
   </style>
 </head>
 <body class="admin-body">
@@ -349,6 +441,17 @@
       </table>
     </div>
 
+    <div class="admin-table-wrap admin-docs">
+      <div class="admin-table-header">
+        <h3>All Documents</h3>
+        <span id="adminDocCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
+      </div>
+      <div id="adminDocList">
+        <div class="doc-empty">Loading documents…</div>
+      </div>
+      <div class="doc-err" id="adminDocErr"></div>
+    </div>
+
     <div class="dash-footer" style="margin-top:2rem;">
       TideVenture CPA &mdash; Admin Portal &mdash; Internal Use Only
     </div>
@@ -436,6 +539,75 @@
       loginView.style.display = 'none';
       dashView.style.display  = 'block';
       renderClients();
+      loadAdminDocuments();
+    }
+
+    // ─── Admin Document Manager ───
+
+    async function loadAdminDocuments() {
+      const listEl = document.getElementById('adminDocList');
+      const countEl = document.getElementById('adminDocCount');
+      const errEl = document.getElementById('adminDocErr');
+      errEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/documents');
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        renderAdminDocs(data.documents, listEl, countEl);
+      } catch (err) {
+        errEl.textContent = 'Could not load documents. Try refreshing.';
+        errEl.style.display = 'block';
+        listEl.innerHTML = '<div class="doc-empty">Failed to load documents.</div>';
+      }
+    }
+
+    function renderAdminDocs(docs, listEl, countEl) {
+      countEl.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
+
+      if (docs.length === 0) {
+        listEl.innerHTML = '<div class="doc-empty">No documents uploaded yet.</div>';
+        return;
+      }
+
+      // Group docs by uploader email prefix for display
+      listEl.innerHTML = '<div class="doc-row" style="font-weight:600;font-size:0.72rem;text-transform:uppercase;color:var(--text-muted);background:var(--sand);padding:0.5rem 1.25rem;"><span class="doc-client">Client</span><span class="doc-name">Document</span><span class="doc-date">Uploaded</span><span class="doc-actions">Actions</span></div>';
+
+      docs.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'doc-row';
+        const displayName = d.uploadedBy ? d.uploadedBy.split('@')[0] : 'Unknown';
+        const date = new Date(d.uploaded).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        row.innerHTML = `
+          <span class="doc-client">${escHtml(displayName)}</span>
+          <span class="doc-name">${escHtml(d.name)}</span>
+          <span class="doc-date">${date}</span>
+          <span class="doc-actions">
+            <a href="/api/documents/${escHtml(d.id)}" target="_blank" class="dl-link">Download</a>
+            <button class="del-btn" data-id="${escHtml(d.id)}" onclick="deleteDoc(this)">Delete</button>
+          </span>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    async function deleteDoc(btn) {
+      const id = btn.dataset.id;
+      if (!confirm('Permanently delete this document?')) return;
+
+      try {
+        const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Delete failed');
+        loadAdminDocuments();
+      } catch (err) {
+        alert('Failed to delete document.');
+      }
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
     }
   </script>
 
