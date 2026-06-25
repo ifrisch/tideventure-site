@@ -7,7 +7,7 @@
     "enabled": true
   },
   "assets": {
-    "directory": ".",
+    "directory": "public",
     "binding": "ASSETS"
   },
   "compatibility_flags": [

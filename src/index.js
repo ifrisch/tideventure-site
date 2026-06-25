@@ -54,6 +54,10 @@ export default {
       }
     }
 
+    if (url.pathname.startsWith('/.git') || url.pathname.startsWith('/.wrangler') || url.pathname.startsWith('/node_modules')) {
+      return new Response('Not found', { status: 404 });
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
