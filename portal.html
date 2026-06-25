@@ -11,7 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* ─── Dashboard layout ─── */
     .dash {
       max-width: 1000px;
       margin: 2rem auto;
@@ -153,23 +152,6 @@
       grid-column: 1 / -1;
     }
 
-    .dash-logout {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 0.85rem;
-      cursor: pointer;
-      font-family: var(--font-body);
-      transition: all 0.2s;
-    }
-
-    .dash-logout:hover {
-      color: #c00;
-      border-color: #c00;
-    }
-
     .dash-footer {
       text-align: center;
       font-size: 0.75rem;
@@ -178,16 +160,6 @@
       border-top: 1px solid var(--border);
     }
 
-    /* ─── Error message ─── */
-    .portal-error {
-      font-size: 0.8rem;
-      color: #c00;
-      text-align: center;
-      margin-top: -0.5rem;
-      display: none;
-    }
-
-    /* ─── Document manager ─── */
     .doc-upload-area {
       border: 2px dashed var(--border);
       border-radius: var(--radius-sm);
@@ -297,7 +269,6 @@
 </head>
 <body class="portal-page">
 
-  <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
       <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
@@ -318,79 +289,23 @@
     </div>
   </nav>
 
-  <!-- ─── LOGIN VIEW ─── -->
-  <div class="portal-body" id="loginView">
-    <div class="portal-card">
-
-      <div class="portal-card__logo">
-        <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
-          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
-          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
-          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
-          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-        </svg>
-        <div class="portal-card__logo-name">Tide<em>Venture</em> CPA</div>
-      </div>
-
-      <h1 class="portal-card__title">Client Portal</h1>
-      <p class="portal-card__sub">Sign in to access your documents and financial dashboard.</p>
-
-      <div class="portal-secure-badge">
-        <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="1" y="4.5" width="8" height="7" rx="1.5" stroke="#2d7a40" stroke-width="1.3"/><path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" stroke="#2d7a40" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Secure Connection — Test Portal
-      </div>
-
-      <form class="portal-form" id="portalForm" novalidate>
-        <div class="form-group">
-          <label for="portalEmail">Email Address</label>
-          <input type="email" id="portalEmail" name="email" placeholder="you@example.com" autocomplete="email" required />
-        </div>
-        <div class="form-group">
-          <label for="portalPassword">Password</label>
-          <input type="password" id="portalPassword" name="password" placeholder="••••••••" autocomplete="current-password" required />
-        </div>
-        <div class="portal-error" id="loginError">Invalid email or password. Try again.</div>
-        <button type="submit" class="portal-submit">Sign In</button>
-      </form>
-
-      <div class="portal-divider"><span>test credentials</span></div>
-
-      <div style="text-align:center;font-size:0.78rem;color:var(--text-muted);line-height:1.6;padding:0.25rem 0 0.75rem;">
-        <strong>Email:</strong> isaac@tideventure.com<br/>
-        <strong>Password:</strong> test123
-      </div>
-
-      <div class="portal-card__footer">
-        <p>
-          Need access? <a href="contact.html">Contact us</a> to set up your account.<br/>
-          <small>Your connection to this portal is encrypted. This is a test portal for demonstration purposes.</small>
-        </p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ─── DASHBOARD VIEW ─── -->
-  <div class="dash" id="dashView" style="display:none;">
+  <div class="dash" id="dashView">
 
     <div class="dash-header">
       <div class="dash-header__left">
-        <h1>Welcome back, Isaac</h1>
-        <p>S-Corp · Tax ID: XX-XXXXXXX · Last login: today</p>
+        <h1>Welcome back</h1>
+        <p>Client Portal · TideVenture CPA</p>
       </div>
       <div class="dash-header__right">
         <span class="dash-badge">
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="4.5" fill="#2d7a40"/></svg>
-          Client since 2025
+          Authenticated via Cloudflare Access
         </span>
-        <button class="dash-logout" id="logoutBtn">Sign Out</button>
       </div>
     </div>
 
     <div class="dash-grid">
 
-      <!-- Quick Actions -->
       <div class="dash-card">
         <div class="dash-card__header">
           <h3>Quick Actions</h3>
@@ -399,65 +314,36 @@
           <li>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 6h6M4 8.5h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
             Upload a document
-            <a href="#" class="file-link" onclick="alert('Document upload coming soon.');return false;">Upload</a>
-          </li>
-          <li>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4.5h10M2 7h10M2 9.5h10" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/><rect x="1" y="1.5" width="12" height="11" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
-            Send a message
-            <a href="#" class="file-link" onclick="alert('Messaging coming soon.');return false;">Compose</a>
+            <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Use area below</span>
           </li>
           <li>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 4h6M4 7h6M4 10h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
             QuickBooks Online
             <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a>
           </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
+            Shared Documents
+            <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Listed below</span>
+          </li>
         </ul>
       </div>
 
-      <!-- Tax Return Status -->
       <div class="dash-card">
         <div class="dash-card__header">
-          <h3>Tax Return Status</h3>
-          <span style="font-size:0.75rem;font-weight:600;color:#e5a100;">In Progress</span>
+          <h3>Your CPA Team</h3>
         </div>
-        <ul>
-          <li>
-            <span class="status-dot status-dot--green"></span>
-            2025 Estimated Payments — Filed
-          </li>
-          <li>
-            <span class="status-dot status-dot--yellow"></span>
-            2024 Business Return — In review
-          </li>
-          <li>
-            <span class="status-dot status-dot--gray"></span>
-            2024 Personal Return — Not started
-          </li>
-        </ul>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">TV</div>
+          <div>
+            <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">TideVenture CPA</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">
+              <a href="mailto:hello@tideventurecpa.com" style="color:var(--brand-teal);text-decoration:none;">hello@tideventurecpa.com</a>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Upcoming Dates -->
-      <div class="dash-card">
-        <div class="dash-card__header">
-          <h3>Upcoming Dates</h3>
-        </div>
-        <ul>
-          <li>
-            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Jun 15, 2026</strong>
-            2nd Quarter Estimated Payment due
-          </li>
-          <li>
-            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Sep 15, 2026</strong>
-            3rd Quarter Estimated Payment due
-          </li>
-          <li>
-            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Oct 15, 2026</strong>
-            Extension deadline (if filed)
-          </li>
-        </ul>
-      </div>
-
-      <!-- Documents -->
       <div class="dash-card dash-card--full">
         <div class="dash-card__header">
           <h3>Documents</h3>
@@ -470,10 +356,7 @@
           <input type="file" id="docFileInput" />
         </div>
 
-        <div class="doc-upload-progress" id="docUploadProgress">
-          <span>Uploading…</span>
-        </div>
-
+        <div class="doc-upload-progress" id="docUploadProgress"><span>Uploading…</span></div>
         <div class="doc-error" id="docError"></div>
 
         <ul class="doc-list" id="docList">
@@ -481,85 +364,23 @@
         </ul>
       </div>
 
-      <!-- Contact / Firm Info -->
-      <div class="dash-card dash-card--full">
-        <div class="dash-card__header">
-          <h3>Your CPA Team</h3>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;">
-          <div style="display:flex;align-items:center;gap:0.75rem;">
-            <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">IF</div>
-            <div>
-              <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">Isaac Frisch</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);">Founder &amp; CPA</div>
-            </div>
-          </div>
-          <div style="font-size:0.82rem;color:var(--text-muted);">
-            <a href="mailto:isaac@tideventure.com" style="color:var(--brand-teal);text-decoration:none;">isaac@tideventure.com</a>
-            &nbsp;·&nbsp; (555) 123-4567
-          </div>
-        </div>
-      </div>
-
     </div>
 
     <div class="dash-footer">
-      TideVenture CPA &mdash; Test Portal &mdash; Not for client use
+      TideVenture CPA &mdash; Secure Client Portal
     </div>
   </div>
 
   <script>
-    const VALID_EMAIL  = 'isaac@tideventure.com';
-    const VALID_PASS   = 'test123';
+    const uploadArea  = document.getElementById('docUploadArea');
+    const fileInput   = document.getElementById('docFileInput');
+    const docList     = document.getElementById('docList');
+    const docEmpty    = document.getElementById('docEmpty');
+    const docError    = document.getElementById('docError');
+    const docProgress = document.getElementById('docUploadProgress');
+    const docCount    = document.getElementById('docCount');
 
-    const loginView = document.getElementById('loginView');
-    const dashView  = document.getElementById('dashView');
-    const form      = document.getElementById('portalForm');
-    const emailIn   = document.getElementById('portalEmail');
-    const passIn    = document.getElementById('portalPassword');
-    const errorEl   = document.getElementById('loginError');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    // Check for existing session
-    if (sessionStorage.getItem('tv_portal_auth') === 'true') {
-      showDashboard();
-    }
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      errorEl.style.display = 'none';
-
-      if (emailIn.value.toLowerCase() === VALID_EMAIL && passIn.value === VALID_PASS) {
-        sessionStorage.setItem('tv_portal_auth', 'true');
-        showDashboard();
-      } else {
-        errorEl.style.display = 'block';
-      }
-    });
-
-    logoutBtn.addEventListener('click', function () {
-      sessionStorage.removeItem('tv_portal_auth');
-      loginView.style.display = '';
-      dashView.style.display  = 'none';
-      form.reset();
-      errorEl.style.display = 'none';
-    });
-
-    function showDashboard() {
-      loginView.style.display = 'none';
-      dashView.style.display  = 'block';
-      loadDocuments();
-    }
-
-    // ─── Document Manager ───
-
-    const uploadArea   = document.getElementById('docUploadArea');
-    const fileInput    = document.getElementById('docFileInput');
-    const docList      = document.getElementById('docList');
-    const docEmpty     = document.getElementById('docEmpty');
-    const docError     = document.getElementById('docError');
-    const docProgress  = document.getElementById('docUploadProgress');
-    const docCount     = document.getElementById('docCount');
+    loadDocuments();
 
     uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -587,13 +408,10 @@
         showDocError('File too large. Maximum size is 20MB.');
         return;
       }
-
       docProgress.classList.add('active');
       docError.style.display = 'none';
-
       const formData = new FormData();
       formData.append('file', file);
-
       try {
         const res = await fetch('/api/documents/upload', { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Upload failed');
@@ -620,12 +438,10 @@
     function renderDocuments(docs) {
       docList.innerHTML = '';
       docCount.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
-
       if (docs.length === 0) {
         docList.appendChild(docEmpty);
         return;
       }
-
       docs.forEach(d => {
         const li = document.createElement('li');
         const date = new Date(d.uploaded).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
