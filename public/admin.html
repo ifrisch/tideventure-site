@@ -300,37 +300,6 @@
       loadAuditLog();
     })();
 
-    async function deriveAdminFileKey(salt) {
-      const base = await crypto.subtle.importKey('raw', hexToBytes(adminKeyMaterial), 'PBKDF2', false, ['deriveKey']);
-      return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' },
-        base,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['decrypt']
-      );
-    }
-
-    async function adminDecryptFile(blob) {
-      const data = await blob.arrayBuffer();
-      const bytes = new Uint8Array(data);
-      const salt = bytes.slice(0, 16);
-      const iv = bytes.slice(16, 28);
-      const ciphertext = bytes.slice(28);
-      const key = await deriveAdminFileKey(bytesToHex(salt));
-      return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-    }
-
-    function hexToBytes(hex) {
-      const bytes = new Uint8Array(hex.length / 2);
-      for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-      return bytes;
-    }
-
-    function bytesToHex(bytes) {
-      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     async function loadAdminDocuments() {
       const listEl = document.getElementById('adminDocList');
       const countEl = document.getElementById('adminDocCount');
@@ -377,30 +346,10 @@
           <span class="doc-name">${escHtml(d.name)}</span>
           <span class="doc-date">${date}</span>
           <span class="doc-actions">
-            <a href="#" class="dl-link" data-id="${escHtml(d.id)}" data-name="${escHtml(d.name)}">Download</a>
+            <a href="/api/documents/${escHtml(d.id)}" target="_blank" class="dl-link">Download</a>
             <button class="del-btn" data-id="${escHtml(d.id)}" onclick="deleteDoc(this)">Delete</button>
           </span>
         `;
-        row.querySelector('.dl-link').addEventListener('click', async (e) => {
-          e.preventDefault();
-          const id = e.target.dataset.id;
-          const name = e.target.dataset.name;
-          if (!adminKeyMaterial) { alert('Encryption key not loaded.'); return; }
-          try {
-            const res = await fetch(`/api/documents/${id}`);
-            if (!res.ok) throw new Error('Download failed');
-            const blob = await res.blob();
-            const decrypted = await adminDecryptFile(blob);
-            const originalName = name.endsWith('.enc') ? name.slice(0, -4) : name;
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([decrypted]));
-            a.download = originalName;
-            a.click();
-            URL.revokeObjectURL(a.href);
-          } catch (err) {
-            alert('Failed to download/decrypt file.');
-          }
-        });
         listEl.appendChild(row);
       });
     }

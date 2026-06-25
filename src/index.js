@@ -154,13 +154,36 @@ async function handleDownloadDocument(env, docId, email, admin) {
   if (!object) return json(404, { error: 'Document not found' });
 
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
+  const origName = found.customMetadata?.originalName || docId;
 
+  // Admin downloads: decrypt server-side and serve plaintext
+  if (admin) {
+    const ciphertext = await object.arrayBuffer();
+    try {
+      const plaintext = await decryptWithKey(env.DOC_ENC_KEY, uploader || email, ciphertext);
+      const headers = {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${origName}"`,
+        'Cache-Control': 'private, max-age=3600',
+      };
+      return new Response(plaintext, { headers });
+    } catch {
+      // If decryption fails, serve raw
+      const headers = {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Content-Disposition': `inline; filename="${origName}"`,
+        'Cache-Control': 'private, max-age=3600',
+      };
+      return new Response(object.body, { headers });
+    }
+  }
+
+  // Regular user download: serve encrypted blob for client-side decryption
   const headers = {
-    'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-    'Content-Disposition': `inline; filename="${found.customMetadata?.originalName || docId}"`,
+    'Content-Type': 'application/octet-stream',
+    'Content-Disposition': `inline; filename="${origName}.enc"`,
     'Cache-Control': 'private, max-age=3600',
   };
-
   return new Response(object.body, { headers });
 }
 
@@ -203,11 +226,41 @@ async function handleAuditLog(env) {
 
 // ── Client-side encryption key material ──
 async function handleKeyMaterial(env, email) {
+  const raw = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
+  return json(200, { keyMaterial: raw });
+}
+
+// ── Encryption helpers (used server-side for admin downloads) ──
+async function deriveKeyMaterial(secret, userEmail) {
   const enc = new TextEncoder();
-  const keyData = enc.encode(env.DOC_ENC_KEY);
-  const msgData = enc.encode(email);
-  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, msgData);
-  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return json(200, { keyMaterial: hex });
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(userEmail));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function decryptWithKey(secret, userEmail, ciphertext) {
+  const enc = new TextEncoder();
+  const keyMaterialHex = await deriveKeyMaterial(secret, userEmail);
+  const keyMaterial = hexToBytes(keyMaterialHex);
+  const bytes = new Uint8Array(ciphertext);
+  const salt = bytes.slice(0, 16);
+  const iv = bytes.slice(16, 28);
+  const encrypted = bytes.slice(28);
+
+  const baseKey = await crypto.subtle.importKey('raw', keyMaterial, 'PBKDF2', false, ['deriveKey']);
+  const aesKey = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+
+  return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, encrypted);
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  return bytes;
 }
