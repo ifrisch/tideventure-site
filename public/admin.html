@@ -4,209 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Portal — TideVenture CPA</title>
-  <meta name="description" content="Admin portal for TideVenture CPA staff." />
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .admin-body { background: var(--sand); min-height: 100vh; }
+    body { background: var(--sand); }
+    .portal-body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .portal-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
+    .portal-card h1 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
+    .portal-card p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
+    .portal-card .form-group { margin-bottom: 1rem; }
+    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
+    .portal-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--ink); background: var(--white); outline: none; box-sizing: border-box; }
+    .portal-card .form-group input:focus { border-color: var(--brand-teal); }
+    .portal-card .btn--primary { width: 100%; }
+    .portal-error { font-size: 0.78rem; color: #c00; text-align: center; display: none; margin-bottom: 0.75rem; }
 
-    .admin-nav {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    .admin-dash { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
+    .admin-dash h1 { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
+    .admin-dash > p { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem; }
+    .dash-logout { font-size: 0.8rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.85rem; cursor: pointer; font-family: inherit; }
+    .dash-logout:hover { color: #c00; border-color: #c00; }
 
-    .admin-nav__inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
-    }
-
-    .admin-nav__brand {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--ink);
-      text-decoration: none;
-    }
-
-    .admin-nav__brand span { color: var(--brand-teal); font-weight: 400; }
-
-    .admin-nav__right { display: flex; align-items: center; gap: 1rem; }
-
-    .admin-badge {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--brand-teal);
-      background: var(--brand-pale);
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
-    }
-
-    .admin-dash {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-
-    .admin-dash h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--ink);
-      margin: 0 0 0.2rem;
-    }
-
-    .admin-dash > p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin: 0 0 1.5rem;
-    }
-
-    .admin-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .admin-stat {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem 1.25rem;
-    }
-
-    .admin-stat__num { font-size: 1.6rem; font-weight: 800; color: var(--ink); line-height: 1; margin-bottom: 0.2rem; }
-    .admin-stat__label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
-
-    .admin-table-wrap {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-    }
-
-    .admin-table-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
+    .admin-table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 1.5rem; }
+    .admin-table-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 0.75rem; }
     .admin-table-header h3 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin: 0; }
-
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .admin-table th {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: var(--text-muted);
-      text-align: left;
-      padding: 0.7rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--sand);
-    }
-
-    .admin-table td {
-      font-size: 0.82rem;
-      color: var(--ink);
-      padding: 0.7rem 1.25rem;
-      border-bottom: 1px solid var(--sand);
-    }
-
-    .admin-table tr:last-child td { border-bottom: none; }
-
-    .admin-table .status-tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.15rem 0.5rem;
-      border-radius: 10px;
-    }
-
-    .status-tag--green { background: #e6f4ea; color: #2d7a40; }
-    .status-tag--yellow { background: #fff3cd; color: #856404; }
-    .status-tag--gray { background: #eee; color: #888; }
-    .status-tag--blue { background: #e0f0ff; color: #1a5a8c; }
-
-    .admin-table .entity-tag {
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      background: var(--sand);
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-    }
-
-    .admin-docs { margin-top: 1.5rem; }
-
-    .admin-docs .doc-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 1.25rem;
-      border-bottom: 1px solid var(--sand);
-      font-size: 0.82rem;
-    }
-
-    .admin-docs .doc-row:hover { background: var(--sand); }
-    .admin-docs .doc-row:last-child { border-bottom: none; }
-
-    .admin-docs .doc-client { font-weight: 600; color: var(--ink); min-width: 9rem; }
-    .admin-docs .doc-name { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .admin-docs .doc-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; min-width: 5rem; }
-    .admin-docs .doc-actions { display: flex; gap: 0.5rem; white-space: nowrap; }
-
-    .admin-docs .doc-actions a,
-    .admin-docs .doc-actions button {
-      font-size: 0.78rem;
-      font-weight: 600;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      font-family: inherit;
-    }
-
-    .admin-docs .doc-actions .dl-link { color: var(--brand-teal); text-decoration: none; }
-    .admin-docs .doc-actions .dl-link:hover { text-decoration: underline; }
-    .admin-docs .doc-actions .del-btn { color: #c00; }
-    .admin-docs .doc-actions .del-btn:hover { text-decoration: underline; }
-    .admin-docs .doc-empty { text-align: center; padding: 2rem 0; font-size: 0.82rem; color: var(--text-muted); }
-    .admin-docs .doc-err { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #c00; display: none; }
-
-    /* Audit log */
-    .audit-entry {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.45rem 1.25rem;
-      border-bottom: 1px solid var(--sand);
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
+    .doc-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1.25rem; border-bottom: 1px solid var(--sand); font-size: 0.82rem; }
+    .doc-row:hover { background: var(--sand); }
+    .doc-row:last-child { border-bottom: none; }
+    .doc-client { font-weight: 600; color: var(--ink); min-width: 9rem; }
+    .doc-name { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; min-width: 5rem; }
+    .doc-actions { display: flex; gap: 0.5rem; white-space: nowrap; }
+    .doc-actions a, .doc-actions button { font-size: 0.78rem; font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+    .doc-actions .dl-link { color: var(--brand-teal); text-decoration: none; }
+    .doc-actions .dl-link:hover { text-decoration: underline; }
+    .doc-actions .del-btn { color: #c00; }
+    .doc-actions .del-btn:hover { text-decoration: underline; }
+    .doc-empty { text-align: center; padding: 2rem 0; font-size: 0.82rem; color: var(--text-muted); }
+    .doc-err { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #c00; display: none; }
+    .audit-entry { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 1.25rem; border-bottom: 1px solid var(--sand); font-size: 0.78rem; color: var(--text-muted); }
     .audit-entry:last-child { border-bottom: none; }
     .audit-entry .audit-action { min-width: 5.5rem; font-weight: 700; }
     .audit-entry .audit-action.UPLOAD { color: #2d7a40; }
@@ -215,195 +54,180 @@
     .audit-entry .audit-user { min-width: 10rem; color: var(--ink); }
     .audit-entry .audit-detail { flex: 1; }
     .audit-entry .audit-time { font-size: 0.72rem; white-space: nowrap; }
-
-    @media (max-width: 768px) {
-      .admin-stats { grid-template-columns: repeat(2, 1fr); }
-      .admin-table th, .admin-table td { padding: 0.5rem 0.75rem; }
-      .admin-table td:nth-child(4), .admin-table th:nth-child(4) { display: none; }
-    }
-
-    @media (max-width: 500px) {
-      .admin-stats { grid-template-columns: 1fr; }
-    }
+    .dash-footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
   </style>
 </head>
-<body class="admin-body">
+<body>
 
-  <nav class="admin-nav">
-    <div class="admin-nav__inner">
-      <a href="index.html" class="admin-nav__brand">
-        <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
-        Tide<span>Venture</span> Admin
-      </a>
-      <div class="admin-nav__right">
-        <span class="admin-badge">Staff</span>
-        <a href="index.html" class="btn--portal" style="font-size:0.78rem;">Back to Site</a>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
+    </a>
+    <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
+  </div>
+</nav>
+
+<!-- Login -->
+<div class="portal-body" id="loginView">
+  <div class="portal-card">
+    <h1>Admin Portal</h1>
+    <p>Staff only. Unauthorized use is prohibited.</p>
+    <div class="portal-error" id="loginError">Invalid email or password.</div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required />
       </div>
-    </div>
-  </nav>
-
-  <div class="admin-dash">
-
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.25rem;">
-      <h1>Dashboard</h1>
-      <a href="https://tideventure.cloudflareaccess.com/cdn-cgi/access/logout" style="font-size:0.8rem;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.4rem 0.85rem;text-decoration:none;">Sign Out</a>
-    </div>
-    <p>Admin portal — authenticated via Cloudflare Access</p>
-
-    <div class="admin-stats">
-      <div class="admin-stat"><div class="admin-stat__num" id="statClients">—</div><div class="admin-stat__label">Active Clients</div></div>
-      <div class="admin-stat"><div class="admin-stat__num" id="statDocs">—</div><div class="admin-stat__label">Total Documents</div></div>
-      <div class="admin-stat"><div class="admin-stat__num" id="statClientsWithDocs">—</div><div class="admin-stat__label">Clients w/ Docs</div></div>
-      <div class="admin-stat"><div class="admin-stat__num" id="statRecent">—</div><div class="admin-stat__label">Uploads This Week</div></div>
-    </div>
-
-    <div class="admin-table-wrap">
-      <div class="admin-table-header">
-        <h3>All Documents</h3>
-        <span id="adminDocCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
+      <div class="form-group">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" required />
       </div>
-      <div id="adminDocList">
-        <div class="doc-empty">Loading documents…</div>
-      </div>
-      <div class="doc-err" id="adminDocErr"></div>
-    </div>
+      <button type="submit" class="btn btn--primary">Sign In</button>
+    </form>
+  </div>
+</div>
 
-    <div class="admin-table-wrap" style="margin-top:1.5rem;">
-      <div class="admin-table-header">
-        <h3>Audit Log</h3>
-        <span id="auditCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
-      </div>
-      <div id="auditList">
-        <div class="doc-empty">Loading audit log…</div>
-      </div>
-      <div class="doc-err" id="auditErr"></div>
-    </div>
+<!-- Dashboard -->
+<div class="admin-dash" id="dashView">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.25rem;">
+    <h1>Dashboard</h1>
+    <button class="dash-logout" id="logoutBtn">Sign Out</button>
+  </div>
+  <p>Admin portal — all client documents</p>
 
-    <div class="dash-footer" style="margin-top:2rem;">
-      TideVenture CPA &mdash; Admin Portal &mdash; Internal Use Only
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <h3>All Documents</h3>
+      <span id="docCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
     </div>
+    <div id="docList"><div class="doc-empty">Loading documents…</div></div>
+    <div class="doc-err" id="docErr"></div>
   </div>
 
-  <script>
-    const adminKeyMaterial = window.__KEY_MATERIAL__;
-    if (!adminKeyMaterial) {
-      document.getElementById('adminDocErr').textContent = 'Authentication failed.';
-      document.getElementById('adminDocErr').style.display = 'block';
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <h3>Audit Log</h3>
+      <span id="auditCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
+    </div>
+    <div id="auditList"><div class="doc-empty">Loading audit log…</div></div>
+    <div class="doc-err" id="auditErr"></div>
+  </div>
+
+  <div class="dash-footer">TideVenture CPA &mdash; Admin Portal &mdash; Internal Use Only</div>
+</div>
+
+<script>
+const pageData = window.__PAGE_DATA__;
+if (pageData && pageData.role === 'admin') {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  initAdmin(pageData);
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  if (res.ok) { window.location.reload(); } else { err.style.display = 'block'; }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.reload();
+});
+
+function initAdmin(data) {
+  loadDocs();
+  loadAudit();
+
+  async function loadDocs() {
+    const listEl = document.getElementById('docList');
+    const countEl = document.getElementById('docCount');
+    const errEl = document.getElementById('docErr');
+    errEl.style.display = 'none';
+    try {
+      const res = await fetch('/api/documents');
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      renderDocs(data.documents, listEl, countEl);
+    } catch (e) {
+      errEl.textContent = 'Failed to load documents.';
+      errEl.style.display = 'block';
+      listEl.innerHTML = '<div class="doc-empty">Failed to load.</div>';
     }
-    loadAdminDocuments();
-    loadAuditLog();
+  }
 
-    async function loadAdminDocuments() {
-      const listEl = document.getElementById('adminDocList');
-      const countEl = document.getElementById('adminDocCount');
-      const errEl = document.getElementById('adminDocErr');
-      errEl.style.display = 'none';
-      try {
-        const res = await fetch('/api/documents');
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        renderAdminDocs(data.documents, listEl, countEl);
-      } catch (err) {
-        errEl.textContent = 'Could not load documents.';
-        errEl.style.display = 'block';
-        listEl.innerHTML = '<div class="doc-empty">Failed to load documents.</div>';
-      }
+  function renderDocs(docs, listEl, countEl) {
+    countEl.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
+    if (!docs.length) { listEl.innerHTML = '<div class="doc-empty">No documents yet.</div>'; return; }
+    listEl.innerHTML = '<div class="doc-row" style="font-weight:600;font-size:0.72rem;text-transform:uppercase;color:var(--text-muted);background:var(--sand);"><span class="doc-client">Client</span><span class="doc-name">Document</span><span class="doc-date">Uploaded</span><span class="doc-actions">Actions</span></div>';
+    docs.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'doc-row';
+      const displayName = d.uploadedBy ? d.uploadedBy.split('@')[0] : 'Unknown';
+      row.innerHTML = `
+        <span class="doc-client">${esc(displayName)}</span>
+        <span class="doc-name">${esc(d.name)}</span>
+        <span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span>
+        <span class="doc-actions">
+          <a href="/api/documents/${esc(d.id)}" class="dl-link">Download</a>
+          <button class="del-btn" data-id="${esc(d.id)}" onclick="deleteDoc(this)">Delete</button>
+        </span>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  window.deleteDoc = async (btn) => {
+    if (!confirm('Permanently delete this document?')) return;
+    try {
+      const res = await fetch(`/api/documents/${btn.dataset.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      loadDocs(); loadAudit();
+    } catch (e) { alert('Delete failed.'); }
+  };
+
+  async function loadAudit() {
+    const listEl = document.getElementById('auditList');
+    const countEl = document.getElementById('auditCount');
+    const errEl = document.getElementById('auditErr');
+    errEl.style.display = 'none';
+    try {
+      const res = await fetch('/api/audit');
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      renderAudit(data.audit, listEl, countEl);
+    } catch (e) {
+      errEl.textContent = 'Failed to load audit log.';
+      errEl.style.display = 'block';
+      listEl.innerHTML = '<div class="doc-empty">Failed to load.</div>';
     }
+  }
 
-    function renderAdminDocs(docs, listEl, countEl) {
-      countEl.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
-      document.getElementById('statDocs').textContent = docs.length;
-      const clients = new Set(docs.map(d => d.uploadedBy).filter(Boolean));
-      document.getElementById('statClients').textContent = clients.size;
-      document.getElementById('statClientsWithDocs').textContent = clients.size;
+  function renderAudit(entries, listEl, countEl) {
+    countEl.textContent = `${entries.length} event${entries.length !== 1 ? 's' : ''}`;
+    if (!entries.length) { listEl.innerHTML = '<div class="doc-empty">No events yet.</div>'; return; }
+    listEl.innerHTML = '';
+    entries.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'audit-entry';
+      div.innerHTML = `
+        <span class="audit-action ${e.action}">${e.action}</span>
+        <span class="audit-user">${esc(e.email)}</span>
+        <span class="audit-detail">${esc(e.detail)}</span>
+        <span class="audit-time">${new Date(e.timestamp).toLocaleString()}</span>
+      `;
+      listEl.appendChild(div);
+    });
+  }
 
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const recent = docs.filter(d => new Date(d.uploaded) > oneWeekAgo).length;
-      document.getElementById('statRecent').textContent = recent;
-
-      if (docs.length === 0) {
-        listEl.innerHTML = '<div class="doc-empty">No documents uploaded yet.</div>';
-        return;
-      }
-
-      listEl.innerHTML = '<div class="doc-row" style="font-weight:600;font-size:0.72rem;text-transform:uppercase;color:var(--text-muted);background:var(--sand);padding:0.5rem 1.25rem;"><span class="doc-client">Client</span><span class="doc-name">Document</span><span class="doc-date">Uploaded</span><span class="doc-actions">Actions</span></div>';
-
-      docs.forEach(d => {
-        const row = document.createElement('div');
-        row.className = 'doc-row';
-        const displayName = d.uploadedBy ? d.uploadedBy.split('@')[0] : 'Unknown';
-        const date = new Date(d.uploaded).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        row.innerHTML = `
-          <span class="doc-client">${escHtml(displayName)}</span>
-          <span class="doc-name">${escHtml(d.name)}</span>
-          <span class="doc-date">${date}</span>
-          <span class="doc-actions">
-            <a href="/api/documents/${escHtml(d.id)}" target="_blank" class="dl-link">Download</a>
-            <button class="del-btn" data-id="${escHtml(d.id)}" onclick="deleteDoc(this)">Delete</button>
-          </span>
-        `;
-        listEl.appendChild(row);
-      });
-    }
-
-    async function deleteDoc(btn) {
-      const id = btn.dataset.id;
-      if (!confirm('Permanently delete this document?')) return;
-      try {
-        const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Delete failed');
-        loadAdminDocuments();
-        loadAuditLog();
-      } catch (err) {
-        alert('Failed to delete document.');
-      }
-    }
-
-    async function loadAuditLog() {
-      const listEl = document.getElementById('auditList');
-      const countEl = document.getElementById('auditCount');
-      const errEl = document.getElementById('auditErr');
-      errEl.style.display = 'none';
-      try {
-        const res = await fetch('/api/audit');
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        renderAuditLog(data.audit, listEl, countEl);
-      } catch (err) {
-        errEl.textContent = 'Could not load audit log.';
-        errEl.style.display = 'block';
-        listEl.innerHTML = '<div class="doc-empty">Failed to load audit log.</div>';
-      }
-    }
-
-    function renderAuditLog(entries, listEl, countEl) {
-      countEl.textContent = `${entries.length} event${entries.length !== 1 ? 's' : ''}`;
-      if (entries.length === 0) {
-        listEl.innerHTML = '<div class="doc-empty">No events yet.</div>';
-        return;
-      }
-      listEl.innerHTML = '';
-      entries.forEach(e => {
-        const div = document.createElement('div');
-        div.className = 'audit-entry';
-        const date = new Date(e.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        div.innerHTML = `
-          <span class="audit-action ${e.action}">${e.action}</span>
-          <span class="audit-user">${escHtml(e.email)}</span>
-          <span class="audit-detail">${escHtml(e.detail)}</span>
-          <span class="audit-time">${date}</span>
-        `;
-        listEl.appendChild(div);
-      });
-    }
-
-    function escHtml(s) {
-      const d = document.createElement('div');
-      d.textContent = s;
-      return d.innerHTML;
-    }
-  </script>
-
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+}
+</script>
 </body>
 </html>

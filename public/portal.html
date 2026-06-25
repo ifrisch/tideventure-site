@@ -4,556 +4,258 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Portal — TideVenture CPA</title>
-  <meta name="description" content="Secure client login for TideVenture CPA." />
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .dash {
-      max-width: 1000px;
-      margin: 2rem auto;
-      padding: 0 1.5rem;
-    }
+    body { background: var(--sand); }
+    .portal-body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .portal-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
+    .portal-card h1 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
+    .portal-card p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
+    .portal-card .form-group { margin-bottom: 1rem; }
+    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
+    .portal-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--ink); background: var(--white); outline: none; box-sizing: border-box; }
+    .portal-card .form-group input:focus { border-color: var(--brand-teal); }
+    .portal-card .btn--primary { width: 100%; }
+    .portal-error { font-size: 0.78rem; color: #c00; text-align: center; display: none; margin-bottom: 0.75rem; }
 
-    .dash-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
+    .dash { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .dash-header__left h1 { font-size: 1.4rem; font-weight: 700; color: var(--ink); margin: 0 0 0.15rem; }
+    .dash-header__left p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+    .dash-header__right { display: flex; align-items: center; gap: 0.75rem; }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+    .dash-card { background: var(--white); border-radius: var(--radius-sm); padding: 1.25rem 1.5rem; border: 1px solid var(--border); }
+    .dash-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .dash-card__header h3 { font-size: 0.9rem; font-weight: 600; color: var(--ink); margin: 0; }
+    .dash-card ul { list-style: none; padding: 0; margin: 0; }
+    .dash-card ul li { font-size: 0.82rem; color: var(--text-muted); padding: 0.4rem 0; border-bottom: 1px solid var(--sand); display: flex; align-items: center; gap: 0.5rem; }
+    .dash-card ul li:last-child { border-bottom: none; }
+    .dash-card ul li .file-link { color: var(--brand-teal); text-decoration: none; margin-left: auto; font-weight: 600; font-size: 0.78rem; }
+    .dash-card ul li .file-link:hover { text-decoration: underline; }
+    .dash-card--full { grid-column: 1 / -1; }
+    .dash-footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
+    .dash-logout { font-size: 0.8rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .dash-logout:hover { color: #c00; border-color: #c00; }
 
-    .dash-header__left h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--ink);
-      margin: 0 0 0.15rem;
-    }
-
-    .dash-header__left p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .dash-header__right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .dash-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #2d7a40;
-      background: #e6f4ea;
-      padding: 0.3rem 0.65rem;
-      border-radius: 20px;
-    }
-
-    .dash-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-    }
-
-    .dash-card {
-      background: var(--white);
-      border-radius: var(--radius-sm);
-      padding: 1.25rem 1.5rem;
-      border: 1px solid var(--border);
-    }
-
-    .dash-card__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-    }
-
-    .dash-card__header h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--ink);
-      margin: 0;
-    }
-
-    .dash-card__header a {
-      font-size: 0.78rem;
-      color: var(--brand-teal);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .dash-card__header a:hover {
-      text-decoration: underline;
-    }
-
-    .dash-card p {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin: 0 0 0.5rem;
-      line-height: 1.5;
-    }
-
-    .dash-card ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .dash-card ul li {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      padding: 0.4rem 0;
-      border-bottom: 1px solid var(--sand);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .dash-card ul li:last-child {
-      border-bottom: none;
-    }
-
-    .dash-card ul li .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .status-dot--green { background: #2d7a40; }
-    .status-dot--yellow { background: #e5a100; }
-    .status-dot--gray { background: #bbb; }
-
-    .dash-card ul li .file-link {
-      color: var(--brand-teal);
-      text-decoration: none;
-      margin-left: auto;
-      font-weight: 600;
-      font-size: 0.78rem;
-    }
-
-    .dash-card ul li .file-link:hover {
-      text-decoration: underline;
-    }
-
-    .dash-card--full {
-      grid-column: 1 / -1;
-    }
-
-    .dash-footer {
-      text-align: center;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      padding: 2rem 0 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .doc-upload-area {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      margin-bottom: 1rem;
-    }
-
-    .doc-upload-area:hover,
-    .doc-upload-area.dragover {
-      border-color: var(--brand-teal);
-      background: var(--brand-pale);
-    }
-
-    .doc-upload-area p {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin: 0.25rem 0 0;
-    }
-
-    .doc-upload-area input[type="file"] {
-      display: none;
-    }
-
-    .doc-upload-progress {
-      display: none;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 0.5rem;
-    }
-
-    .doc-upload-progress.active {
-      display: block;
-    }
-
-    .doc-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .doc-list li {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--sand);
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-
-    .doc-list li:last-child {
-      border-bottom: none;
-    }
-
-    .doc-list li .doc-name {
-      flex: 1;
-      color: var(--ink);
-      font-weight: 500;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .doc-list li .doc-date {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .doc-list li .doc-dl {
-      color: var(--brand-teal);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.78rem;
-      white-space: nowrap;
-    }
-
-    .doc-list li .doc-dl:hover {
-      text-decoration: underline;
-    }
-
-    .doc-empty {
-      text-align: center;
-      padding: 1.5rem 0;
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-
-    .doc-error {
-      text-align: center;
-      padding: 0.5rem;
-      font-size: 0.78rem;
-      color: #c00;
-      display: none;
-    }
-
-    @media (max-width: 640px) {
-      .dash-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    .doc-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem; }
+    .doc-upload-area:hover, .doc-upload-area.dragover { border-color: var(--brand-teal); background: var(--brand-pale); }
+    .doc-upload-area p { font-size: 0.82rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+    .doc-upload-area input[type="file"] { display: none; }
+    .doc-upload-progress { display: none; font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0.5rem; }
+    .doc-upload-progress.active { display: block; }
+    .doc-list { list-style: none; padding: 0; margin: 0; }
+    .doc-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--sand); font-size: 0.82rem; color: var(--text-muted); }
+    .doc-list li:last-child { border-bottom: none; }
+    .doc-list li .doc-name { flex: 1; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-list li .doc-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+    .doc-list li .doc-dl { color: var(--brand-teal); text-decoration: none; font-weight: 600; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
+    .doc-list li .doc-dl:hover { text-decoration: underline; }
+    .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.82rem; color: var(--text-muted); }
+    .doc-error { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #c00; display: none; }
+    @media (max-width:640px) { .dash-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body class="portal-page">
+<body>
 
-  <nav class="nav">
-    <div class="container nav__inner">
-      <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
-        <svg class="nav__logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
-          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
-          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
-          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
-          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <path d="M4 36.5 Q10 32.5 16 36.5 T28 36.5 T36 36.5" stroke="rgba(26,127,160,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
-        </svg>
-        <span class="nav__logo-words">
-          <span class="nav__logo-name">Tide<em>Venture</em></span>
-          <span class="nav__logo-sub">CPA</span>
-        </span>
-      </a>
-      <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
+    </a>
+    <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
+  </div>
+</nav>
+
+<!-- Login -->
+<div class="portal-body" id="loginView">
+  <div class="portal-card">
+    <h1>Client Portal</h1>
+    <p>Sign in to access your documents.</p>
+    <div class="portal-error" id="loginError">Invalid email or password.</div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required />
+      </div>
+      <div class="form-group">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" required />
+      </div>
+      <button type="submit" class="btn btn--primary">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dash" id="dashView">
+  <div class="dash-header">
+    <div class="dash-header__left">
+      <h1 id="dashGreeting">Welcome</h1>
+      <p>Client Portal · TideVenture CPA</p>
     </div>
-  </nav>
-
-  <div class="dash" id="dashView">
-
-    <div class="dash-header">
-      <div class="dash-header__left">
-        <h1>Welcome back</h1>
-        <p>Client Portal · TideVenture CPA</p>
-      </div>
-      <div class="dash-header__right">
-        <span class="dash-badge">
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="4.5" fill="#2d7a40"/></svg>
-          Authenticated
-        </span>
-        <a href="https://tideventure.cloudflareaccess.com/cdn-cgi/access/logout" class="dash-logout" style="text-decoration:none;font-size:0.8rem;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.4rem 0.85rem;">Sign Out</a>
-      </div>
-    </div>
-
-    <div class="dash-grid">
-
-      <div class="dash-card">
-        <div class="dash-card__header">
-          <h3>Quick Actions</h3>
-        </div>
-        <ul>
-          <li>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 6h6M4 8.5h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Upload a document
-            <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Use area below</span>
-          </li>
-          <li>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 4h6M4 7h6M4 10h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
-            QuickBooks Online
-            <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a>
-          </li>
-          <li>
-            <svg width="14" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
-            Shared Documents
-            <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Listed below</span>
-          </li>
-        </ul>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-card__header">
-          <h3>Your CPA Team</h3>
-        </div>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">TV</div>
-          <div>
-            <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">TideVenture CPA</div>
-            <div style="font-size:0.78rem;color:var(--text-muted);">
-              <a href="mailto:hello@tideventurecpa.com" style="color:var(--brand-teal);text-decoration:none;">hello@tideventurecpa.com</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dash-card dash-card--full">
-        <div class="dash-card__header">
-          <h3>Documents</h3>
-          <span id="docCount" style="font-size:0.75rem;color:var(--text-muted);">0 files</span>
-        </div>
-
-        <div class="doc-upload-area" id="docUploadArea">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-bottom:0.25rem;"><path d="M10 14V6m0 0l-3 3m3-3l3 3" stroke="var(--brand-teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="16" height="7" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.5"/></svg>
-          <p>Drop a file here or click to upload (PDF, JPEG, PNG — max 20MB)</p>
-          <input type="file" id="docFileInput" />
-        </div>
-
-        <div class="doc-upload-progress" id="docUploadProgress"><span>Uploading…</span></div>
-        <div class="doc-error" id="docError"></div>
-
-        <ul class="doc-list" id="docList">
-          <li class="doc-empty" id="docEmpty">No documents yet. Upload your first file above.</li>
-        </ul>
-      </div>
-
-    </div>
-
-    <div class="dash-footer">
-      TideVenture CPA &mdash; Secure Client Portal
+    <div class="dash-header__right">
+      <button class="dash-logout" id="logoutBtn">Sign Out</button>
     </div>
   </div>
 
-  <script>
-    const keyMaterial = window.__KEY_MATERIAL__;
-    if (!keyMaterial) {
-      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#666;"><p>Authentication failed. Please <a href="https://tideventure.cloudflareaccess.com/cdn-cgi/access/logout" style="color:#1a7fa0;">sign out</a> and try again.</p></div>';
-    } else {
-      loadDocuments();
-    }
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card__header"><h3>Quick Actions</h3></div>
+      <ul>
+        <li>Upload a document <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Use area below</span></li>
+        <li>QuickBooks Online <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a></li>
+      </ul>
+    </div>
 
-    async function deriveFileKey(salt) {
-      const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
-      return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' },
-        base,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
-      );
-    }
+    <div class="dash-card">
+      <div class="dash-card__header"><h3>Your CPA Team</h3></div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">TV</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">TideVenture CPA</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);"><a href="mailto:hello@tideventurecpa.com" style="color:var(--brand-teal);text-decoration:none;">hello@tideventurecpa.com</a></div>
+        </div>
+      </div>
+    </div>
 
-    async function encryptFile(file) {
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const key = await deriveFileKey(bytesToHex(salt));
-      const fileData = await file.arrayBuffer();
-      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, fileData);
-      // Package: salt (16) + iv (12) + ciphertext
-      const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
-      combined.set(salt, 0);
-      combined.set(iv, salt.length);
-      combined.set(new Uint8Array(encrypted), salt.length + iv.length);
-      return new Blob([combined], { type: 'application/octet-stream' });
-    }
+    <div class="dash-card dash-card--full">
+      <div class="dash-card__header">
+        <h3>Documents</h3>
+        <span id="docCount" style="font-size:0.75rem;color:var(--text-muted);">0 files</span>
+      </div>
+      <div class="doc-upload-area" id="docUploadArea">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-bottom:0.25rem;"><path d="M10 14V6m0 0l-3 3m3-3l3 3" stroke="var(--brand-teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="16" height="7" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.5"/></svg>
+        <p>Drop a file here or click to upload (PDF, JPEG, PNG — max 20MB)</p>
+        <input type="file" id="docFileInput" />
+      </div>
+      <div class="doc-upload-progress" id="docUploadProgress"><span>Uploading…</span></div>
+      <div class="doc-error" id="docError"></div>
+      <ul class="doc-list" id="docList"><li class="doc-empty" id="docEmpty">No documents yet. Upload your first file above.</li></ul>
+    </div>
+  </div>
+  <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
+</div>
 
-    async function decryptFile(blob) {
-      const data = await blob.arrayBuffer();
-      const bytes = new Uint8Array(data);
-      const salt = bytes.slice(0, 16);
-      const iv = bytes.slice(16, 28);
-      const ciphertext = bytes.slice(28);
-      const key = await deriveFileKey(bytesToHex(salt));
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-      return decrypted;
-    }
+<script>
+const pageData = window.__PAGE_DATA__;
+if (pageData) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  document.getElementById('dashGreeting').textContent = `Welcome back, ${pageData.email.split('@')[0]}`;
+  initDocManager(pageData);
+}
 
-    function hexToBytes(hex) {
-      const bytes = new Uint8Array(hex.length / 2);
-      for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-      return bytes;
-    }
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  if (res.ok) { window.location.reload(); } else { err.style.display = 'block'; }
+});
 
-    function bytesToHex(bytes) {
-      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.reload();
+});
 
-    const uploadArea  = document.getElementById('docUploadArea');
-    const fileInput   = document.getElementById('docFileInput');
-    const docList     = document.getElementById('docList');
-    const docEmpty    = document.getElementById('docEmpty');
-    const docError    = document.getElementById('docError');
-    const docProgress = document.getElementById('docUploadProgress');
-    const docCount    = document.getElementById('docCount');
+// ── Document Manager ──
+function initDocManager(data) {
+  const keyMaterial = data.keyMaterial;
+  const isAdmin = data.role === 'admin';
 
-    uploadArea.addEventListener('click', () => fileInput.click());
+  function hexToBytes(h) { const b = new Uint8Array(h.length / 2); for (let i = 0; i < h.length; i += 2) b[i / 2] = parseInt(h.substr(i, 2), 16); return b; }
+  function bytesToHex(b) { return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
 
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.classList.add('dragover');
-    });
+  async function deriveKey(salt) {
+    const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
 
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.classList.remove('dragover');
-    });
+  async function encryptFile(file) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(bytesToHex(salt));
+    const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, await file.arrayBuffer());
+    const out = new Uint8Array(salt.length + iv.length + enc.byteLength);
+    out.set(salt, 0); out.set(iv, salt.length); out.set(new Uint8Array(enc), salt.length + iv.length);
+    return new Blob([out], { type: 'application/octet-stream' });
+  }
 
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove('dragover');
-      if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
-    });
+  async function decryptFile(blob) {
+    const d = new Uint8Array(await blob.arrayBuffer());
+    const key = await deriveKey(bytesToHex(d.slice(0, 16)));
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16, 28) }, key, d.slice(28));
+  }
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) uploadFile(fileInput.files[0]);
-    });
+  const uploadArea = document.getElementById('docUploadArea');
+  const fileInput = document.getElementById('docFileInput');
+  const docList = document.getElementById('docList');
+  const docEmpty = document.getElementById('docEmpty');
+  const docError = document.getElementById('docError');
+  const docProgress = document.getElementById('docUploadProgress');
+  const docCount = document.getElementById('docCount');
 
-    async function uploadFile(file) {
-      if (file.size > 20 * 1024 * 1024) {
-        showDocError('File too large. Maximum size is 20MB.');
-        return;
-      }
-      if (!keyMaterial) {
-        showDocError('Encryption key not loaded. Try refreshing.');
-        return;
-      }
+  uploadArea.addEventListener('click', () => fileInput.click());
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); });
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) uploadFile(fileInput.files[0]); });
 
-      docProgress.classList.add('active');
-      docError.style.display = 'none';
+  async function uploadFile(file) {
+    if (file.size > 20 * 1024 * 1024) { showError('File too large.'); return; }
+    docProgress.classList.add('active'); docError.style.display = 'none';
+    try {
+      const encrypted = await encryptFile(file);
+      const fd = new FormData();
+      fd.append('file', encrypted, file.name + '.enc');
+      const res = await fetch('/api/documents/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error();
+      fileInput.value = '';
+      loadDocs();
+    } catch (e) { showError('Upload failed.'); } finally { docProgress.classList.remove('active'); }
+  }
 
-      try {
-        const encryptedBlob = await encryptFile(file);
-        const formData = new FormData();
-        formData.append('file', encryptedBlob, file.name + '.enc');
-        formData.append('originalName', file.name);
-        const res = await fetch('/api/documents/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload failed');
-        fileInput.value = '';
-        await loadDocuments();
-      } catch (err) {
-        showDocError('Upload failed. Please try again.');
-        console.error(err);
-      } finally {
-        docProgress.classList.remove('active');
-      }
-    }
+  async function loadDocs() {
+    try {
+      const res = await fetch('/api/documents');
+      if (!res.ok) throw new Error();
+      render((await res.json()).documents);
+    } catch (e) { showError('Could not load documents.'); }
+  }
 
-    async function loadDocuments() {
-      try {
-        const res = await fetch('/api/documents');
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        renderDocuments(data.documents);
-      } catch (err) {
-        showDocError('Could not load documents. Try refreshing.');
-      }
-    }
-
-    function renderDocuments(docs) {
-      docList.innerHTML = '';
-      docCount.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
-      if (docs.length === 0) {
-        docList.appendChild(docEmpty);
-        return;
-      }
-      docs.forEach(d => {
-        const li = document.createElement('li');
-        const date = new Date(d.uploaded).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const displayName = d.name.endsWith('.enc') ? d.name.slice(0, -4) : d.name;
-        li.innerHTML = `
-          <svg width="12" height="14" viewBox="0 0 12 14" fill="none" style="flex-shrink:0;"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
-          <span class="doc-name">${escHtml(displayName)}</span>
-          <span class="doc-date">${date}</span>
-          <a href="#" class="doc-dl" data-id="${escHtml(d.id)}" data-name="${escHtml(d.name)}">Download</a>
-        `;
-        li.querySelector('.doc-dl').addEventListener('click', async (e) => {
-          e.preventDefault();
-          await downloadAndDecrypt(e.target.dataset.id, e.target.dataset.name);
-        });
-        docList.appendChild(li);
+  function render(docs) {
+    docList.innerHTML = ''; docCount.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
+    if (!docs.length) { docList.appendChild(docEmpty); return; }
+    docs.forEach(d => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="doc-dl">Download</a>`;
+      li.querySelector('.doc-dl').addEventListener('click', async () => {
+        try {
+          const res = await fetch(`/api/documents/${d.id}`);
+          if (!res.ok) throw new Error();
+          const blob = await res.blob();
+          let decrypted;
+          if (isAdmin) { decrypted = await blob.arrayBuffer(); } else { decrypted = await decryptFile(blob); }
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([decrypted])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
+        } catch (e) { showError('Download failed.'); }
       });
-    }
+      docList.appendChild(li);
+    });
+  }
 
-    async function downloadAndDecrypt(docId, encName) {
-      if (!keyMaterial) {
-        showDocError('Encryption key not loaded.');
-        return;
-      }
-      try {
-        const res = await fetch(`/api/documents/${docId}`);
-        if (!res.ok) throw new Error('Download failed');
-        const encryptedBlob = await res.blob();
-        const decrypted = await decryptFile(encryptedBlob);
-        const originalName = encName.endsWith('.enc') ? encName.slice(0, -4) : encName;
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([decrypted]));
-        a.download = originalName;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      } catch (err) {
-        showDocError('Download failed. The file may be corrupted.');
-        console.error(err);
-      }
-    }
+  function showError(m) { docError.textContent = m; docError.style.display = 'block'; }
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    function showDocError(msg) {
-      docError.textContent = msg;
-      docError.style.display = 'block';
-    }
-
-    function escHtml(s) {
-      const d = document.createElement('div');
-      d.textContent = s;
-      return d.innerHTML;
-    }
-  </script>
-
+  loadDocs();
+}
+</script>
 </body>
 </html>

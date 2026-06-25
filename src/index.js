@@ -1,8 +1,9 @@
-import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
-const TEAM_DOMAIN = 'https://tideventure.cloudflareaccess.com';
-const CERTS_URL = `${TEAM_DOMAIN}/cdn-cgi/access/certs`;
-const JWKS = createRemoteJWKSet(new URL(CERTS_URL));
+const USERS = {
+  'admin@tideventurecpa.com': 'admin123',
+  'isaac@tideventure.com': 'test123',
+};
 
 export default {
   async fetch(request, env) {
@@ -10,20 +11,12 @@ export default {
     const method = request.method;
 
     async function getAuthUser() {
-      let token = request.headers.get('cf-access-jwt-assertion');
-      // Fallback: read CF_Authorization cookie (for API calls from SPA)
-      if (!token) {
-        const cookie = request.headers.get('cookie') || '';
-        const match = cookie.match(/(?:^|;\s*)CF_Authorization=([^;]+)/);
-        if (match) token = match[1];
-      }
-      if (!token) return null;
+      const cookie = request.headers.get('cookie') || '';
+      const match = cookie.match(/(?:^|;\s*)tv_session=([^;]+)/);
+      if (!match) return null;
       try {
-        const { payload } = await jwtVerify(token, JWKS, {
-          issuer: TEAM_DOMAIN,
-          audience: env.AUD_TAG,
-        });
-        return payload.email || null;
+        const { payload } = await jwtVerify(match[1], new TextEncoder().encode(env.DOC_ENC_KEY));
+        return payload;
       } catch {
         return null;
       }
@@ -33,14 +26,54 @@ export default {
       return email && email.endsWith('@tideventurecpa.com');
     }
 
-    const email = await getAuthUser();
-    if (!email) return json(401, { error: 'Unauthorized' });
+    // ── Login endpoint ──
+    if (url.pathname === '/api/login' && method === 'POST') {
+      const { email, password } = await request.json();
+      if (USERS[email] && USERS[email] === password) {
+        const token = await new SignJWT({ email, role: isAdmin(email) ? 'admin' : 'client' })
+          .setProtectedHeader({ alg: 'HS256' })
+          .setExpirationTime('24h')
+          .sign(new TextEncoder().encode(env.DOC_ENC_KEY));
+        return new Response(JSON.stringify({ token, email }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': `tv_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`,
+          },
+        });
+      }
+      return json(401, { error: 'Invalid credentials' });
+    }
+
+    // ── Check session ──
+    if (url.pathname === '/api/session' && method === 'GET') {
+      const user = await getAuthUser();
+      if (!user) return json(401, { error: 'Not authenticated' });
+      return json(200, { email: user.email, role: user.role });
+    }
+
+    // ── Logout ──
+    if (url.pathname === '/api/logout' && method === 'POST') {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Set-Cookie': 'tv_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        },
+      });
+    }
+
+    // ── Protected API routes ──
+    const user = await getAuthUser();
+    const email = user?.email;
 
     if (url.pathname === '/api/documents' && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
       return handleListDocuments(env, email, isAdmin(email));
     }
 
     if (url.pathname === '/api/documents/upload' && method === 'POST') {
+      if (!email) return json(401, { error: 'Unauthorized' });
       return handleUploadDocument(request, env, email);
     }
 
@@ -49,12 +82,9 @@ export default {
       return handleAuditLog(env);
     }
 
-    if (url.pathname === '/api/key-material' && method === 'GET') {
-      return handleKeyMaterial(env, email);
-    }
-
     const docMatch = url.pathname.match(/^\/api\/documents\/([^\/]+)$/);
     if (docMatch) {
+      if (!email) return json(401, { error: 'Unauthorized' });
       const docId = docMatch[1];
       if (method === 'GET') {
         return handleDownloadDocument(env, docId, email, isAdmin(email));
@@ -64,14 +94,14 @@ export default {
       }
     }
 
-    // ── Serve static assets (with key material injection for portal pages) ──
+    // ── Inject user data + key material into portal/admin pages ──
     if (url.pathname === '/portal.html' || url.pathname === '/admin.html') {
       const response = await env.ASSETS.fetch(request);
       if (!email) return response;
-
       const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
       const html = await response.text();
-      const injected = html.replace('</head>', `<script>window.__KEY_MATERIAL__='${keyMaterial}';window.__USER_EMAIL__='${email}';</script></head>`);
+      const data = { email, role: isAdmin(email) ? 'admin' : 'client', keyMaterial };
+      const injected = html.replace('</head>', `<script>window.__PAGE_DATA__=${JSON.stringify(data)};</script></head>`);
       return new Response(injected, {
         headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'no-store' },
       });
@@ -95,21 +125,8 @@ function json(status, data) {
 async function logAudit(env, action, email, detail) {
   const key = `audit/${Date.now()}-${crypto.randomUUID()}`;
   await env.tideventure_documents.put(key, JSON.stringify({
-    action,
-    email,
-    detail,
-    timestamp: new Date().toISOString(),
+    action, email, detail, timestamp: new Date().toISOString(),
   }), { httpMetadata: { contentType: 'application/json' } });
-}
-
-async function listAllDocs(env) {
-  const objects = [];
-  for await (const obj of env.tideventure_documents.list()) {
-    if (!obj.key.startsWith('audit/')) {
-      objects.push(obj);
-    }
-  }
-  return objects;
 }
 
 async function handleListDocuments(env, email, admin) {
@@ -135,21 +152,13 @@ async function handleUploadDocument(request, env, email) {
   const formData = await request.formData();
   const file = formData.get('file');
   if (!file) return json(400, { error: 'No file provided' });
-
   const id = crypto.randomUUID();
   const key = `${email}/${id}`;
-
   await env.tideventure_documents.put(key, file.stream(), {
     httpMetadata: { contentType: file.type },
-    customMetadata: {
-      originalName: file.name,
-      uploadedBy: email,
-      uploadedAt: new Date().toISOString(),
-    },
+    customMetadata: { originalName: file.name, uploadedBy: email, uploadedAt: new Date().toISOString() },
   });
-
   await logAudit(env, 'UPLOAD', email, `${file.name} (${file.size} bytes)`);
-
   return json(201, { id, key, name: file.name });
 }
 
@@ -157,29 +166,20 @@ async function handleDownloadDocument(env, docId, email, admin) {
   let found = null;
   for await (const obj of env.tideventure_documents.list()) {
     if (obj.key.startsWith('audit/')) continue;
-    if (obj.key.endsWith(`/${docId}`)) {
-      found = obj;
-      break;
-    }
+    if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
   }
   if (!found) return json(404, { error: 'Document not found' });
-
   const uploader = found.customMetadata?.uploadedBy;
-  if (!admin && uploader !== email) {
-    return json(403, { error: 'Forbidden' });
-  }
-
+  if (!admin && uploader !== email) return json(403, { error: 'Forbidden' });
   const object = await env.tideventure_documents.get(found.key);
   if (!object) return json(404, { error: 'Document not found' });
-
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
 
-  // Admin downloads: decrypt server-side and serve plaintext
+  // Admin: decrypt server-side. Client: serve encrypted blob for browser decryption.
   if (admin) {
-    const ciphertext = await object.arrayBuffer();
     try {
-      const plaintext = await decryptWithKey(env.DOC_ENC_KEY, uploader || email, ciphertext);
+      const plaintext = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader || email, await object.arrayBuffer());
       const headers = {
         'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${origName}"`,
@@ -187,20 +187,13 @@ async function handleDownloadDocument(env, docId, email, admin) {
       };
       return new Response(plaintext, { headers });
     } catch {
-      // If decryption fails, serve raw
-      const headers = {
-        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-        'Content-Disposition': `inline; filename="${origName}"`,
-        'Cache-Control': 'private, max-age=3600',
-      };
-      return new Response(object.body, { headers });
+      // Fall through to serve raw
     }
   }
 
-  // Regular user download: serve encrypted blob for client-side decryption
   const headers = {
     'Content-Type': 'application/octet-stream',
-    'Content-Disposition': `inline; filename="${origName}.enc"`,
+    'Content-Disposition': `attachment; filename="${origName}"`,
     'Cache-Control': 'private, max-age=3600',
   };
   return new Response(object.body, { headers });
@@ -208,22 +201,15 @@ async function handleDownloadDocument(env, docId, email, admin) {
 
 async function handleDeleteDocument(env, docId, email, admin) {
   if (!admin) return json(403, { error: 'Admin access required' });
-
   let found = null;
   for await (const obj of env.tideventure_documents.list()) {
     if (obj.key.startsWith('audit/')) continue;
-    if (obj.key.endsWith(`/${docId}`)) {
-      found = obj;
-      break;
-    }
+    if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
   }
   if (!found) return json(404, { error: 'Document not found' });
-
   const name = found.customMetadata?.originalName || docId;
   await env.tideventure_documents.delete(found.key);
-
   await logAudit(env, 'DELETE', email, name);
-
   return json(200, { success: true });
 }
 
@@ -234,22 +220,14 @@ async function handleAuditLog(env) {
     const data = await env.tideventure_documents.get(obj.key);
     if (data) {
       const body = await data.text();
-      try {
-        entries.push(JSON.parse(body));
-      } catch {}
+      try { entries.push(JSON.parse(body)); } catch {}
     }
   }
   entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   return json(200, { audit: entries.slice(0, 200) });
 }
 
-// ── Client-side encryption key material ──
-async function handleKeyMaterial(env, email) {
-  const raw = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
-  return json(200, { keyMaterial: raw });
-}
-
-// ── Encryption helpers (used server-side for admin downloads) ──
+// ── Encryption helpers (paired with browser-side Web Crypto) ──
 async function deriveKeyMaterial(secret, userEmail) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -257,24 +235,18 @@ async function deriveKeyMaterial(secret, userEmail) {
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function decryptWithKey(secret, userEmail, ciphertext) {
-  const enc = new TextEncoder();
-  const keyMaterialHex = await deriveKeyMaterial(secret, userEmail);
-  const keyMaterial = hexToBytes(keyMaterialHex);
+async function decryptWithWorkerKey(secret, uploaderEmail, ciphertext) {
+  const kmHex = await deriveKeyMaterial(secret, uploaderEmail);
+  const km = hexToBytes(kmHex);
   const bytes = new Uint8Array(ciphertext);
   const salt = bytes.slice(0, 16);
   const iv = bytes.slice(16, 28);
   const encrypted = bytes.slice(28);
-
-  const baseKey = await crypto.subtle.importKey('raw', keyMaterial, 'PBKDF2', false, ['deriveKey']);
+  const baseKey = await crypto.subtle.importKey('raw', km, 'PBKDF2', false, ['deriveKey']);
   const aesKey = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
-    baseKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt']
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
   );
-
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, encrypted);
 }
 

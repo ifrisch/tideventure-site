@@ -15,15 +15,12 @@
   ],
   "workers_dev": true,
   "routes": [
-    { "pattern": "portal.tideventurecpa.com", "zone_name": "tideventurecpa.com" }
+    { "pattern": "portal.tideventurecpa.com/*", "zone_name": "tideventurecpa.com" }
   ],
   "r2_buckets": [
     {
       "bucket_name": "tideventure-documents",
       "binding": "tideventure_documents"
     }
-  ],
-  "vars": {
-    "AUD_TAG": "22560be882961894c66fa682554aa6540eec94dca892d570c4d00739e3036445"
-  }
+  ]
 }
