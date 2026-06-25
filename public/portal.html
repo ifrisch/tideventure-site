@@ -372,6 +372,67 @@
   </div>
 
   <script>
+    let keyMaterial = null;
+
+    (async function init() {
+      try {
+        const res = await fetch('/api/key-material');
+        if (!res.ok) throw new Error('Auth failed');
+        const data = await res.json();
+        keyMaterial = data.keyMaterial;
+      } catch (err) {
+        showDocError('Authentication failed. Try refreshing.');
+        return;
+      }
+      loadDocuments();
+    })();
+
+    async function deriveFileKey(salt) {
+      const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' },
+        base,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptFile(file) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveFileKey(bytesToHex(salt));
+      const fileData = await file.arrayBuffer();
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, fileData);
+      // Package: salt (16) + iv (12) + ciphertext
+      const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+      combined.set(salt, 0);
+      combined.set(iv, salt.length);
+      combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+      return new Blob([combined], { type: 'application/octet-stream' });
+    }
+
+    async function decryptFile(blob) {
+      const data = await blob.arrayBuffer();
+      const bytes = new Uint8Array(data);
+      const salt = bytes.slice(0, 16);
+      const iv = bytes.slice(16, 28);
+      const ciphertext = bytes.slice(28);
+      const key = await deriveFileKey(bytesToHex(salt));
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+      return decrypted;
+    }
+
+    function hexToBytes(hex) {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+      return bytes;
+    }
+
+    function bytesToHex(bytes) {
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     const uploadArea  = document.getElementById('docUploadArea');
     const fileInput   = document.getElementById('docFileInput');
     const docList     = document.getElementById('docList');
@@ -379,8 +440,6 @@
     const docError    = document.getElementById('docError');
     const docProgress = document.getElementById('docUploadProgress');
     const docCount    = document.getElementById('docCount');
-
-    loadDocuments();
 
     uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -408,17 +467,26 @@
         showDocError('File too large. Maximum size is 20MB.');
         return;
       }
+      if (!keyMaterial) {
+        showDocError('Encryption key not loaded. Try refreshing.');
+        return;
+      }
+
       docProgress.classList.add('active');
       docError.style.display = 'none';
-      const formData = new FormData();
-      formData.append('file', file);
+
       try {
+        const encryptedBlob = await encryptFile(file);
+        const formData = new FormData();
+        formData.append('file', encryptedBlob, file.name + '.enc');
+        formData.append('originalName', file.name);
         const res = await fetch('/api/documents/upload', { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Upload failed');
         fileInput.value = '';
         await loadDocuments();
       } catch (err) {
         showDocError('Upload failed. Please try again.');
+        console.error(err);
       } finally {
         docProgress.classList.remove('active');
       }
@@ -445,14 +513,41 @@
       docs.forEach(d => {
         const li = document.createElement('li');
         const date = new Date(d.uploaded).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const displayName = d.name.endsWith('.enc') ? d.name.slice(0, -4) : d.name;
         li.innerHTML = `
           <svg width="12" height="14" viewBox="0 0 12 14" fill="none" style="flex-shrink:0;"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
-          <span class="doc-name">${escHtml(d.name)}</span>
+          <span class="doc-name">${escHtml(displayName)}</span>
           <span class="doc-date">${date}</span>
-          <a href="/api/documents/${escHtml(d.id)}" target="_blank" class="doc-dl">Download</a>
+          <a href="#" class="doc-dl" data-id="${escHtml(d.id)}" data-name="${escHtml(d.name)}">Download</a>
         `;
+        li.querySelector('.doc-dl').addEventListener('click', async (e) => {
+          e.preventDefault();
+          await downloadAndDecrypt(e.target.dataset.id, e.target.dataset.name);
+        });
         docList.appendChild(li);
       });
+    }
+
+    async function downloadAndDecrypt(docId, encName) {
+      if (!keyMaterial) {
+        showDocError('Encryption key not loaded.');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/documents/${docId}`);
+        if (!res.ok) throw new Error('Download failed');
+        const encryptedBlob = await res.blob();
+        const decrypted = await decryptFile(encryptedBlob);
+        const originalName = encName.endsWith('.enc') ? encName.slice(0, -4) : encName;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([decrypted]));
+        a.download = originalName;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        showDocError('Download failed. The file may be corrupted.');
+        console.error(err);
+      }
     }
 
     function showDocError(msg) {

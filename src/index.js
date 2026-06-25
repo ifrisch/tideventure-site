@@ -43,6 +43,10 @@ export default {
       return handleAuditLog(env);
     }
 
+    if (url.pathname === '/api/key-material' && method === 'GET') {
+      return handleKeyMaterial(env, email);
+    }
+
     const docMatch = url.pathname.match(/^\/api\/documents\/([^\/]+)$/);
     if (docMatch) {
       const docId = docMatch[1];
@@ -195,4 +199,15 @@ async function handleAuditLog(env) {
   }
   entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   return json(200, { audit: entries.slice(0, 200) });
+}
+
+// ── Client-side encryption key material ──
+async function handleKeyMaterial(env, email) {
+  const enc = new TextEncoder();
+  const keyData = enc.encode(env.DOC_ENC_KEY);
+  const msgData = enc.encode(email);
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, msgData);
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return json(200, { keyMaterial: hex });
 }
