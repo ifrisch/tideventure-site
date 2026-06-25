@@ -15,7 +15,9 @@
   ],
   "workers_dev": true,
   "routes": [
-    { "pattern": "portal.tideventurecpa.com/*", "zone_name": "tideventurecpa.com" }
+    { "pattern": "portal.tideventurecpa.com/*", "zone_name": "tideventurecpa.com" },
+    { "pattern": "tideventurecpa.com/portal*", "zone_name": "tideventurecpa.com" },
+    { "pattern": "tideventurecpa.com/admin*", "zone_name": "tideventurecpa.com" }
   ],
   "r2_buckets": [
     {
