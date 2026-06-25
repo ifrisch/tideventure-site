@@ -10,7 +10,13 @@ export default {
     const method = request.method;
 
     async function getAuthUser() {
-      const token = request.headers.get('cf-access-jwt-assertion');
+      let token = request.headers.get('cf-access-jwt-assertion');
+      // Fallback: read CF_Authorization cookie (for API calls from SPA)
+      if (!token) {
+        const cookie = request.headers.get('cookie') || '';
+        const match = cookie.match(/(?:^|;\s*)CF_Authorization=([^;]+)/);
+        if (match) token = match[1];
+      }
       if (!token) return null;
       try {
         const { payload } = await jwtVerify(token, JWKS, {
