@@ -154,6 +154,7 @@
             <div class="service-option__body">
               <h3>Business Tax Return</h3>
               <p>Annual federal &amp; state business tax filing — all entity types</p>
+              <p class="service-option__hint" id="taxRequiredHint">Business Tax Returns must be selected with Quarterly Planning &amp; Estimated Payments</p>
             </div>
           </label>
 
@@ -164,7 +165,7 @@
             <div class="service-option__body">
               <h3>Quarterly Planning &amp; Estimated Payments</h3>
               <p>Proactive quarterly tax planning and estimated payment calculation</p>
-              <p class="service-option__hint">Commonly chosen with Business Tax Returns</p>
+              <p class="service-option__hint">Selecting this will also select Business Tax Returns</p>
             </div>
           </label>
 
@@ -460,19 +461,6 @@
       });
     }
 
-    function updateQuarterlySuggestionHint() {
-      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
-      if (!quarterlyOption) return;
-      const hint = quarterlyOption.querySelector('.service-option__hint');
-      if (!hint) return;
-
-      if (selectedServices.has('tax') && !selectedServices.has('quarterly')) {
-        hint.classList.add('service-option__hint--visible');
-      } else {
-        hint.classList.remove('service-option__hint--visible');
-      }
-    }
-
     // --- Navigation helpers ---
     function handleStep2Next() {
       if (selectedServices.has('other')) {
@@ -553,6 +541,13 @@
     document.querySelectorAll('.service-option').forEach(option => {
       function toggleService() {
         const svc = option.dataset.service;
+
+        // Prevent deselecting Tax if Quarterly is still selected
+        if (svc === 'tax' && selectedServices.has('tax') && selectedServices.has('quarterly')) {
+          document.getElementById('taxRequiredHint').classList.add('service-option__hint--visible');
+          return;
+        }
+
         if (selectedServices.has(svc)) {
           selectedServices.delete(svc);
           option.classList.remove('selected');
@@ -561,19 +556,43 @@
           selectedServices.add(svc);
           option.classList.add('selected');
           option.setAttribute('aria-checked', 'true');
+
+          // Auto-select Tax when Quarterly is chosen
+          if (svc === 'quarterly' && !selectedServices.has('tax')) {
+            selectedServices.add('tax');
+            document.querySelector('.service-option[data-service="tax"]').classList.add('selected');
+            document.querySelector('.service-option[data-service="tax"]').setAttribute('aria-checked', 'true');
+          }
         }
 
         normalizeServiceOptionStyles();
-        updateQuarterlySuggestionHint();
+        updateServiceHints();
         document.getElementById('step2Next').disabled = (selectedServices.size === 0);
       }
       option.addEventListener('click', toggleService);
       option.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleService(); } });
     });
 
+    function updateServiceHints() {
+      // Quarterly hint
+      const quarterlyOption = document.querySelector('.service-option[data-service="quarterly"]');
+      if (quarterlyOption) {
+        const hint = quarterlyOption.querySelector('.service-option__hint');
+        if (hint) {
+          hint.classList.toggle('service-option__hint--visible', selectedServices.has('quarterly'));
+        }
+      }
+
+      // Tax required hint (shown when Quarterly is selected without Tax)
+      const taxHint = document.getElementById('taxRequiredHint');
+      if (taxHint) {
+        taxHint.classList.toggle('service-option__hint--visible', selectedServices.has('quarterly') && !selectedServices.has('tax'));
+      }
+    }
+
     // Ensure stale inline styles from previous deployed scripts never persist.
     normalizeServiceOptionStyles();
-    updateQuarterlySuggestionHint();
+    updateServiceHints();
 
     // --- Step 3: revenue radios ---
     document.querySelectorAll('.revenue-option').forEach(option => {
@@ -687,17 +706,6 @@
               <div class="result-line__period">${details}</div>
             </div>
             <div class="result-line__price">Custom</div>
-          </div>`;
-      }
-
-      if (memberCount > 1 && (selectedEntity === 'scorp' || selectedEntity === 'ccorp' || selectedEntity === 'partnership' || selectedEntity === 'mmllc')) {
-        breakdown.innerHTML += `
-          <div class="result-line">
-            <div>
-              <div class="result-line__label">Member/Partner Count</div>
-              <div class="result-line__period">${memberCount} members × ${memberMult.toFixed(2)} multiplier</div>
-            </div>
-            <div class="result-line__price">Included above</div>
           </div>`;
       }
 
