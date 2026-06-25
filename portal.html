@@ -10,28 +10,193 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ─── Dashboard layout ─── */
+    .dash {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dash-header__left h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 0.15rem;
+    }
+
+    .dash-header__left p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .dash-header__right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .dash-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #2d7a40;
+      background: #e6f4ea;
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+    }
+
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .dash-card {
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      border: 1px solid var(--border);
+    }
+
+    .dash-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .dash-card__header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .dash-card__header a {
+      font-size: 0.78rem;
+      color: var(--brand-teal);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .dash-card__header a:hover {
+      text-decoration: underline;
+    }
+
+    .dash-card p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 0 0 0.5rem;
+      line-height: 1.5;
+    }
+
+    .dash-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .dash-card ul li {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--sand);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dash-card ul li:last-child {
+      border-bottom: none;
+    }
+
+    .dash-card ul li .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot--green { background: #2d7a40; }
+    .status-dot--yellow { background: #e5a100; }
+    .status-dot--gray { background: #bbb; }
+
+    .dash-card ul li .file-link {
+      color: var(--brand-teal);
+      text-decoration: none;
+      margin-left: auto;
+      font-weight: 600;
+      font-size: 0.78rem;
+    }
+
+    .dash-card ul li .file-link:hover {
+      text-decoration: underline;
+    }
+
+    .dash-card--full {
+      grid-column: 1 / -1;
+    }
+
+    .dash-logout {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+
+    .dash-logout:hover {
+      color: #c00;
+      border-color: #c00;
+    }
+
+    .dash-footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── Error message ─── */
+    .portal-error {
+      font-size: 0.8rem;
+      color: #c00;
+      text-align: center;
+      margin-top: -0.5rem;
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .dash-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body class="portal-page">
 
-  <!--
-    AUTHENTICATION NOTE:
-    This is a static login UI. To add real authentication, choose one of:
-
-    Option A — Cloudflare Access (recommended for Cloudflare Pages):
-      Protect this page behind a Cloudflare Access policy in your Cloudflare dashboard.
-      Cloudflare handles all auth; no code changes needed.
-      https://developers.cloudflare.com/cloudflare-one/policies/access/
-
-    Option B — Third-party auth service (Clerk, Auth0, Firebase Auth):
-      Replace the form below with the provider's drop-in component/SDK.
-      These services manage sessions, passwords, and SSO securely.
-
-    Most clients use QuickBooks Online directly — this portal is
-    a future-facing hub and can be expanded to link out to QBO,
-    document storage, and communication tools as needs grow.
-  -->
-
-  <!-- NAV (minimal) -->
+  <!-- NAV -->
   <nav class="nav">
     <div class="container nav__inner">
       <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
@@ -52,11 +217,10 @@
     </div>
   </nav>
 
-  <!-- PORTAL BODY -->
-  <div class="portal-body">
+  <!-- ─── LOGIN VIEW ─── -->
+  <div class="portal-body" id="loginView">
     <div class="portal-card">
 
-      <!-- Logo mark -->
       <div class="portal-card__logo">
         <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
@@ -71,73 +235,221 @@
       <h1 class="portal-card__title">Client Portal</h1>
       <p class="portal-card__sub">Sign in to access your documents and financial dashboard.</p>
 
-      <!-- Secure badge -->
       <div class="portal-secure-badge">
         <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="1" y="4.5" width="8" height="7" rx="1.5" stroke="#2d7a40" stroke-width="1.3"/><path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" stroke="#2d7a40" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Secure Connection
+        Secure Connection — Test Portal
       </div>
 
-      <!-- Login form -->
-      <form class="portal-form" id="portalForm" onsubmit="handleLogin(event)" novalidate>
+      <form class="portal-form" id="portalForm" novalidate>
         <div class="form-group">
           <label for="portalEmail">Email Address</label>
-          <input
-            type="email"
-            id="portalEmail"
-            name="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            required
-          />
+          <input type="email" id="portalEmail" name="email" placeholder="you@example.com" autocomplete="email" required />
         </div>
         <div class="form-group">
           <label for="portalPassword">Password</label>
-          <input
-            type="password"
-            id="portalPassword"
-            name="password"
-            placeholder="••••••••"
-            autocomplete="current-password"
-            required
-          />
+          <input type="password" id="portalPassword" name="password" placeholder="••••••••" autocomplete="current-password" required />
         </div>
-        <a href="#" class="portal-forgot" onclick="return false;">Forgot your password?</a>
+        <div class="portal-error" id="loginError">Invalid email or password. Try again.</div>
         <button type="submit" class="portal-submit">Sign In</button>
       </form>
 
-      <!-- SSO divider -->
-      <div class="portal-divider"><span>or continue with</span></div>
+      <div class="portal-divider"><span>test credentials</span></div>
 
-      <!-- Google SSO (placeholder — wire up with your auth provider) -->
-      <button class="portal-sso" type="button" onclick="alert('Google sign-in will be available once authentication is configured. See HTML comment for setup options.')">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17.64 9.2c0-.637-.057-1.25-.164-1.84H9v3.48h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.585 14.016 17.64 11.82 17.64 9.2z" fill="#4285F4"/>
-          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-        </svg>
-        Sign in with Google
-      </button>
+      <div style="text-align:center;font-size:0.78rem;color:var(--text-muted);line-height:1.6;padding:0.25rem 0 0.75rem;">
+        <strong>Email:</strong> isaac@tideventure.com<br/>
+        <strong>Password:</strong> test123
+      </div>
 
-      <!-- Footer -->
       <div class="portal-card__footer">
         <p>
           Need access? <a href="contact.html">Contact us</a> to set up your account.<br/>
-          <small>Your connection to this portal is encrypted. We never store passwords in plain text. This portal is intended for TideVenture CPA clients only.</small>
+          <small>Your connection to this portal is encrypted. This is a test portal for demonstration purposes.</small>
         </p>
       </div>
 
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+  <!-- ─── DASHBOARD VIEW ─── -->
+  <div class="dash" id="dashView" style="display:none;">
+
+    <div class="dash-header">
+      <div class="dash-header__left">
+        <h1>Welcome back, Isaac</h1>
+        <p>S-Corp · Tax ID: XX-XXXXXXX · Last login: today</p>
+      </div>
+      <div class="dash-header__right">
+        <span class="dash-badge">
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="4.5" fill="#2d7a40"/></svg>
+          Client since 2025
+        </span>
+        <button class="dash-logout" id="logoutBtn">Sign Out</button>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+
+      <!-- Quick Actions -->
+      <div class="dash-card">
+        <div class="dash-card__header">
+          <h3>Quick Actions</h3>
+        </div>
+        <ul>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 6h6M4 8.5h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Upload a document
+            <a href="#" class="file-link" onclick="alert('Document upload coming soon.');return false;">Upload</a>
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4.5h10M2 7h10M2 9.5h10" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/><rect x="1" y="1.5" width="12" height="11" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
+            Send a message
+            <a href="#" class="file-link" onclick="alert('Messaging coming soon.');return false;">Compose</a>
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="var(--brand-teal)" stroke-width="1.3"/><path d="M4 4h6M4 7h6M4 10h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
+            QuickBooks Online
+            <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tax Return Status -->
+      <div class="dash-card">
+        <div class="dash-card__header">
+          <h3>Tax Return Status</h3>
+          <span style="font-size:0.75rem;font-weight:600;color:#e5a100;">In Progress</span>
+        </div>
+        <ul>
+          <li>
+            <span class="status-dot status-dot--green"></span>
+            2025 Estimated Payments — Filed
+          </li>
+          <li>
+            <span class="status-dot status-dot--yellow"></span>
+            2024 Business Return — In review
+          </li>
+          <li>
+            <span class="status-dot status-dot--gray"></span>
+            2024 Personal Return — Not started
+          </li>
+        </ul>
+      </div>
+
+      <!-- Upcoming Dates -->
+      <div class="dash-card">
+        <div class="dash-card__header">
+          <h3>Upcoming Dates</h3>
+        </div>
+        <ul>
+          <li>
+            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Jun 15, 2026</strong>
+            2nd Quarter Estimated Payment due
+          </li>
+          <li>
+            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Sep 15, 2026</strong>
+            3rd Quarter Estimated Payment due
+          </li>
+          <li>
+            <strong style="color:var(--ink);min-width:5.5rem;display:inline-block;">Oct 15, 2026</strong>
+            Extension deadline (if filed)
+          </li>
+        </ul>
+      </div>
+
+      <!-- Documents -->
+      <div class="dash-card">
+        <div class="dash-card__header">
+          <h3>Shared Documents</h3>
+          <a href="#" onclick="alert('Full document library coming soon.');return false;">View all</a>
+        </div>
+        <ul>
+          <li>
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
+            Engagement Letter 2026
+            <a href="#" class="file-link" onclick="alert('Document viewer coming soon.');return false;">View</a>
+          </li>
+          <li>
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
+            Tax Organizer 2025
+            <a href="#" class="file-link" onclick="alert('Document viewer coming soon.');return false;">View</a>
+          </li>
+          <li>
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1v4h4" stroke="var(--brand-teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 1h6l4 4v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="var(--brand-teal)" stroke-width="1.3"/></svg>
+            2024 Tax Return (Draft)
+            <a href="#" class="file-link" onclick="alert('Document viewer coming soon.');return false;">View</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Contact / Firm Info -->
+      <div class="dash-card dash-card--full">
+        <div class="dash-card__header">
+          <h3>Your CPA Team</h3>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;">
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">IF</div>
+            <div>
+              <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">Isaac Frisch</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);">Founder &amp; CPA</div>
+            </div>
+          </div>
+          <div style="font-size:0.82rem;color:var(--text-muted);">
+            <a href="mailto:isaac@tideventure.com" style="color:var(--brand-teal);text-decoration:none;">isaac@tideventure.com</a>
+            &nbsp;·&nbsp; (555) 123-4567
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dash-footer">
+      TideVenture CPA &mdash; Test Portal &mdash; Not for client use
+    </div>
+  </div>
+
   <script>
-    function handleLogin(e) {
+    const VALID_EMAIL  = 'isaac@tideventure.com';
+    const VALID_PASS   = 'test123';
+
+    const loginView = document.getElementById('loginView');
+    const dashView  = document.getElementById('dashView');
+    const form      = document.getElementById('portalForm');
+    const emailIn   = document.getElementById('portalEmail');
+    const passIn    = document.getElementById('portalPassword');
+    const errorEl   = document.getElementById('loginError');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Check for existing session
+    if (sessionStorage.getItem('tv_portal_auth') === 'true') {
+      showDashboard();
+    }
+
+    form.addEventListener('submit', function (e) {
       e.preventDefault();
-      // Placeholder — replace with real auth once Cloudflare Access or
-      // a third-party auth provider (Clerk, Auth0) is configured.
-      alert('Authentication is not yet configured.\n\nTo set up real login, see the HTML comment at the top of portal.html for implementation options.');
+      errorEl.style.display = 'none';
+
+      if (emailIn.value.toLowerCase() === VALID_EMAIL && passIn.value === VALID_PASS) {
+        sessionStorage.setItem('tv_portal_auth', 'true');
+        showDashboard();
+      } else {
+        errorEl.style.display = 'block';
+      }
+    });
+
+    logoutBtn.addEventListener('click', function () {
+      sessionStorage.removeItem('tv_portal_auth');
+      loginView.style.display = '';
+      dashView.style.display  = 'none';
+      form.reset();
+      errorEl.style.display = 'none';
+    });
+
+    function showDashboard() {
+      loginView.style.display = 'none';
+      dashView.style.display  = 'block';
     }
   </script>
+
 </body>
 </html>
