@@ -274,7 +274,7 @@ function initDocManager(data) {
     if (!docs.length) { docList.appendChild(docEmpty); return; }
     docs.forEach(d => {
       const li = document.createElement('li');
-      li.innerHTML = `<span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="doc-dl">Download</a>`;
+      li.innerHTML = `<span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="doc-dl" style="margin-left:0.5rem;">Download</a><span style="color:var(--border);margin:0 0.25rem;">|</span><a class="doc-del" style="color:#c00;cursor:pointer;font-size:0.78rem;font-weight:600;">Delete</a>`;
       li.querySelector('.doc-dl').addEventListener('click', async () => {
         try {
           const res = await authFetch(`/api/documents/${d.id}`);
@@ -285,6 +285,14 @@ function initDocManager(data) {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([decrypted])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
         } catch (e) { showError('Download failed.'); }
+      });
+      li.querySelector('.doc-del').addEventListener('click', async () => {
+        if (!confirm(`Delete "${d.name}"?`)) return;
+        try {
+          const res = await authFetch(`/api/documents/${d.id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error();
+          loadDocs();
+        } catch (e) { showError('Delete failed.'); }
       });
       docList.appendChild(li);
     });

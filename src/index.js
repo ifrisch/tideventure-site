@@ -96,7 +96,7 @@ export default {
 
     if (url.pathname === '/api/audit' && method === 'GET') {
       if (!isAdmin(email)) return json(403, { error: 'Admin access required' });
-      return handleAuditLog(env);
+      try { return await handleAuditLog(env); } catch (e) { return json(500, { error: e.message }); }
     }
 
     const docMatch = url.pathname.match(/^\/api\/documents\/([^\/]+)$/);
@@ -104,10 +104,10 @@ export default {
       if (!email) return json(401, { error: 'Unauthorized' });
       const docId = docMatch[1];
       if (method === 'GET') {
-        return handleDownloadDocument(env, docId, email, isAdmin(email));
+        try { return await handleDownloadDocument(env, docId, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'DELETE') {
-        return handleDeleteDocument(env, docId, email, isAdmin(email));
+        try { return await handleDeleteDocument(env, docId, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }
       }
     }
 
@@ -149,7 +149,7 @@ async function logAudit(env, action, email, detail) {
 
 async function handleListDocuments(env, email, admin) {
   const objects = [];
-  const result = await env.tideventure_documents.list();
+  const result = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
   for (const obj of result.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (admin || obj.customMetadata?.uploadedBy === email) {
@@ -182,7 +182,8 @@ async function handleUploadDocument(request, env, email) {
 }
 
 async function handleDownloadDocument(env, docId, email, admin) {
-  const result = await env.tideventure_documents.list();
+  let found = null;
+  const result = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
   for (const obj of result.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
@@ -210,14 +211,16 @@ async function handleDownloadDocument(env, docId, email, admin) {
 }
 
 async function handleDeleteDocument(env, docId, email, admin) {
-  if (!admin) return json(403, { error: 'Admin access required' });
   let found = null;
-  const listResult = await env.tideventure_documents.list();
+  const listResult = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
   for (const obj of listResult.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
   }
   if (!found) return json(404, { error: 'Document not found' });
+  // Allow admin or the document owner to delete
+  const uploader = found.customMetadata?.uploadedBy;
+  if (!admin && uploader !== email) return json(403, { error: 'Forbidden' });
   const name = found.customMetadata?.originalName || docId;
   await env.tideventure_documents.delete(found.key);
   await logAudit(env, 'DELETE', email, name);
@@ -226,7 +229,7 @@ async function handleDeleteDocument(env, docId, email, admin) {
 
 async function handleAuditLog(env) {
   const entries = [];
-  const listResult = await env.tideventure_documents.list();
+  const listResult = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
   for (const obj of listResult.objects) {
     if (!obj.key.startsWith('audit/')) continue;
     const data = await env.tideventure_documents.get(obj.key);
