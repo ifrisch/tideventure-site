@@ -82,7 +82,11 @@ export default {
 
     if (url.pathname === '/api/documents' && method === 'GET') {
       if (!email) return json(401, { error: 'Unauthorized' });
-      return handleListDocuments(env, email, isAdmin(email));
+      try {
+        return await handleListDocuments(env, email, isAdmin(email));
+      } catch (e) {
+        return json(500, { error: e.message });
+      }
     }
 
     if (url.pathname === '/api/documents/upload' && method === 'POST') {
@@ -145,7 +149,8 @@ async function logAudit(env, action, email, detail) {
 
 async function handleListDocuments(env, email, admin) {
   const objects = [];
-  for await (const obj of env.tideventure_documents.list()) {
+  const result = await env.tideventure_documents.list();
+  for (const obj of result.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (admin || obj.customMetadata?.uploadedBy === email) {
       objects.push({
@@ -177,46 +182,38 @@ async function handleUploadDocument(request, env, email) {
 }
 
 async function handleDownloadDocument(env, docId, email, admin) {
-  let found = null;
-  for await (const obj of env.tideventure_documents.list()) {
+  const result = await env.tideventure_documents.list();
+  for (const obj of result.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
   }
   if (!found) return json(404, { error: 'Document not found' });
+
   const uploader = found.customMetadata?.uploadedBy;
   if (!admin && uploader !== email) return json(403, { error: 'Forbidden' });
   const object = await env.tideventure_documents.get(found.key);
   if (!object) return json(404, { error: 'Document not found' });
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
-
-  // Admin: decrypt server-side. Client: serve encrypted blob for browser decryption.
+  // Try to decrypt admin downloads, fall back to raw
   if (admin) {
     try {
       const plaintext = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader || email, await object.arrayBuffer());
-      const headers = {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${origName}"`,
-        'Cache-Control': 'private, max-age=3600',
-      };
-      return new Response(plaintext, { headers });
-    } catch {
-      // Fall through to serve raw
-    }
+      return new Response(plaintext, {
+        headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
+      });
+    } catch { /* fall through to serve raw */ }
   }
-
-  const headers = {
-    'Content-Type': 'application/octet-stream',
-    'Content-Disposition': `attachment; filename="${origName}"`,
-    'Cache-Control': 'private, max-age=3600',
-  };
-  return new Response(object.body, { headers });
+  return new Response(object.body, {
+    headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
+  });
 }
 
 async function handleDeleteDocument(env, docId, email, admin) {
   if (!admin) return json(403, { error: 'Admin access required' });
   let found = null;
-  for await (const obj of env.tideventure_documents.list()) {
+  const listResult = await env.tideventure_documents.list();
+  for (const obj of listResult.objects) {
     if (obj.key.startsWith('audit/')) continue;
     if (obj.key.endsWith(`/${docId}`)) { found = obj; break; }
   }
@@ -229,7 +226,8 @@ async function handleDeleteDocument(env, docId, email, admin) {
 
 async function handleAuditLog(env) {
   const entries = [];
-  for await (const obj of env.tideventure_documents.list()) {
+  const listResult = await env.tideventure_documents.list();
+  for (const obj of listResult.objects) {
     if (!obj.key.startsWith('audit/')) continue;
     const data = await env.tideventure_documents.get(obj.key);
     if (data) {
