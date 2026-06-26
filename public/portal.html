@@ -10,71 +10,69 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    body { background: var(--sand); }
+    * { box-sizing: border-box; }
+    body { background: #f5f7fa; font-family: 'Inter', system-ui, sans-serif; }
     .portal-body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .portal-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
-    .portal-card h1 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
-    .portal-card p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
+    .portal-card { background: #fff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
+    .portal-card h1 { font-size: 1.25rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
+    .portal-card p { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.5rem; }
     .portal-card .form-group { margin-bottom: 1rem; }
-    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
-    .portal-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--ink); background: var(--white); outline: none; box-sizing: border-box; }
-    .portal-card .form-group input:focus { border-color: var(--brand-teal); }
-    .portal-card .btn--primary { width: 100%; }
-    .portal-error { font-size: 0.78rem; color: #c00; text-align: center; display: none; margin-bottom: 0.75rem; }
+    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+    .portal-card .form-group input { width: 100%; padding: 0.65rem 0.8rem; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; color: #111; background: #fff; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .portal-card .form-group input:focus { border-color: #1a7fa0; box-shadow: 0 0 0 3px rgba(26,127,160,0.12); }
+    .portal-card .btn--primary { width: 100%; padding: 0.7rem !important; border-radius: 10px !important; font-size: 0.9rem !important; }
+    .portal-error { font-size: 0.78rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
 
-    .dash { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
-    .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
-    .dash-header__left h1 { font-size: 1.4rem; font-weight: 700; color: var(--ink); margin: 0 0 0.15rem; }
-    .dash-header__left p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+    .dash { max-width: 1040px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .dash-header__left h1 { font-size: 1.5rem; font-weight: 700; color: #0d3f5e; margin: 0; }
+    .dash-header__left p { font-size: 0.85rem; color: #6b7280; margin: 0.15rem 0 0; }
     .dash-header__right { display: flex; align-items: center; gap: 0.75rem; }
-    .dash-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-    }
-    .dash-card { background: var(--white); border-radius: var(--radius-sm); padding: 1.25rem 1.5rem; border: 1px solid var(--border); }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+    .dash-card { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03); padding: 1.25rem 1.5rem; transition: box-shadow 0.2s; }
+    .dash-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04); }
     .dash-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-    .dash-card__header h3 { font-size: 0.9rem; font-weight: 600; color: var(--ink); margin: 0; }
+    .dash-card__header h3 { font-size: 0.82rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; margin: 0; }
     .dash-card ul { list-style: none; padding: 0; margin: 0; }
-    .dash-card ul li { font-size: 0.82rem; color: var(--text-muted); padding: 0.4rem 0; border-bottom: 1px solid var(--sand); display: flex; align-items: center; gap: 0.5rem; }
+    .dash-card ul li { font-size: 0.85rem; color: #374151; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
     .dash-card ul li:last-child { border-bottom: none; }
-    .dash-card ul li .file-link { color: var(--brand-teal); text-decoration: none; margin-left: auto; font-weight: 600; font-size: 0.78rem; }
-    .dash-card ul li .file-link:hover { text-decoration: underline; }
+    .dash-card ul li .file-link { color: #1a7fa0; text-decoration: none; margin-left: auto; font-weight: 600; font-size: 0.8rem; transition: color 0.15s; }
+    .dash-card ul li .file-link:hover { color: #0d3f5e; text-decoration: underline; }
     .dash-card--full { grid-column: 1 / -1; }
-    .dash-footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
-    .dash-logout { font-size: 0.8rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-    .dash-logout:hover { color: #c00; border-color: #c00; }
+    .dash-footer { text-align: center; font-size: 0.75rem; color: #9ca3af; padding: 2rem 0 1rem; border-top: 1px solid #e5e7eb; margin-top: 1rem; }
+    .dash-logout { font-size: 0.8rem; color: #6b7280; background: none; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .dash-logout:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
 
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .status-dot--green { background: #2d7a40; }
-    .status-dot--yellow { background: #e5a100; }
-    .status-dot--gray { background: #bbb; }
-    .deadline-date { font-weight: 600; color: var(--ink); min-width: 5.5rem; display: inline-block; font-size: 0.82rem; }
-    .activity-item { font-size: 0.78rem; padding: 0.35rem 0; border-bottom: 1px solid var(--sand); display: flex; align-items: center; gap: 0.5rem; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot--green { background: #10b981; }
+    .status-dot--yellow { background: #f59e0b; }
+    .status-dot--gray { background: #d1d5db; }
+    .deadline-date { font-weight: 600; color: #0d3f5e; min-width: 5.5rem; display: inline-block; font-size: 0.82rem; }
+    .activity-item { font-size: 0.8rem; padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
     .activity-item:last-child { border-bottom: none; }
-    .activity-action { font-weight: 700; font-size: 0.7rem; min-width: 4.5rem; }
-    .activity-action.UPLOAD { color: #2d7a40; }
-    .activity-action.DOWNLOAD { color: #1a5a8c; }
-    .activity-action.DELETE { color: #c00; }
-    .activity-time { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+    .activity-action { font-weight: 700; font-size: 0.68rem; min-width: 4.5rem; padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .activity-action.UPLOAD { color: #059669; background: #ecfdf5; }
+    .activity-action.DOWNLOAD { color: #2563eb; background: #eff6ff; }
+    .activity-action.DELETE { color: #dc2626; background: #fef2f2; }
+    .activity-time { font-size: 0.7rem; color: #9ca3af; margin-left: auto; white-space: nowrap; }
 
-    .doc-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem; }
-    .doc-upload-area:hover, .doc-upload-area.dragover { border-color: var(--brand-teal); background: var(--brand-pale); }
-    .doc-upload-area p { font-size: 0.82rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+    .doc-upload-area { border: 2px dashed #e5e7eb; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 1rem; }
+    .doc-upload-area:hover, .doc-upload-area.dragover { border-color: #1a7fa0; background: #f0f9ff; }
+    .doc-upload-area p { font-size: 0.82rem; color: #6b7280; margin: 0.25rem 0 0; }
     .doc-upload-area input[type="file"] { display: none; }
-    .doc-upload-progress { display: none; font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0.5rem; }
+    .doc-upload-progress { display: none; font-size: 0.8rem; color: #6b7280; text-align: center; padding: 0.5rem; }
     .doc-upload-progress.active { display: block; }
     .doc-list { list-style: none; padding: 0; margin: 0; }
-    .doc-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--sand); font-size: 0.82rem; color: var(--text-muted); }
+    .doc-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; color: #374151; }
     .doc-list li:last-child { border-bottom: none; }
-    .doc-list li .doc-name { flex: 1; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .doc-list li .doc-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
-    .doc-list li .doc-dl { color: var(--brand-teal); text-decoration: none; font-weight: 600; font-size: 0.78rem; white-space: nowrap; cursor: pointer; }
-    .doc-list li .doc-dl:hover { text-decoration: underline; }
-    .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.82rem; color: var(--text-muted); }
-    .doc-error { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #c00; display: none; }
-    @media (max-width:640px) { .dash-grid { grid-template-columns: 1fr; } }
+    .doc-list li .doc-name { flex: 1; color: #111; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-list li .doc-date { font-size: 0.75rem; color: #9ca3af; white-space: nowrap; }
+    .doc-list li .doc-dl { color: #1a7fa0; text-decoration: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: color 0.15s; }
+    .doc-list li .doc-dl:hover { color: #0d3f5e; }
+    .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.82rem; color: #9ca3af; }
+    .doc-error { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #dc2626; display: none; }
+    .doc-color-accent { color: #1a7fa0; }
+    @media (max-width:768px) { .dash-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -255,13 +253,14 @@ function renderDeadlines(deadlines) {
   const el = document.getElementById('deadlineList');
   el.innerHTML = '';
   if (!deadlines || !deadlines.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No upcoming deadlines.</li>'; return; }
-  deadlines.forEach(d => {
-    const date = new Date(d.date + 'T00:00:00');
-    const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="deadline-date">${formatted}</span> ${esc(d.label)}`;
-    el.appendChild(li);
-  });
+    deadlines.forEach(d => {
+      const date = new Date(d.date + 'T00:00:00');
+      const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const li = document.createElement('li');
+      li.style.cssText = 'background:#f0f9ff;border-radius:8px;margin-bottom:0.25rem;padding:0.6rem 0.65rem;border:none;';
+      li.innerHTML = `<span style="font-weight:700;color:#0d3f5e;font-size:0.9rem;min-width:auto;display:block;line-height:1.3;">${formatted}</span><span style="font-size:0.78rem;color:#374151;">${esc(d.label)}</span>`;
+      el.appendChild(li);
+    });
 }
 
 function renderActivity(activities) {

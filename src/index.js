@@ -179,12 +179,23 @@ const TAX_STATUSES = [
   { year: 2024, label: '2023 Business Return', status: 'filed' },
 ];
 
-const DEADLINES = [
-  { date: '2026-09-15', label: '3rd Quarter Estimated Payment due' },
-  { date: '2027-01-15', label: '4th Quarter Estimated Payment due' },
-  { date: '2027-03-15', label: 'S-Corp deadline (extension)' },
-  { date: '2027-04-15', label: 'Individual tax deadline' },
+const ESTIMATED_PAYMENT_DATES = [
+  { month: 4, day: 15, label: '1st Quarter Estimated Payment' },
+  { month: 6, day: 15, label: '2nd Quarter Estimated Payment' },
+  { month: 9, day: 15, label: '3rd Quarter Estimated Payment' },
+  { month: 1, day: 15, label: '4th Quarter Estimated Payment (prior year)' },
 ];
+
+function getNextEstimatedPayment() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  for (const ep of ESTIMATED_PAYMENT_DATES) {
+    const year = ep.month >= 4 ? currentYear : currentYear + 1;
+    const due = new Date(year, ep.month - 1, ep.day);
+    if (due > now) return { date: due.toISOString().slice(0, 10), label: ep.label + ' due' };
+  }
+  return null;
+}
 
 async function handleDashboard(env, email) {
   // Recent activity from audit log
@@ -207,7 +218,7 @@ async function handleDashboard(env, email) {
 
   return json(200, {
     taxStatuses: TAX_STATUSES,
-    deadlines: DEADLINES,
+    deadlines: getNextEstimatedPayment() ? [getNextEstimatedPayment()] : [],
     recentActivity: activities.slice(0, 10),
   });
 }
