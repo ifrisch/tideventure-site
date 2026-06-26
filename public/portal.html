@@ -77,17 +77,18 @@
     <h1>Client Portal</h1>
     <p>Sign in to access your documents.</p>
     <div class="portal-error" id="loginError">Invalid email or password.</div>
-    <form id="loginForm">
+    <form id="loginForm" action="/api/login" method="POST">
       <div class="form-group">
         <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" required />
+        <input type="email" id="loginEmail" name="email" required />
       </div>
       <div class="form-group">
         <label for="loginPass">Password</label>
-        <input type="password" id="loginPass" required />
+        <input type="password" id="loginPass" name="password" required />
       </div>
       <button type="submit" class="btn btn--primary">Sign In</button>
     </form>
+    <div class="portal-error" id="loginError" style="margin-top:0.75rem;">Invalid email or password.</div>
   </div>
 </div>
 
@@ -142,12 +143,22 @@
 </div>
 
 <script>
-const pageData = window.__PAGE_DATA__;
-if (pageData) {
-  document.getElementById('loginView').style.display = 'none';
-  document.getElementById('dashView').style.display = 'block';
-  document.getElementById('dashGreeting').textContent = `Welcome back, ${pageData.email.split('@')[0]}`;
-  initDocManager(pageData);
+const authToken = sessionStorage.getItem('tv_portal_token');
+
+if (authToken) {
+  // Already logged in — load dashboard
+  fetch('/api/session', { headers: { 'Authorization': `Bearer ${authToken}` } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.email) {
+        showDashboard(data);
+      } else {
+        sessionStorage.removeItem('tv_portal_token');
+      }
+    })
+    .catch(() => {});
+} else {
+  // Show login form with JS handler
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -156,19 +167,47 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const password = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.style.display = 'none';
-  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-  if (res.ok) { window.location.reload(); } else { err.style.display = 'block'; }
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      sessionStorage.setItem('tv_portal_token', data.token);
+      showDashboard(data);
+    } else {
+      err.style.display = 'block';
+    }
+  } catch {
+    err.textContent = 'Network error.';
+    err.style.display = 'block';
+  }
 });
 
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await fetch('/api/logout', { method: 'POST' });
-  window.location.reload();
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('tv_portal_token');
+  window.location.href = '/portal';
 });
+
+function showDashboard(data) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  document.getElementById('dashGreeting').textContent = `Welcome back, ${data.email.split('@')[0]}`;
+  initDocManager(data);
+}
 
 // ── Document Manager ──
 function initDocManager(data) {
   const keyMaterial = data.keyMaterial;
   const isAdmin = data.role === 'admin';
+
+  const token = sessionStorage.getItem('tv_portal_token');
+  function authFetch(url, opts = {}) {
+    opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` };
+    return fetch(url, opts);
+  }
 
   function hexToBytes(h) { const b = new Uint8Array(h.length / 2); for (let i = 0; i < h.length; i += 2) b[i / 2] = parseInt(h.substr(i, 2), 16); return b; }
   function bytesToHex(b) { return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
@@ -215,7 +254,7 @@ function initDocManager(data) {
       const encrypted = await encryptFile(file);
       const fd = new FormData();
       fd.append('file', encrypted, file.name + '.enc');
-      const res = await fetch('/api/documents/upload', { method: 'POST', body: fd });
+      const res = await authFetch('/api/documents/upload', { method: 'POST', body: fd });
       if (!res.ok) throw new Error();
       fileInput.value = '';
       loadDocs();
@@ -224,7 +263,7 @@ function initDocManager(data) {
 
   async function loadDocs() {
     try {
-      const res = await fetch('/api/documents');
+      const res = await authFetch('/api/documents');
       if (!res.ok) throw new Error();
       render((await res.json()).documents);
     } catch (e) { showError('Could not load documents.'); }
@@ -238,7 +277,7 @@ function initDocManager(data) {
       li.innerHTML = `<span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="doc-dl">Download</a>`;
       li.querySelector('.doc-dl').addEventListener('click', async () => {
         try {
-          const res = await fetch(`/api/documents/${d.id}`);
+          const res = await authFetch(`/api/documents/${d.id}`);
           if (!res.ok) throw new Error();
           const blob = await res.blob();
           let decrypted;

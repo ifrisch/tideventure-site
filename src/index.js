@@ -11,11 +11,20 @@ export default {
     const method = request.method;
 
     async function getAuthUser() {
-      const cookie = request.headers.get('cookie') || '';
-      const match = cookie.match(/(?:^|;\s*)tv_session=([^;]+)/);
-      if (!match) return null;
+      let token = null;
+      // Try Authorization header first (used by JS-based clients)
+      const auth = request.headers.get('authorization') || '';
+      const match = auth.match(/^Bearer\s+(.+)$/i);
+      if (match) token = match[1];
+      // Fallback to cookie
+      if (!token) {
+        const cookie = request.headers.get('cookie') || '';
+        const cmatch = cookie.match(/(?:^|;\s*)tv_session=([^;]+)/);
+        if (cmatch) token = cmatch[1];
+      }
+      if (!token) return null;
       try {
-        const { payload } = await jwtVerify(match[1], new TextEncoder().encode(env.DOC_ENC_KEY));
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(env.DOC_ENC_KEY));
         return payload;
       } catch {
         return null;
@@ -28,19 +37,22 @@ export default {
 
     // ── Login endpoint ──
     if (url.pathname === '/api/login' && method === 'POST') {
-      const { email, password } = await request.json();
+      let email, password;
+      const ct = request.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        ({ email, password } = await request.json());
+      } else {
+        const fd = await request.formData();
+        email = fd.get('email');
+        password = fd.get('password');
+      }
       if (USERS[email] && USERS[email] === password) {
         const token = await new SignJWT({ email, role: isAdmin(email) ? 'admin' : 'client' })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('24h')
           .sign(new TextEncoder().encode(env.DOC_ENC_KEY));
-        return new Response(JSON.stringify({ token, email }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Set-Cookie': `tv_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`,
-          },
-        });
+        const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
+        return json(200, { token, keyMaterial, email, role: isAdmin(email) ? 'admin' : 'client' });
       }
       return json(401, { error: 'Invalid credentials' });
     }
@@ -49,7 +61,8 @@ export default {
     if (url.pathname === '/api/session' && method === 'GET') {
       const user = await getAuthUser();
       if (!user) return json(401, { error: 'Not authenticated' });
-      return json(200, { email: user.email, role: user.role });
+      const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, user.email);
+      return json(200, { email: user.email, role: user.role, keyMaterial });
     }
 
     // ── Logout ──
@@ -95,7 +108,8 @@ export default {
     }
 
     // ── Inject user data + key material into portal/admin pages ──
-    if (url.pathname === '/portal.html' || url.pathname === '/admin.html') {
+    const path = url.pathname.replace(/\.html$/, '');
+    if (path === '/portal' || path === '/admin' || url.pathname === '/portal.html' || url.pathname === '/admin.html') {
       const response = await env.ASSETS.fetch(request);
       if (!email) return response;
       const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
