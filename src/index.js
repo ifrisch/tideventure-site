@@ -89,6 +89,11 @@ export default {
       }
     }
 
+    if (url.pathname === '/api/dashboard' && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try { return await handleDashboard(env, email); } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/documents/upload' && method === 'POST') {
       if (!email) return json(401, { error: 'Unauthorized' });
       return handleUploadDocument(request, env, email);
@@ -165,6 +170,46 @@ async function handleListDocuments(env, email, admin) {
   }
   objects.sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
   return json(200, { documents: objects });
+}
+
+// ── Dashboard data for clients ──
+const TAX_STATUSES = [
+  { year: 2026, label: '2025 Business Return', status: 'in_review' },
+  { year: 2025, label: '2024 Business Return', status: 'filed' },
+  { year: 2024, label: '2023 Business Return', status: 'filed' },
+];
+
+const DEADLINES = [
+  { date: '2026-09-15', label: '3rd Quarter Estimated Payment due' },
+  { date: '2027-01-15', label: '4th Quarter Estimated Payment due' },
+  { date: '2027-03-15', label: 'S-Corp deadline (extension)' },
+  { date: '2027-04-15', label: 'Individual tax deadline' },
+];
+
+async function handleDashboard(env, email) {
+  // Recent activity from audit log
+  const activities = [];
+  const listResult = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
+  for (const obj of listResult.objects) {
+    if (!obj.key.startsWith('audit/')) continue;
+    const data = await env.tideventure_documents.get(obj.key);
+    if (data) {
+      const body = await data.text();
+      try {
+        const entry = JSON.parse(body);
+        if (entry.email === email || entry.email?.endsWith('@tideventurecpa.com')) {
+          activities.push(entry);
+        }
+      } catch {}
+    }
+  }
+  activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  return json(200, {
+    taxStatuses: TAX_STATUSES,
+    deadlines: DEADLINES,
+    recentActivity: activities.slice(0, 10),
+  });
 }
 
 async function handleUploadDocument(request, env, email) {

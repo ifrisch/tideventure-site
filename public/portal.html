@@ -27,7 +27,12 @@
     .dash-header__left h1 { font-size: 1.4rem; font-weight: 700; color: var(--ink); margin: 0 0 0.15rem; }
     .dash-header__left p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
     .dash-header__right { display: flex; align-items: center; gap: 0.75rem; }
-    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
     .dash-card { background: var(--white); border-radius: var(--radius-sm); padding: 1.25rem 1.5rem; border: 1px solid var(--border); }
     .dash-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
     .dash-card__header h3 { font-size: 0.9rem; font-weight: 600; color: var(--ink); margin: 0; }
@@ -40,6 +45,19 @@
     .dash-footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
     .dash-logout { font-size: 0.8rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
     .dash-logout:hover { color: #c00; border-color: #c00; }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot--green { background: #2d7a40; }
+    .status-dot--yellow { background: #e5a100; }
+    .status-dot--gray { background: #bbb; }
+    .deadline-date { font-weight: 600; color: var(--ink); min-width: 5.5rem; display: inline-block; font-size: 0.82rem; }
+    .activity-item { font-size: 0.78rem; padding: 0.35rem 0; border-bottom: 1px solid var(--sand); display: flex; align-items: center; gap: 0.5rem; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-action { font-weight: 700; font-size: 0.7rem; min-width: 4.5rem; }
+    .activity-action.UPLOAD { color: #2d7a40; }
+    .activity-action.DOWNLOAD { color: #1a5a8c; }
+    .activity-action.DELETE { color: #c00; }
+    .activity-time { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
 
     .doc-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem; }
     .doc-upload-area:hover, .doc-upload-area.dragover { border-color: var(--brand-teal); background: var(--brand-pale); }
@@ -106,21 +124,30 @@
 
   <div class="dash-grid">
     <div class="dash-card">
+      <div class="dash-card__header"><h3>Tax Return Status</h3></div>
+      <ul id="taxStatusList">
+        <li style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</li>
+      </ul>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-card__header"><h3>Upcoming Deadlines</h3></div>
+      <ul id="deadlineList">
+        <li style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</li>
+      </ul>
+    </div>
+
+    <div class="dash-card">
       <div class="dash-card__header"><h3>Quick Actions</h3></div>
       <ul>
-        <li>Upload a document <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">Use area below</span></li>
         <li>QuickBooks Online <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a></li>
       </ul>
     </div>
 
     <div class="dash-card">
-      <div class="dash-card__header"><h3>Your CPA Team</h3></div>
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--brand-teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem;">TV</div>
-        <div>
-          <div style="font-size:0.85rem;font-weight:600;color:var(--ink);">TideVenture CPA</div>
-          <div style="font-size:0.78rem;color:var(--text-muted);"><a href="mailto:hello@tideventurecpa.com" style="color:var(--brand-teal);text-decoration:none;">hello@tideventurecpa.com</a></div>
-        </div>
+      <div class="dash-card__header"><h3>Recent Activity</h3></div>
+      <div id="activityList">
+        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
       </div>
     </div>
 
@@ -196,6 +223,58 @@ function showDashboard(data) {
   document.getElementById('dashView').style.display = 'block';
   document.getElementById('dashGreeting').textContent = `Welcome back, ${data.email.split('@')[0]}`;
   initDocManager(data);
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  try {
+    const res = await fetch('/api/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderTaxStatuses(data.taxStatuses);
+    renderDeadlines(data.deadlines);
+    renderActivity(data.recentActivity);
+  } catch (e) { /* silently fail - cards stay as "Loading…" */ }
+}
+
+function renderTaxStatuses(statuses) {
+  const el = document.getElementById('taxStatusList');
+  el.innerHTML = '';
+  if (!statuses || !statuses.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No returns yet.</li>'; return; }
+  statuses.forEach(s => {
+    const dotClass = s.status === 'filed' ? 'green' : s.status === 'in_review' ? 'yellow' : 'gray';
+    const label = s.status === 'filed' ? 'Filed' : s.status === 'in_review' ? 'In Review' : 'Not Started';
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="status-dot status-dot--${dotClass}"></span> ${esc(s.label)}<span style="margin-left:auto;font-size:0.72rem;font-weight:600;color:var(--text-muted);">${label}</span>`;
+    el.appendChild(li);
+  });
+}
+
+function renderDeadlines(deadlines) {
+  const el = document.getElementById('deadlineList');
+  el.innerHTML = '';
+  if (!deadlines || !deadlines.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No upcoming deadlines.</li>'; return; }
+  deadlines.forEach(d => {
+    const date = new Date(d.date + 'T00:00:00');
+    const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="deadline-date">${formatted}</span> ${esc(d.label)}`;
+    el.appendChild(li);
+  });
+}
+
+function renderActivity(activities) {
+  const el = document.getElementById('activityList');
+  el.innerHTML = '';
+  if (!activities || !activities.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">No recent activity.</div>'; return; }
+  activities.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'activity-item';
+    const time = new Date(a.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    div.innerHTML = `<span class="activity-action ${a.action}">${a.action}</span><span>${esc(a.detail)}</span><span class="activity-time">${time}</span>`;
+    el.appendChild(div);
+  });
 }
 
 // ── Document Manager ──
