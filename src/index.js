@@ -94,6 +94,16 @@ export default {
       try { return await handleDashboard(env, email); } catch (e) { return json(500, { error: e.message }); }
     }
 
+    if (url.pathname === '/api/profile' && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try { return await handleGetProfile(env, email); } catch (e) { return json(500, { error: e.message }); }
+    }
+
+    if (url.pathname === '/api/profile' && method === 'PUT') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try { return await handleUpdateProfile(request, env, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/documents/upload' && method === 'POST') {
       if (!email) return json(401, { error: 'Unauthorized' });
       return handleUploadDocument(request, env, email);
@@ -198,6 +208,14 @@ function getNextEstimatedPayment() {
 }
 
 async function handleDashboard(env, email) {
+  // Load client profile for state
+  let clientState = null;
+  const profileKey = `profile/${email}`;
+  const profileObj = await env.tideventure_documents.get(profileKey);
+  if (profileObj) {
+    try { const p = JSON.parse(await profileObj.text()); clientState = p.state; } catch {}
+  }
+
   // Recent activity from audit log
   const activities = [];
   const listResult = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
@@ -216,11 +234,83 @@ async function handleDashboard(env, email) {
   }
   activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+  const stateDeadline = getStateDeadline(clientState);
+
   return json(200, {
     taxStatuses: TAX_STATUSES,
     deadlines: getNextEstimatedPayment() ? [getNextEstimatedPayment()] : [],
+    stateDeadline: stateDeadline ? [stateDeadline] : [],
     recentActivity: activities.slice(0, 10),
+    profile: { state: clientState },
   });
+}
+
+// ── State estimated payment deadlines ──
+const STATE_DEADLINES = {
+  // Follows federal (4/15, 6/15, 9/15, 1/15)
+  AL: 'federal', AR: 'federal', AZ: 'federal', CA: 'federal',
+  CO: 'federal', CT: 'federal', DC: 'federal', DE: 'federal', GA: 'federal',
+  HI: 'federal', IA: 'federal', ID: 'federal', IL: 'federal', IN: 'federal',
+  KS: 'federal', KY: 'federal', LA: 'federal', MA: 'federal', MD: 'federal',
+  ME: 'federal', MI: 'federal', MN: 'federal', MO: 'federal', MS: 'federal',
+  MT: 'federal', NC: 'federal', ND: 'federal', NE: 'federal',
+  NJ: 'federal', NM: 'federal', NY: 'federal', OH: 'federal', OK: 'federal',
+  OR: 'federal', PA: 'federal', RI: 'federal', SC: 'federal', UT: 'federal',
+  VA: 'federal', VT: 'federal', WI: 'federal', WV: 'federal',
+  // No state income tax
+  AK: 'none', FL: 'none', NV: 'none', SD: 'none', TN: 'none', TX: 'none',
+  WA: 'none', WY: 'none', NH: 'none',
+};
+
+const STATE_NAMES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi',
+  MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire',
+  NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina',
+  ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
+  RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee',
+  TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
+  WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming', DC: 'District of Columbia',
+};
+
+function getStateDeadline(state) {
+  if (!state || !STATE_DEADLINES[state]) return null;
+  const rule = STATE_DEADLINES[state];
+  if (rule === 'none') return { label: `${STATE_NAMES[state]} has no state income tax`, noTax: true };
+  if (rule === 'federal') {
+    const fed = getNextEstimatedPayment();
+    if (!fed) return null;
+    return { ...fed, label: `${STATE_NAMES[state]} Estimated Payment — ` + fed.label };
+  }
+  return null;
+}
+
+// ── Client profile ──
+async function handleGetProfile(env, email) {
+  const key = `profile/${email}`;
+  const obj = await env.tideventure_documents.get(key);
+  if (!obj) return json(200, { state: null, businessName: email.split('@')[0], ein: '' });
+  const body = await obj.text();
+  try { return json(200, JSON.parse(body)); } catch { return json(200, { state: null }); }
+}
+
+async function handleUpdateProfile(request, env, email, admin) {
+  const data = await request.json();
+  const targetEmail = (admin && data.email) ? data.email : email;
+  const key = `profile/${targetEmail}`;
+  // Only admin can change state for now
+  if (data.state && !admin) return json(403, { error: 'Admin access required' });
+  const existing = await env.tideventure_documents.get(key);
+  let profile = {};
+  if (existing) { try { profile = JSON.parse(await existing.text()); } catch {} }
+  Object.assign(profile, data);
+  await env.tideventure_documents.put(key, JSON.stringify(profile), {
+    httpMetadata: { contentType: 'application/json' },
+  });
+  return json(200, profile);
 }
 
 async function handleUploadDocument(request, env, email) {

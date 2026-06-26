@@ -133,6 +133,7 @@
       <ul id="deadlineList">
         <li style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</li>
       </ul>
+      <div id="stateDeadlineEl" style="margin-top:0.5rem;"></div>
     </div>
 
     <div class="dash-card">
@@ -216,6 +217,8 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = '/portal';
 });
 
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
 function showDashboard(data) {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('dashView').style.display = 'block';
@@ -232,8 +235,9 @@ async function loadDashboard() {
     const data = await res.json();
     renderTaxStatuses(data.taxStatuses);
     renderDeadlines(data.deadlines);
+    renderStateDeadline(data.stateDeadline, data.profile?.state);
     renderActivity(data.recentActivity);
-  } catch (e) { /* silently fail - cards stay as "Loading…" */ }
+  } catch (e) { console.error('Dashboard load failed:', e); }
 }
 
 function renderTaxStatuses(statuses) {
@@ -253,7 +257,7 @@ function renderDeadlines(deadlines) {
   const el = document.getElementById('deadlineList');
   el.innerHTML = '';
   if (!deadlines || !deadlines.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No upcoming deadlines.</li>'; return; }
-    deadlines.forEach(d => {
+  deadlines.forEach(d => {
       const date = new Date(d.date + 'T00:00:00');
       const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const li = document.createElement('li');
@@ -261,6 +265,25 @@ function renderDeadlines(deadlines) {
       li.innerHTML = `<span style="font-weight:700;color:#0d3f5e;font-size:0.9rem;min-width:auto;display:block;line-height:1.3;">${formatted}</span><span style="font-size:0.78rem;color:#374151;">${esc(d.label)}</span>`;
       el.appendChild(li);
     });
+}
+
+function renderStateDeadline(stateDeadline, state) {
+  const el = document.getElementById('stateDeadlineEl');
+  if (!el) return;
+  if (!state) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  if (stateDeadline && stateDeadline.noTax) {
+    el.innerHTML = `<div style="background:#f0fdf4;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;">${esc(stateDeadline.label)}</div>`;
+  } else if (stateDeadline) {
+    const date = new Date(stateDeadline.date + 'T00:00:00');
+    const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(stateDeadline.label)}</div>`;
+  } else {
+    el.innerHTML = `<div style="background:#fef3c7;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#92400e;">State info not available for your state code: ${esc(state)}</div>`;
+  }
 }
 
 function renderActivity(activities) {
@@ -377,7 +400,6 @@ function initDocManager(data) {
   }
 
   function showError(m) { docError.textContent = m; docError.style.display = 'block'; }
-  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   loadDocs();
 }
