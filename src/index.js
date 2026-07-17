@@ -37,15 +37,18 @@ export default {
 
     // ── QBO OAuth ──
     if (url.pathname === '/api/qbo/auth' && method === 'GET') {
-      return handleQboAuth(request, env);
+      const u = await getAuthUser();
+      if (!u?.email) return json(401, { error: 'Not authenticated' });
+      return handleQboAuth(request, env, u.email);
     }
     if (url.pathname === '/api/qbo/callback' && method === 'GET') {
       return handleQboCallback(request, env);
     }
-    if (url.pathname === '/api/qbo/sync' && method === 'POST') {
+    if (url.pathname === '/api/qbo/status' && method === 'GET') {
       const u = await getAuthUser();
-      if (!isAdmin(u?.email)) return json(403, { error: 'Admin access required' });
-      return handleQboSync(env);
+      if (!u?.email) return json(401, { error: 'Not authenticated' });
+      const tokens = await getQboTokens(env, u.email);
+      return json(200, { connected: !!tokens });
     }
 
     // ── Login endpoint ──
@@ -403,9 +406,7 @@ async function handleAuditLog(env) {
   return json(200, { audit: entries.slice(0, 200) });
 }
 
-// ── QBO helpers ──
-const QBO_TOKEN_KEY = 'qbo/tokens';
-const QBO_CUSTOMERS_KEY = 'qbo/customers';
+// ── QBO helpers (per-client tokens) ──
 const QBO_SCOPES = 'com.intuit.quickbooks.accounting';
 
 function qboEnv(env) {
@@ -416,20 +417,24 @@ function qboEnv(env) {
   };
 }
 
-async function getQboTokens(env) {
-  const obj = await env.tideventure_documents.get(QBO_TOKEN_KEY);
+function qboTokenKey(email) {
+  return `qbo/tokens/${email}`;
+}
+
+async function getQboTokens(env, email) {
+  const obj = await env.tideventure_documents.get(qboTokenKey(email));
   if (!obj) return null;
   return JSON.parse(await obj.text());
 }
 
-async function saveQboTokens(env, tokens) {
-  await env.tideventure_documents.put(QBO_TOKEN_KEY, JSON.stringify(tokens), {
+async function saveQboTokens(env, email, tokens) {
+  await env.tideventure_documents.put(qboTokenKey(email), JSON.stringify(tokens), {
     httpMetadata: { contentType: 'application/json' },
   });
 }
 
-async function refreshQboTokens(env) {
-  const tokens = await getQboTokens(env);
+async function refreshQboTokens(env, email) {
+  const tokens = await getQboTokens(env, email);
   if (!tokens?.refresh_token) return null;
   const { clientId, clientSecret } = qboEnv(env);
   const res = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
@@ -445,29 +450,32 @@ async function refreshQboTokens(env) {
   if (!res.ok) return null;
   const newTokens = await res.json();
   newTokens.realmId = tokens.realmId;
-  await saveQboTokens(env, newTokens);
+  await saveQboTokens(env, email, newTokens);
   return newTokens;
 }
 
-async function qboFetch(env, path) {
-  let tokens = await getQboTokens(env);
-  if (!tokens) return json(502, { error: 'QBO not connected' });
+async function qboFetch(env, email, path) {
+  let tokens = await getQboTokens(env, email);
+  if (!tokens) throw new Error('QuickBooks not connected');
   const url = `https://quickbooks.api.intuit.com/v3/company/${tokens.realmId}${path}`;
   let res = await fetch(url, {
     headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Accept': 'application/json' },
   });
   if (res.status === 401) {
-    tokens = await refreshQboTokens(env);
-    if (!tokens) return json(502, { error: 'QBO token refresh failed' });
+    tokens = await refreshQboTokens(env, email);
+    if (!tokens) throw new Error('QBO token refresh failed');
     res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Accept': 'application/json' },
     });
   }
-  if (!res.ok) return json(502, { error: `QBO API error: ${res.status}` });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`QBO API ${res.status}: ${body.slice(0, 200)}`);
+  }
   return res.json();
 }
 
-async function handleQboAuth(request, env) {
+async function handleQboAuth(request, env, email) {
   const { clientId, redirectUri } = qboEnv(env);
   const state = crypto.randomUUID();
   const verifier = bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
@@ -476,8 +484,8 @@ async function handleQboAuth(request, env) {
   const challenge = btoa(String.fromCharCode(...new Uint8Array(challengeBuf)))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-  // Store verifier + state temporarily (expires in 5 min)
-  await env.tideventure_documents.put(`qbo/oauth/${state}`, JSON.stringify({ verifier, createdAt: Date.now() }), {
+  // Store verifier + email + state temporarily (expires in 5 min)
+  await env.tideventure_documents.put(`qbo/oauth/${state}`, JSON.stringify({ verifier, email, createdAt: Date.now() }), {
     httpMetadata: { contentType: 'application/json' },
     customMetadata: { expiresAt: Date.now() + 300000 },
   });
@@ -504,10 +512,11 @@ async function handleQboCallback(request, env) {
   if (error) return new Response(`QBO auth error: ${error}`, { status: 400 });
   if (!code || !state || !realmId) return new Response('Missing OAuth parameters', { status: 400 });
 
-  // Retrieve verifier
+  // Retrieve verifier + email from stored state
   const stored = await env.tideventure_documents.get(`qbo/oauth/${state}`);
   if (!stored) return new Response('OAuth state expired or invalid', { status: 400 });
-  const { verifier } = JSON.parse(await stored.text());
+  const { verifier, email } = JSON.parse(await stored.text());
+  if (!email) return new Response('No email in state', { status: 400 });
   await env.tideventure_documents.delete(`qbo/oauth/${state}`);
 
   const { clientId, clientSecret, redirectUri } = qboEnv(env);
@@ -529,72 +538,30 @@ async function handleQboCallback(request, env) {
   }
   const tokens = await res.json();
   tokens.realmId = realmId;
-  await saveQboTokens(env, tokens);
+  await saveQboTokens(env, email, tokens);
 
-  return new Response('QuickBooks connected! You can close this tab.', {
+  return new Response('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=/portal"></head><body style="font-family:sans-serif;text-align:center;padding:3rem;"><h2>QuickBooks connected!</h2><p>Redirecting back to portal…</p><a href="/portal">Go to Portal</a></body></html>', {
     headers: { 'Content-Type': 'text/html' },
   });
 }
 
-async function handleQboSync(env) {
+async function getQboDataForClient(env, email) {
+  const tokens = await getQboTokens(env, email);
+  if (!tokens) return { qboConnected: false, invoices: [] };
+
   try {
-    const tokens = await getQboTokens(env);
-    const companyInfo = await qboFetch(env, '/companyinfo/' + tokens.realmId);
-    const companyName = companyInfo?.CompanyInfo?.CompanyName || 'unknown';
-    const customers = (data.QueryResponse?.Customer || []).map(c => ({
-      id: c.Id,
-      displayName: c.DisplayName,
-      email: c.PrimaryEmailAddr?.Address || '',
-      companyName: c.CompanyName || c.DisplayName,
-      active: c.Active !== false,
-    }));
-    await env.tideventure_documents.put(QBO_CUSTOMERS_KEY, JSON.stringify(customers), {
-      httpMetadata: { contentType: 'application/json' },
-    });
-    // Also fetch invoices
-    const invData = await qboFetch(env, '/query?query=select%20*%20from%20Invoice%20where%20Balance%3E0%20maxresults%201000');
+    const invData = await qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20where%20Balance%3E0%20maxresults%201000');
     const invoices = (invData.QueryResponse?.Invoice || []).map(i => ({
-      id: i.Id,
       docNumber: i.DocNumber,
-      customerRef: i.CustomerRef?.value || '',
-      customerName: i.CustomerRef?.name || '',
       totalAmt: i.TotalAmt,
       balance: i.Balance,
       dueDate: i.DueDate,
       txnDate: i.TxnDate,
     }));
-    await env.tideventure_documents.put('qbo/invoices', JSON.stringify(invoices), {
-      httpMetadata: { contentType: 'application/json' },
-    });
-    return json(200, { company: companyName, customers: customers.length, invoices: invoices.length });
+    return { qboConnected: true, invoices };
   } catch (e) {
-    return json(500, { error: e.message });
+    return { qboConnected: true, invoices: [], error: e.message };
   }
-}
-
-async function getQboDataForClient(env, email) {
-  const customersObj = await env.tideventure_documents.get(QBO_CUSTOMERS_KEY);
-  const invoicesObj = await env.tideventure_documents.get('qbo/invoices');
-  if (!customersObj) return { qboConnected: false, invoices: [] };
-
-  const customers = JSON.parse(await customersObj.text());
-  const invoices = invoicesObj ? JSON.parse(await invoicesObj.text()) : [];
-
-  // Match client by email
-  const matchedCustomer = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
-  if (!matchedCustomer) return { qboConnected: true, invoices: [] };
-
-  const clientInvoices = invoices
-    .filter(i => i.customerRef === matchedCustomer.id)
-    .map(i => ({
-      docNumber: i.docNumber,
-      totalAmt: i.totalAmt,
-      balance: i.balance,
-      dueDate: i.dueDate,
-      txnDate: i.txnDate,
-    }));
-
-  return { qboConnected: true, invoices: clientInvoices };
 }
 
 // ── Encryption helpers (paired with browser-side Web Crypto) ──
