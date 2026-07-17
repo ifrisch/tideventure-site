@@ -538,7 +538,9 @@ async function handleQboCallback(request, env) {
 
 async function handleQboSync(env) {
   try {
-    const data = await qboFetch(env, '/query?query=select%20*%20from%20Customer%20maxresults%201000');
+    const tokens = await getQboTokens(env);
+    const companyInfo = await qboFetch(env, '/companyinfo/' + tokens.realmId);
+    const companyName = companyInfo?.CompanyInfo?.CompanyName || 'unknown';
     const customers = (data.QueryResponse?.Customer || []).map(c => ({
       id: c.Id,
       displayName: c.DisplayName,
@@ -564,7 +566,7 @@ async function handleQboSync(env) {
     await env.tideventure_documents.put('qbo/invoices', JSON.stringify(invoices), {
       httpMetadata: { contentType: 'application/json' },
     });
-    return json(200, { customers: customers.length, invoices: invoices.length });
+    return json(200, { company: companyName, customers: customers.length, invoices: invoices.length });
   } catch (e) {
     return json(500, { error: e.message });
   }
