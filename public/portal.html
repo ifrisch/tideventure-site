@@ -137,6 +137,13 @@
     </div>
 
     <div class="dash-card">
+      <div class="dash-card__header"><h3>Invoices &amp; Payments</h3></div>
+      <div id="qboSection">
+        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="dash-card">
       <div class="dash-card__header"><h3>Quick Actions</h3></div>
       <ul>
         <li>QuickBooks Online <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a></li>
@@ -237,6 +244,7 @@ async function loadDashboard() {
     renderDeadlines(data.deadlines);
     renderStateDeadline(data.stateDeadline, data.profile?.state);
     renderActivity(data.recentActivity);
+    renderQbo(data.qbo);
   } catch (e) { console.error('Dashboard load failed:', e); }
 }
 
@@ -282,6 +290,37 @@ function renderStateDeadline(stateDeadlineArr, state) {
     const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(sd.label)}</div>`;
   }
+}
+
+function renderQbo(qbo) {
+  const el = document.getElementById('qboSection');
+  el.innerHTML = '';
+  if (!qbo || !qbo.qboConnected) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">No payment info available yet.</div>';
+    return;
+  }
+  const invoices = qbo.invoices || [];
+  if (!invoices.length) {
+    el.innerHTML = '<div style="text-align:center;color:#059669;font-size:0.82rem;padding:1rem 0;">No outstanding invoices.</div>';
+    return;
+  }
+  const totalDue = invoices.reduce((s, i) => s + i.balance, 0);
+  el.innerHTML = `
+    <div style="background:#f0f9ff;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+      <span style="font-size:0.72rem;color:#6b7280;">Total Outstanding</span>
+      <div style="font-size:1.2rem;font-weight:700;color:#0d3f5e;">$${totalDue.toFixed(2)}</div>
+    </div>
+    <ul style="list-style:none;padding:0;margin:0;">
+      ${invoices.map(i => `
+        <li style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
+          <span style="flex:1;">Invoice #${esc(i.docNumber)}</span>
+          <span style="color:#6b7280;font-size:0.78rem;">Due ${new Date(i.dueDate).toLocaleDateString()}</span>
+          <span style="font-weight:600;color:#dc2626;">$${i.balance.toFixed(2)}</span>
+        </li>
+      `).join('')}
+    </ul>
+    <a href="https://qbo.intuit.com" target="_blank" class="file-link" style="display:block;text-align:center;margin-top:0.75rem;">Pay in QuickBooks →</a>
+  `;
 }
 
 function renderActivity(activities) {
