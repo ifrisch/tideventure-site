@@ -38,6 +38,24 @@
       display: inline-block !important;
     }
 
+    .qbo-note {
+      display: inline-block !important;
+      margin-top: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #111111;
+      background: transparent;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      line-height: 1.4;
+      width: fit-content;
+      transition: background 0.2s ease;
+    }
+
+    .service-option.selected .qbo-note {
+      background: #ffe566 !important;
+    }
+
   </style>
 </head>
 <body>
@@ -185,7 +203,8 @@
             </div>
             <div class="service-option__body">
               <h3>Bookkeeping with Financial Statement Maintenance</h3>
-              <p>Monthly bookkeeping upkeep and clean statements. Requires QuickBooks Online for this service.</p>
+              <p>Monthly bookkeeping upkeep and clean statements.</p>
+              <span class="service-option__hint qbo-note">Requires QuickBooks Online for this service</span>
             </div>
           </label>
 

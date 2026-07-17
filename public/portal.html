@@ -267,22 +267,20 @@ function renderDeadlines(deadlines) {
     });
 }
 
-function renderStateDeadline(stateDeadline, state) {
+function renderStateDeadline(stateDeadlineArr, state) {
   const el = document.getElementById('stateDeadlineEl');
   if (!el) return;
-  if (!state) {
-    el.style.display = 'none';
-    return;
-  }
+  if (!state) { el.style.display = 'none'; return; }
   el.style.display = '';
-  if (stateDeadline && stateDeadline.noTax) {
-    el.innerHTML = `<div style="background:#f0fdf4;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;">${esc(stateDeadline.label)}</div>`;
-  } else if (stateDeadline) {
-    const date = new Date(stateDeadline.date + 'T00:00:00');
-    const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(stateDeadline.label)}</div>`;
+  const sd = stateDeadlineArr && stateDeadlineArr.length ? stateDeadlineArr[0] : null;
+  if (!sd) {
+    el.innerHTML = `<div style="background:#fef3c7;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#92400e;">State info not available for: ${esc(state)}</div>`;
+  } else if (sd.noTax) {
+    el.innerHTML = `<div style="background:#f0fdf4;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;">${esc(sd.label)}</div>`;
   } else {
-    el.innerHTML = `<div style="background:#fef3c7;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#92400e;">State info not available for your state code: ${esc(state)}</div>`;
+    const date = new Date(sd.date + 'T12:00:00');
+    const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(sd.label)}</div>`;
   }
 }
 
