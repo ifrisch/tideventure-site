@@ -226,6 +226,12 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function connectQbo() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  if (!token) return;
+  window.location.href = '/api/qbo/auth?token=' + encodeURIComponent(token);
+}
+
 function showDashboard(data) {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('dashView').style.display = 'block';
@@ -299,12 +305,18 @@ function renderQbo(qbo) {
     el.innerHTML = `
       <div style="text-align:center;padding:1rem 0;">
         <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.75rem;">Connect QuickBooks to see invoices and pay online.</p>
-        <a href="/api/qbo/auth" class="btn btn--primary" style="display:inline-flex;padding:0.5rem 1.25rem;font-size:0.82rem;">Connect QuickBooks</a>
+        <button class="btn btn--primary" id="connectQboBtn" style="padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Connect QuickBooks</button>
       </div>`;
+    document.getElementById('connectQboBtn').addEventListener('click', connectQbo);
     return;
   }
   if (qbo.error) {
-    el.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">QuickBooks connected, but unable to load data.</div>`;
+    el.innerHTML = `
+      <div style="text-align:center;padding:1rem 0;">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.75rem;">QuickBooks connected, but unable to load data. Please reconnect.</p>
+        <button class="btn btn--primary" id="connectQboBtn" style="padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Reconnect QuickBooks</button>
+      </div>`;
+    document.getElementById('connectQboBtn').addEventListener('click', connectQbo);
     return;
   }
   const invoices = qbo.invoices || [];

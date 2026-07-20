@@ -37,8 +37,24 @@ export default {
 
     // ── QBO OAuth ──
     if (url.pathname === '/api/qbo/auth' && method === 'GET') {
-      const u = await getAuthUser();
+      let u = await getAuthUser();
+      if (!u?.email) {
+        const queryToken = url.searchParams.get('token');
+        if (queryToken) {
+          try {
+            const { payload } = await jwtVerify(queryToken, new TextEncoder().encode(env.DOC_ENC_KEY));
+            u = payload;
+          } catch (e) {
+            return json(401, { error: 'Token invalid: ' + e.message.slice(0, 60) });
+          }
+        }
+      }
       if (!u?.email) return json(401, { error: 'Not authenticated' });
+      // Clear any existing tokens before starting fresh OAuth
+      const existing = await getQboTokens(env, u.email);
+      if (existing) {
+        await env.tideventure_documents.delete(qboTokenKey(u.email));
+      }
       return handleQboAuth(request, env, u.email);
     }
     if (url.pathname === '/api/qbo/callback' && method === 'GET') {
@@ -50,6 +66,14 @@ export default {
       const tokens = await getQboTokens(env, u.email);
       return json(200, { connected: !!tokens });
     }
+    if (url.pathname === '/api/qbo/tokens' && method === 'POST') {
+      const u = await getAuthUser();
+      if (!isAdmin(u?.email)) return json(403, { error: 'Admin access required' });
+      const body = await request.json();
+      await saveQboTokens(env, body.email, { access_token: body.accessToken, refresh_token: body.refreshToken, realmId: body.realmId });
+      return json(200, { ok: true });
+    }
+
 
     // ── Login endpoint ──
     if (url.pathname === '/api/login' && method === 'POST') {
@@ -457,22 +481,24 @@ async function refreshQboTokens(env, email) {
 async function qboFetch(env, email, path) {
   let tokens = await getQboTokens(env, email);
   if (!tokens) throw new Error('QuickBooks not connected');
-  const url = `https://quickbooks.api.intuit.com/v3/company/${tokens.realmId}${path}`;
-  let res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Accept': 'application/json' },
-  });
-  if (res.status === 401) {
-    tokens = await refreshQboTokens(env, email);
-    if (!tokens) throw new Error('QBO token refresh failed');
-    res = await fetch(url, {
+  const hosts = ['sandbox-quickbooks.api.intuit.com', 'quickbooks.api.intuit.com'];
+  let lastErr;
+  for (const host of hosts) {
+    const url = `https://${host}/v3/company/${tokens.realmId}${path}`;
+    let res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Accept': 'application/json' },
     });
+    if (res.status === 401) {
+      tokens = await refreshQboTokens(env, email);
+      if (!tokens) throw new Error('QBO token refresh failed');
+      res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Accept': 'application/json' },
+      });
+    }
+    if (res.ok) return res.json();
+    lastErr = `QBO API ${res.status}: ${(await res.text()).slice(0, 200)}`;
   }
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`QBO API ${res.status}: ${body.slice(0, 200)}`);
-  }
-  return res.json();
+  throw new Error(lastErr);
 }
 
 async function handleQboAuth(request, env, email) {
@@ -550,8 +576,8 @@ async function getQboDataForClient(env, email) {
   if (!tokens) return { qboConnected: false, invoices: [] };
 
   try {
-    const invData = await qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20where%20Balance%3E0%20maxresults%201000');
-    const invoices = (invData.QueryResponse?.Invoice || []).map(i => ({
+    const invData = await qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20maxresults%201000');
+    const invoices = (invData.QueryResponse?.Invoice || []).filter(i => i.Balance > 0).map(i => ({
       docNumber: i.DocNumber,
       totalAmt: i.TotalAmt,
       balance: i.Balance,
