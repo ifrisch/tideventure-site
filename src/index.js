@@ -573,10 +573,11 @@ async function handleQboCallback(request, env) {
 
 async function getQboDataForClient(env, email) {
   const tokens = await getQboTokens(env, email);
-  if (!tokens) return { qboConnected: false, invoices: [] };
+  if (!tokens) return { qboConnected: false, invoices: [], revenue: [] };
 
   try {
     const invData = await qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20maxresults%201000');
+
     const invoices = (invData.QueryResponse?.Invoice || []).filter(i => i.Balance > 0).map(i => ({
       docNumber: i.DocNumber,
       totalAmt: i.TotalAmt,
@@ -584,10 +585,25 @@ async function getQboDataForClient(env, email) {
       dueDate: i.DueDate,
       txnDate: i.TxnDate,
     }));
-    return { qboConnected: true, invoices };
+
+    // Calculate monthly revenue from invoice totals
+    const revenue = [];
+    const now = new Date();
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const y = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const monthStr = `${y}-${mo}`;
+      const total = (invData.QueryResponse?.Invoice || [])
+        .filter(i => i.TxnDate && i.TxnDate.startsWith(monthStr))
+        .reduce((sum, i) => sum + (parseFloat(i.TotalAmt) || 0), 0);
+      const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      revenue.push({ month: label, amount: total });
+    }
+
+    return { qboConnected: true, invoices, revenue };
   } catch (e) {
-    // Token expired and refresh failed — silently show disconnected
-    return { qboConnected: false, invoices: [] };
+    return { qboConnected: false, invoices: [], revenue: [] };
   }
 }
 
