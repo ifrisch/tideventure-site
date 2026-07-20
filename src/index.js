@@ -586,7 +586,8 @@ async function getQboDataForClient(env, email) {
     }));
     return { qboConnected: true, invoices };
   } catch (e) {
-    return { qboConnected: true, invoices: [], error: e.message };
+    // Token expired and refresh failed — silently show disconnected
+    return { qboConnected: false, invoices: [] };
   }
 }
 
