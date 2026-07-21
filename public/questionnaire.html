@@ -110,31 +110,31 @@ function renderQ(saved) {
       <div><label style="display:block;font-size:0.75rem;">&nbsp;</label>
         <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${(s(saved,'spouse_no_itin')||'').includes('Y')?'checked':''}> Spouse no ITIN</label></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
-      ${['Taxpayer','tp_','Spouse','sp_'].reduce((acc,item,i) => {
-        const pfx = item;
-        const label = i%2===0 ? item : '';
-        return acc + `<div style="background:#f9fafb;padding:0.6rem;border-radius:8px;"><h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">${i<2 ? 'Taxpayer' : 'Spouse'}</h4>
-          <div style="display:grid;gap:0.35rem;">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
-              <input name="${pfx}ssn" placeholder="SSN" value="${esc(s(saved,pfx+'ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-              <input name="${pfx}first" placeholder="First" value="${esc(s(saved,pfx+'first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-              <input name="${pfx}last" placeholder="Last" value="${esc(s(saved,pfx+'last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            </div>
-            <input name="${pfx}occupation" placeholder="Occupation" value="${esc(s(saved,pfx+'occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="${pfx}dob" type="date" value="${s(saved,pfx+'dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
-              <label><input type="checkbox" name="${pfx}dependent" value="Y" ${(s(saved,pfx+'dependent')||'').includes('Y')?'checked':''}> Dependent</label>
-              <label><input type="checkbox" name="${pfx}blind" value="Y" ${(s(saved,pfx+'blind')||'').includes('Y')?'checked':''}> Blind</label>
-              <span>Student:</span><label><input type="radio" name="${pfx}student" value="Y" ${y(saved,pfx+'student')}>Y</label>
-              <label><input type="radio" name="${pfx}student" value="N" ${n(saved,pfx+'student')}>N</label>
-              <span>DOD:</span><input name="${pfx}dod" type="date" value="${s(saved,pfx+'dod')}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;">
-            </div>
-            ${i<2 ? `<input name="${pfx}phone" placeholder="Mobile phone" value="${esc(s(saved,pfx+'phone'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="${pfx}email" placeholder="Email" value="${esc(s(saved,pfx+'email'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">` : ''}
-          </div></div>`;
-      }, '')}
-    </div>
+    ${['Taxpayer','tp_','Spouse','sp_'].reduce((acc, item, i) => {
+      if (i % 2 !== 0) return acc;
+      const label = item;
+      const pfx = ['Taxpayer','tp_','Spouse','sp_'][i + 1];
+      const isTp = i === 0;
+      return acc + `<div style="background:#f9fafb;padding:0.6rem;border-radius:8px;"><h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">${label}</h4>
+        <div style="display:grid;gap:0.35rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+            <input name="${pfx}ssn" placeholder="SSN" value="${esc(s(saved,pfx+'ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="${pfx}first" placeholder="First" value="${esc(s(saved,pfx+'first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="${pfx}last" placeholder="Last" value="${esc(s(saved,pfx+'last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <input name="${pfx}occupation" placeholder="Occupation" value="${esc(s(saved,pfx+'occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <input name="${pfx}dob" type="date" value="${s(saved,pfx+'dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
+            <label><input type="checkbox" name="${pfx}dependent" value="Y" ${(s(saved,pfx+'dependent')||'').includes('Y')?'checked':''}> Dependent</label>
+            <label><input type="checkbox" name="${pfx}blind" value="Y" ${(s(saved,pfx+'blind')||'').includes('Y')?'checked':''}> Blind</label>
+            <span>Student:</span><label><input type="radio" name="${pfx}student" value="Y" ${y(saved,pfx+'student')}>Y</label>
+            <label><input type="radio" name="${pfx}student" value="N" ${n(saved,pfx+'student')}>N</label>
+            <span>DOD:</span><input name="${pfx}dod" type="date" value="${s(saved,pfx+'dod')}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;">
+          </div>
+          ${isTp ? `<input name="${pfx}phone" placeholder="Mobile phone" value="${esc(s(saved,pfx+'phone'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <input name="${pfx}email" placeholder="Email" value="${esc(s(saved,pfx+'email'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">` : ''}
+        </div></div>`;
+    }, '')}
     <div style="margin-bottom:0.75rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
