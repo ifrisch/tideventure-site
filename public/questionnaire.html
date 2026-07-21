@@ -155,21 +155,23 @@ function renderQ(saved) {
     </div>
     <div style="margin-bottom:0.75rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.3rem;">
-        <input name="address" placeholder="Street" value="${esc(s(saved,'address'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="apt" placeholder="Apt" value="${esc(s(saved,'apt'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="in_care_of" placeholder="In care of" value="${esc(s(saved,'in_care_of'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      <input name="address" placeholder="Street address" value="${esc(s(saved,'address'))}" style="display:block;width:100%;margin-bottom:0.3rem;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+      <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem;">
+        <input name="apt" placeholder="Apt" value="${esc(s(saved,'apt'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="in_care_of" placeholder="In care of" value="${esc(s(saved,'in_care_of'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.3rem;margin-top:0.3rem;">
-        <input name="city" placeholder="City" value="${esc(s(saved,'city'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="state" placeholder="State" value="${esc(s(saved,'state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="zip" placeholder="ZIP" value="${esc(s(saved,'zip'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      <div style="display:flex;gap:0.3rem;">
+        <input name="city" placeholder="City" value="${esc(s(saved,'city'))}" style="flex:2;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="state" placeholder="State" value="${esc(s(saved,'state'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="zip" placeholder="ZIP" value="${esc(s(saved,'zip'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
       </div>
     </div>
     <div style="margin-bottom:0.75rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Direct Deposit</label>
-      <input name="bank_routing" placeholder="Routing #" value="${esc(s(saved,'bank_routing'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.3rem;">
-      <input name="bank_account" placeholder="Account #" value="${esc(s(saved,'bank_account'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      <div style="display:flex;gap:0.3rem;">
+        <input name="bank_routing" placeholder="Routing #" value="${esc(s(saved,'bank_routing'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="bank_account" placeholder="Account #" value="${esc(s(saved,'bank_account'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+      </div>
     </div>
     <div style="margin-bottom:0.5rem;">
       <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${y(saved,'irs_auth')}> Authorize IRS to discuss return</label>
