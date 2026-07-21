@@ -125,6 +125,21 @@
 
   <div class="admin-table-wrap">
     <div class="admin-table-header">
+      <h3>Tax Questionnaire — Client Responses (2025)</h3>
+    </div>
+    <div id="tqClientResponses" style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--text-muted);">Loading…</div>
+  </div>
+
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <h3>Tax Questionnaire — Schema Editor</h3>
+      <button onclick="tqSaveSchema()" class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;cursor:pointer;">Save Schema</button>
+    </div>
+    <div id="tqSchemaEditor" style="padding:1rem 1.25rem;font-size:0.82rem;">Loading schema…</div>
+  </div>
+
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
       <h3>Audit Log</h3>
       <span id="auditCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
     </div>
@@ -295,6 +310,77 @@ function initAdmin(data) {
   }
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // ── Tax Questionnaire Admin ──
+  async function tqLoad() {
+    const token = sessionStorage.getItem('tv_admin_token');
+    // Load client responses
+    const resResp = await fetch('/api/admin/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    const respData = await resResp.json();
+    const respEl = document.getElementById('tqClientResponses');
+    if (!respData.responses || !respData.responses.length) {
+      respEl.innerHTML = '<div style="color:var(--text-muted);">No client responses yet.</div>';
+    } else {
+      respEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">'
+        + '<tr style="background:#f9fafb;"><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Client</th><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Status</th><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th></tr>'
+        + respData.responses.map(r => {
+          const sig = r.answers?.final_signature || r.answers?.signature || '';
+          const name = r.answers?.tp_first ? r.answers.tp_first + ' ' + r.answers.tp_last : r.email;
+          return `<tr><td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;">${esc(name)}<br><span style="font-size:0.72rem;color:var(--text-muted);">${esc(r.email)}</span></td>
+            <td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;"><span style="color:#059669;">${sig ? '&#10003; Signed' : 'Incomplete'}</span></td>
+            <td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;"><a href="/api/admin/questionnaire/view/${r.email}/2025" target="_blank" style="color:var(--brand-teal);font-size:0.78rem;">View</a></td></tr>`;
+        }).join('') + '</table>';
+    }
+
+    // Load schema for editing
+    const resSchema = await fetch('/api/questionnaire/schema/2025');
+    let schema = await resSchema.json();
+    if (!schema.sections) schema = { sections: [] };
+    window.tqSchema = schema;
+    renderSchemaEditor(schema);
+  }
+
+  function renderSchemaEditor(schema) {
+    const el = document.getElementById('tqSchemaEditor');
+    el.innerHTML = schema.sections.map((sec, si) => `
+      <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value" style="flex:1;padding:0.3rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.82rem;font-weight:600;">
+          <button onclick="tqSchema.sections.splice(${si},1);renderSchemaEditor(tqSchema)" style="background:none;border:none;color:#c00;cursor:pointer;">Remove Section</button>
+        </div>
+        ${sec.questions.map((q, qi) => `
+        <div style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.3rem;">
+          <input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" placeholder="Field name" style="width:120px;padding:0.2rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <input value="${esc(q[1])}" onchange="tqSchema.sections[${si}].questions[${qi}][1]=this.value" placeholder="Question text" style="flex:1;padding:0.2rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <button onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchemaEditor(tqSchema)" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button>
+        </div>`).join('')}
+        <button onclick="tqSchema.sections[${si}].questions.push(['','New question']);renderSchemaEditor(tqSchema)" style="font-size:0.74rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;">+ Add Question</button>
+      </div>
+    `).join('') + `
+      <button onclick="tqSchema.sections.push({title:'New Section',questions:[['','New question']]});renderSchemaEditor(tqSchema)" class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;cursor:pointer;">+ Add Section</button>
+    `;
+  }
+
+  async function tqSaveSchema() {
+    const token = sessionStorage.getItem('tv_admin_token');
+    const btns = document.querySelectorAll('.admin-table-wrap .btn--primary');
+    const btn = btns[1];
+    if (!btn) return;
+    try {
+      await fetch('/api/questionnaire/schema/2025', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(window.tqSchema),
+      });
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = 'Save Schema'; btn.disabled = false; }, 2000);
+    } catch { btn.textContent = 'Failed'; btn.disabled = false; }
+  }
+
+  // Load everything
+  loadDocs();
+  loadAudit();
+  tqLoad();
 }
 </script>
 </body>

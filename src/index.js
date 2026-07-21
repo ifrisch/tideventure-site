@@ -179,6 +179,17 @@ export default {
         } catch (e) { return json(500, { error: 'Save failed: ' + e.message }); }
       }
     }
+    // Admin: view a specific client's questionnaire response
+    const adminViewMatch = url.pathname.match(/^\/api\/admin\/questionnaire\/view\/([^\/]+)\/(\d{4})$/);
+    if (adminViewMatch && isAdmin(email)) {
+      try {
+        const viewEmail = decodeURIComponent(adminViewMatch[1]);
+        const year = adminViewMatch[2];
+        const obj = await env.tideventure_documents.get(`questionnaire/${viewEmail}/${year}`);
+        if (!obj) return json(404, { error: 'Not found' });
+        return json(200, { email: viewEmail, year, answers: JSON.parse(await obj.text()) });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
     // Admin: list all questionnaire responses for a year
     if (url.pathname.match(/^\/api\/admin\/questionnaire\/\d{4}$/) && method === 'GET' && isAdmin(email)) {
       try {
