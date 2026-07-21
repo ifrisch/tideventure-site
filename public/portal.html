@@ -326,20 +326,23 @@ function tqAddDep() {
   const tbody = document.getElementById('tqDepBody');
   const row = document.createElement('tr');
   row.className = 'tq-dep-row';
-  row.innerHTML = `<td><input name="dep_first" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><input name="dep_last" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><input name="dep_dob" type="date" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><input name="dep_ssn" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><input name="dep_rel" style="width:60px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><input name="dep_months" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-    <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;font-size:0.9rem;">&times;</button></td>`;
+  row.innerHTML = `<td><input name="dep_first" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><input name="dep_last" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><input name="dep_dob" type="date" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><input name="dep_ssn" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><input name="dep_rel" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><input name="dep_months" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+    <td><select name="dep_code" style="width:45px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+    <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button></td>`;
   tbody.appendChild(row);
 }
 
 function renderQuestionnaireForm(year, saved) {
   const s = (name) => saved[name] || '';
   const sel = (name, val) => s(name) === val ? 'selected' : '';
-  const chk = (name, val) => (saved[name] || []).includes(val) ? 'checked' : '';
+  const chk = (name, val) => (s(name)||'').includes(val) ? 'checked' : '';
+  const y = (name) => s(name)==='Y'?'checked':'';
+  const n = (name) => s(name)==='N'?'checked':'';
   document.getElementById('tqForm').innerHTML = `<form id="tqFormData">
     <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:0 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Engagement Letter</h3>
     <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
@@ -351,7 +354,8 @@ function renderQuestionnaireForm(year, saved) {
     </div>
 
     <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Information</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem 1rem;margin-bottom:1rem;">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem 1rem;margin-bottom:1rem;">
       <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Filing Status</label>
         <select name="filing_status" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
           <option value="">Select...</option><option value="1" ${sel('filing_status','1')}>Single</option>
@@ -360,85 +364,150 @@ function renderQuestionnaireForm(year, saved) {
           <option value="4" ${sel('filing_status','4')}>Head of Household</option>
           <option value="5" ${sel('filing_status','5')}>Qualifying Surviving Spouse</option>
         </select></div>
+      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="nonresident_alien" value="Y" ${chk('nonresident_alien','Y')}> Nonresident alien at year end</label></div>
+      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${chk('spouse_no_itin','Y')}> Spouse does not have ITIN</label></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
       <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
         <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Taxpayer</h4>
-        <div style="display:grid;gap:0.5rem;">
-          <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="tp_email" placeholder="Email" value="${esc(s('tp_email'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        <div style="display:grid;gap:0.4rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+            <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
+            <label><input type="checkbox" name="tp_dependent" value="Y" ${chk('tp_dependent','Y')}> Dependent of another taxpayer</label>
+            <label><input type="checkbox" name="tp_blind" value="Y" ${chk('tp_blind','Y')}> Legally blind</label>
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;">
+            <label>Full-time student (age 18-23):</label>
+            <label><input type="radio" name="tp_student" value="Y" ${y('tp_student')}> Y</label>
+            <label><input type="radio" name="tp_student" value="N" ${n('tp_student')}> N</label>
+            <label style="margin-left:0.5rem;">Date of death:</label>
+            <input name="tp_dod" type="date" value="${s('tp_dod')}" style="width:120px;padding:0.25rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_email" placeholder="Email address" value="${esc(s('tp_email'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
         </div>
       </div>
       <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
         <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Spouse</h4>
-        <div style="display:grid;gap:0.5rem;">
-          <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-          <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        <div style="display:grid;gap:0.4rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+            <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
+            <label><input type="checkbox" name="sp_dependent" value="Y" ${chk('sp_dependent','Y')}> Dependent of another taxpayer</label>
+            <label><input type="checkbox" name="sp_blind" value="Y" ${chk('sp_blind','Y')}> Legally blind</label>
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;">
+            <label>Full-time student (age 18-23):</label>
+            <label><input type="radio" name="sp_student" value="Y" ${y('sp_student')}> Y</label>
+            <label><input type="radio" name="sp_student" value="N" ${n('sp_student')}> N</label>
+            <label style="margin-left:0.5rem;">Date of death:</label>
+            <input name="sp_dod" type="date" value="${s('sp_dod')}" style="width:120px;padding:0.25rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
         </div>
       </div>
     </div>
 
     <div style="margin-bottom:1rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.5rem;">
-        <input name="address" placeholder="Street address" value="${esc(s('address'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.5rem;margin-top:0.5rem;">
-        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div><span style="font-size:0.74rem;font-weight:600;color:#374151;">Taxpayer</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
+            <input name="dl_number" placeholder="License #" value="${esc(s('dl_number'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_state" placeholder="State" value="${esc(s('dl_state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_exp" placeholder="Exp date" value="${esc(s('dl_exp'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+        </div>
+        <div><span style="font-size:0.74rem;font-weight:600;color:#374151;">Spouse</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
+            <input name="sp_dl_number" placeholder="License #" value="${esc(s('sp_dl_number'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_state" placeholder="State" value="${esc(s('sp_dl_state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_exp" placeholder="Exp date" value="${esc(s('sp_dl_exp'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+        </div>
       </div>
     </div>
 
     <div style="margin-bottom:1rem;">
-      <input name="bank_routing" placeholder="Bank routing number" value="${esc(s('bank_routing'))}" style="width:200px;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;margin-right:0.5rem;">
-      <input name="bank_account" placeholder="Account number" value="${esc(s('bank_account'))}" style="width:200px;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
-      <label style="font-size:0.72rem;color:#6b7280;display:block;margin-top:0.2rem;">For refund direct deposit</label>
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Present Mailing Address</label>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.4rem;">
+        <input name="address" placeholder="Street address" value="${esc(s('address'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="in_care_of" placeholder="In care of" value="${esc(s('in_care_of'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.4rem;margin-top:0.4rem;">
+        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      </div>
     </div>
 
     <div style="margin-bottom:1rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.3rem;">Authorize IRS to discuss return with preparer</label>
-      <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${s('irs_auth')==='Y'?'checked':''}> Yes</label>
-      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${s('irs_auth')==='N'?'checked':''}> No</label>
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Refund Direct Deposit</label>
+      <input name="bank_routing" placeholder="Bank routing number" value="${esc(s('bank_routing'))}" style="width:180px;padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.4rem;">
+      <input name="bank_account" placeholder="Account number" value="${esc(s('bank_account'))}" style="width:180px;padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.78rem;margin-right:1.5rem;"><input type="radio" name="irs_auth" value="Y" ${y('irs_auth')}> Authorize IRS to discuss return with preparer</label>
+      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n('irs_auth')}> Do NOT authorize</label>
     </div>
 
     <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Dependents</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:0.5rem;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.76rem;margin-bottom:0.25rem;">
       <thead><tr style="background:#f9fafb;">
-        <th style="padding:0.3rem 0.4rem;text-align:left;">First</th>
-        <th style="padding:0.3rem 0.4rem;text-align:left;">Last</th>
-        <th style="padding:0.3rem 0.4rem;text-align:left;">DOB</th>
-        <th style="padding:0.3rem 0.4rem;text-align:left;">SSN</th>
-        <th style="padding:0.3rem 0.4rem;text-align:left;">Rel</th>
-        <th style="padding:0.3rem 0.4rem;text-align:left;">Mos</th>
-        <th style="padding:0.3rem 0.4rem;"></th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">First</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">Last</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">DOB</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">SSN</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">Relation</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">Mos</th>
+        <th style="padding:0.25rem 0.3rem;text-align:left;">Code</th>
+        <th style="padding:0.25rem 0.3rem;"></th>
       </tr></thead>
       <tbody id="tqDepBody">
         ${(saved.dependents || []).map(d => `<tr class="tq-dep-row">
-          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
-          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
+          <td><select name="dep_code" style="width:45px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <option value="">-</option>
+            <option value="1" ${d.dep_code==='1'?'selected':''}>1</option>
+            <option value="2" ${d.dep_code==='2'?'selected':''}>2</option>
+            <option value="3" ${d.dep_code==='3'?'selected':''}>3</option>
+            <option value="4" ${d.dep_code==='4'?'selected':''}>4</option>
+          </select></td>
           <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button></td>
         </tr>`).join('')}
       </tbody>
     </table>
-    <button type="button" onclick="tqAddDep()" style="font-size:0.78rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:6px;padding:0.3rem 0.8rem;cursor:pointer;margin-bottom:1rem;">+ Add Dependent</button>
+    <button type="button" onclick="tqAddDep()" style="font-size:0.76rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.25rem 0.7rem;cursor:pointer;margin-bottom:0.5rem;">+ Add Dependent</button>
+    <div style="font-size:0.7rem;color:#6b7280;line-height:1.4;">Dependent codes: 1=Child lived with you, 2=Child not lived with you (divorce), 3=Other dependent, 4=Other dependent not qualifying for ODC</div>
 
     <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Questions</h3>
-    <div style="display:grid;gap:0.6rem;margin-bottom:1rem;">
+    <div style="display:grid;gap:0.5rem;margin-bottom:1rem;">
       ${[
         ['marital_change','Did your marital status change during the year?'],
         ['separated','Did you live separately from your spouse during the last six months of the year?'],
@@ -449,10 +518,10 @@ function renderQuestionnaireForm(year, saved) {
         ['ip_pin','Did you receive an Identity Protection PIN or been a victim of identity theft?'],
         ['disaster_area','Did you reside in or operate a business in a Federally declared disaster area?'],
       ].map(([key,label]) => `
-        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.82rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;">
           <span style="flex:1;color:#374151;">${label}</span>
-          <label style="font-size:0.78rem;"><input type="radio" name="${key}" value="Yes" ${s(key)==='Yes'?'checked':''}> Yes</label>
-          <label style="font-size:0.78rem;"><input type="radio" name="${key}" value="No" ${s(key)==='No'?'checked':''}> No</label>
+          <label style="font-size:0.76rem;"><input type="radio" name="${key}" value="Yes" ${s(key)==='Yes'?'checked':''}> Yes</label>
+          <label style="font-size:0.76rem;"><input type="radio" name="${key}" value="No" ${s(key)==='No'?'checked':''}> No</label>
         </div>`).join('')}
     </div>
 
