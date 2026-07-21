@@ -19,8 +19,9 @@
     .tq-row label { font-size: 0.76rem; white-space: nowrap; }
     .tq-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
     .tq-save-msg { font-size: 0.82rem; color: #059669; display: none; }
-    input, select { box-sizing: border-box; }
-    .tq-card input, .tq-card select { max-width: 100%; }
+    input, select, .tq-card input, .tq-card select { box-sizing: border-box; max-width: 100%; width: 100%; }
+    .tq-card [style*="grid-template-columns"] { min-width: 0; }
+    .tq-card input[type="checkbox"], .tq-card input[type="radio"] { width: auto; }
   </style>
 </head>
 <body>
