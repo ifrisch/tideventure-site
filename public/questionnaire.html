@@ -62,10 +62,14 @@ async function loadQ() {
   const token = sessionStorage.getItem('tv_portal_token');
   if (!token) { window.location.href = '/portal'; return; }
   try {
-    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.status === 401) { window.location.href = '/portal'; return; }
-    const data = await res.json();
-    renderQ(data.data || {});
+    const [resp, schemaResp] = await Promise.all([
+      fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch('/api/questionnaire/schema/2025'),
+    ]);
+    if (resp.status === 401) { window.location.href = '/portal'; return; }
+    const data = await resp.json();
+    const schema = await schemaResp.json();
+    renderQ(data.data || {}, schema);
     document.getElementById('tqLoading').style.display = 'none';
     document.getElementById('tqContent').style.display = 'block';
   } catch {
@@ -87,7 +91,7 @@ function YN(saved, name, label) {
     <input name="${name}_note" value="${esc(c)}" placeholder="Notes" style="flex:1;min-width:80px;margin-left:0.3rem;padding:0.15rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;box-sizing:border-box;"></div>`;
 }
 
-function renderQ(saved) {
+function renderQ(saved, schema) {
   const sec = (title, questions) => `<div class="tq-section"><h3>${title}</h3>${questions}</div>`;
 
   document.getElementById('tqForm').innerHTML = `
@@ -181,218 +185,25 @@ function renderQ(saved) {
       <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n(saved,'irs_auth')}> Do not authorize</label>
     </div></div>
 
-    ${sec('General Questions', [
-      'marital_change','Did your marital status change during the year?',
-      'separated','Live separately from spouse during last 6 months?',
-      'separate_decree','Separate decree and not living in same household?',
-      'address_change','Did your address change from last year?',
-      'claimed_dependent','Can you be claimed as a dependent?',
-      'has_tin','Do all family members have SSN/ITIN/ATIN?',
-      'ip_pin','Received IP PIN or been identity theft victim?',
-      'disaster_area','Reside/operate in a disaster area?',
-      'dep_changes','Changes in dependents from prior year?',
-      'child_unearned','Child under 19/student under 24 with unearned income >$2,600?',
-      'dep_must_file','Do dependents need to file a return?',
-      'support_others','Provided over half support for other persons?',
-      'childcare','Paid for child care while working/student?',
-      'other_lived_with','Other person lived with you more than half year?',
-      'adoption','Paid adoption expenses?',
-      'divorce_decree','If divorced/separated, have separation agreement?',
-      'dep_ip_pin','Did dependents receive IP PIN?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+    <!-- Electronic Filing -->
+    <div class="tq-section"><h3>Electronic Filing</h3>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+      <div><label style="font-size:0.74rem;font-weight:600;">Taxpayer PIN (5-digit)</label>
+        <input name="tp_pin" value="${esc(s(saved,'tp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
+      <div><label style="font-size:0.74rem;font-weight:600;">Spouse PIN (5-digit)</label>
+        <input name="sp_pin" value="${esc(s(saved,'sp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
+    </div>
+    ${YN(saved,'paper_return','File paper return if eligible for e-file?')}
+    ${YN(saved,'email_notification','Email notification when e-file accepted?')}
+    ${YN(saved,'pay_by_debit','Pay amount due by debiting account?')}
+    </div>
 
-    ${sec('Electronic Filing',
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">'
-      +['tp_pin','Taxpayer PIN (5-digit)','sp_pin','Spouse PIN (5-digit)'].reduce((h,_,i,a) => i%2===0 ? h + `<div><label style="font-size:0.74rem;font-weight:600;">${a[i+1]}</label><input name="${a[i]}" value="${esc(s(saved,a[i]))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>` : h, '')
-      +'</div>'
-      +YN(saved,'paper_return','File paper return if eligible for e-file?')
-      +YN(saved,'email_notification','Email notification when e-file accepted?')
-      +YN(saved,'pay_by_debit','Pay amount due by debiting account?')
-    )}
-
-    ${[['Income Information',[
-      'foreign_income','Any foreign income or pay foreign taxes?',
-      'prior_property_income','Income from property sold prior to this year?',
-      'unemployment','Receive unemployment benefits?',
-      'disability','Receive disability income?',
-      'medicaid_waiver','Medicaid waiver payments?',
-      'tip_income','Tip income not reported to employer?',
-      'life_insurance','Life insurance policies mature or surrendered?',
-      'hobby_income','Awards, prizes, hobby income, gambling winnings?',
-      'nonemployee_comp','Nonemployee compensation?',
-      'gig_1099','Form 1099-K/MISC/NEC for gig work?',
-      'crowdfunding_1099k','Form 1099-K for crowdfunding?',
-      'erroneous_1099k','Any Form 1099-K in error?',
-      'income_fluctuation','Expect large income fluctuation next year?',
-      'digital_assets','Sales/exchanges of digital assets?',
-      'social_security','Receive Social Security benefits?',
-    ]],['Purchases, Sales & Debt',[
-      'new_business','Start new business or buy rental property?',
-      'business_interest','Ownership interest in any business?',
-      'sold_biz_assets','Sell/exchange/purchase business assets?',
-      'new_partnership','Acquire interest in partnership or S corp?',
-      'real_estate','Sell/exchange/purchase real estate?',
-      'principal_residence','Purchase or sell principal residence?',
-      'foreclosure','Foreclose or abandon residence/property?',
-      'stock','Acquire or dispose of stock?',
-      'home_equity','Take out home equity loan?',
-      'refinance','Refinance residence or second home?',
-      'sold_business','Sell existing business, rental or property?',
-      'bad_debt','Lend money that became uncollectable?',
-      'debt_forgiven','Debts canceled or forgiven?',
-      'clean_vehicle','Purchase clean vehicle eligible for credit?',
-      'personal_property_1099k','Form 1099-K for personal property sale?',
-      'us_vehicle','Loan payments on US-assembled vehicle?',
-    ]],['Retirement Information',[
-      'retirement_participant','Active participant in pension/retirement plan?',
-      'ira_withdrawal','IRA/Roth/401(k) or other withdrawals?',
-      'disaster_repayment','Repay qualified disaster distributions?',
-      'lump_sum','Lump-sum pension/401(k) distributions?',
-      'ira_contribution','Contributions to IRA/Roth/401(k)?',
-      'birth_adoption_dist','Qualified birth/adoption distributions?',
-      'qcd','Qualified charitable distributions (QCD)?',
-    ]],['Education Information',[
-      'post_secondary','Attend post-secondary school?',
-      'educational_expenses','Educational expenses for self/spouse/dependent?',
-      'scholarship','Family member receive scholarship?',
-      '529_withdrawal','529 plan withdrawals?',
-      '529_contribution','529 plan contributions?',
-      'student_loan_interest','Pay student loan interest?',
-      'savings_bonds','Cash Series EE/I bonds issued after 1989?',
-      'fafsa_worksheet','Want FAFSA worksheet?',
-    ]],['Health Care Information',[
-      'health_coverage','Qualifying health coverage for family?',
-      'marketplace','Enroll in Marketplace via healthcare.gov?',
-      'shared_policy','Share Marketplace policy outside family?',
-      'hsa_contribution','HSA or Archer MSA contributions?',
-      'hsa_distribution','HSA/MSA distributions received?',
-      'long_term_care_premiums','Pay long-term care premiums?',
-      'able_contribution','ABLE account contributions?',
-      'able_withdrawal','ABLE account withdrawals?',
-      'employer_health','Business owner - pay employee health premiums?',
-    ]],['Itemized Deductions',[
-      'casualty_loss','Casualty/theft loss or condemnation award?',
-      'medical_expenses','Out-of-pocket medical expenses?',
-      'cash_charity','Cash charitable contributions?',
-      'noncash_charity','Noncash charitable contributions?',
-      'vehicle_donation','Donate vehicle or boat?',
-      'real_estate_tax','Pay real estate taxes?',
-      'mortgage_interest','Pay mortgage interest?',
-      'investment_interest','Investment interest expenses?',
-      'major_purchases','Major purchases (cars, boats)?',
-      'out_of_state_tax','Out-of-state purchases no sales/use tax collected?',
-    ]],['Miscellaneous Information',[
-      'gifts','Gifts over $18,000 to any individual?',
-      'bartering','Bartering transactions?',
-      'retired_or_job_change','Retire or change jobs?',
-      'moving_armed_forces','Moving costs as Armed Forces member?',
-      'household_employee','Pay household employee?',
-      'energy_improvements','Energy efficient home improvements?',
-      'foreign_trust','Foreign trust distribution or grantor?',
-      'foreign_account','Foreign financial account interest/signature?',
-      'foreign_financial_assets','Foreign financial assets or entity interest?',
-      'boir_owner','Own/control 25% of company pre-Jan 1 2025?',
-      'boir_changed','BOIR info changed?',
-      'irs_correspondence','Correspondence from State or IRS?',
-      'unfiled_years','Prior years unfiled or unpaid balances?',
-      'presidential_fund','Designate $3 to Presidential Campaign Fund?',
-    ]],['Estimated Taxes',[
-      'overpayment_refund','Overpayment refund or apply to 2026 estimated?',
-      'income_change_2026','Expect considerable 2026 income change?',
-      'deduction_change_2026','Expect considerable 2026 deduction change?',
-      'withholding_change_2026','Expect considerable 2026 withholding change?',
-      'dependents_change_2026','Expect change in dependents for 2026?',
-      'fed_estimated_payments','Federal estimated payments for 2025?',
-      'fed_prior_overpayment','2024 overpayment applied to 2025?',
-      'state_estimated_payments','State estimated payments for 2025?',
-      'state_prior_overpayment','State 2024 overpayment applied to 2025?',
-    ]],['Traditional IRA',[
-      'employer_retirement_plan','Covered by employer retirement plan?',
-      'trad_ira_contribution','Traditional IRA contributions for 2025?',
-    ]]].map(([title, qs]) => sec(title, qs.reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))).join('')}
-
-    <div class="tq-section"><h3>Traditional IRA (cont.)</h3>
-    <div class="tq-row"><span class="q">Value of all traditional IRAs on 12/31/2025:</span>
-    <input name="trad_ira_value" value="${esc(s(saved,'trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div></div>
-
-    ${sec('Roth IRA', [
-      'roth_ira_contribution','Roth IRA contributions for 2025?',
-      'roth_conversion','Roth IRA conversion for 2025?',
-      'roth_recharacterization','Roth IRA recharacterizations for 2025?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Sales of Stocks & Securities', [
-      'worthless_securities','Securities become worthless in 2025?',
-      'uncollectible_debts','Debts become uncollectible in 2025?',
-      'commodity_sales','Commodity sales, short sales, straddles?',
-      'noncash_exchange','Exchange securities for non-cash?',
-      'virtual_assets','Sell/exchange/dispose of virtual assets?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Other Income', [
-      'state_refund','State/local income tax refunds in 2025?',
-      'alimony_received','Receive alimony in 2025?',
-      'unemployment_comp','Receive unemployment compensation in 2025?',
-      'other_income','Other income (commissions, jury pay, etc.)?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Social Security Benefits', YN(saved,'ssa_1099','Receive Form SSA-1099 in 2025?'))}
-
-    ${sec('Other Adjustments', [
-      'alimony_paid','Pay alimony in 2025?',
-      'educator_expenses','Educator expenses (K-12 teacher)?',
-      'other_adjustments','Other adjustments to income?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Schedule A - Medical & Dental', [
-      'medical_expenses_itemized','Medical/dental expenses?',
-      'medical_insurance','Medical insurance premiums?',
-      'long_term_care_premiums_itemized','Long-term care premiums?',
-      'prescription_drugs','Prescription medicine expenses?',
-      'medical_mileage','Medical miles driven (21¢/mi)?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Schedule A - Tax Expenses', [
-      'state_local_income_tax','State/local income taxes in 2025?',
-      'state_local_2025_tax','2025 state/local income taxes paid in 2025?',
-      'real_estate_taxes','Real estate taxes in 2025?',
-      'personal_property_tax','Personal property taxes?',
-      'other_taxes','Foreign taxes or state disability taxes?',
-      'sales_tax_major','Sales tax on major purchases?',
-      'sales_tax_actual','Sales tax on actual expenses?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Interest Expenses', [
-      'mortgage_interest_1098','Home mortgage interest on Form 1098?',
-      'mortgage_interest_individual','Mortgage interest to individuals?',
-      'refinance_points','Refinance and pay points in 2025?',
-      'investment_interest_expense','Investment interest other than K-1?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Charitable Contributions', [
-      'charity_cash','Cash/check charitable contributions?',
-      'charity_mileage','Volunteer miles for charity?',
-      'charity_noncash','Noncash donations (clothing, household)?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Miscellaneous Deductions', [
-      'other_expenses','Other expenses not listed?',
-      'gambling_losses','Gambling losses (only if gambling income)?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Misc. Itemized Deductions (State)', [
-      'unreimbursed_expenses','Unreimbursed employee expenses?',
-      'union_dues','Union dues not on W-2?',
-      'tax_prep_fees','Tax preparation fees?',
-      'other_2pct_expenses','Other expenses subject to 2% AGI limit?',
-      'safe_deposit','Safe deposit box rental?',
-      'investment_expenses','Investment expenses other than K-1/1099?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
-
-    ${sec('Health Care Coverage', [
-      'self_employed_health','Self-employed health insurance premiums?',
-      'self_employed_ltc','Self-employed long-term care premiums?',
-    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+    ${schema && schema.sections ? schema.sections.map(s => `
+    <div class="tq-section"><h3>${esc(s.title)}</h3>
+      ${s.questions.map(q => YN(saved, q[0], q[1])).join('')}
+      ${s.title === 'Traditional IRA' ? `<div class="tq-row"><span class="q">Value of all traditional IRAs on 12/31/2025:</span>
+        <input name="trad_ira_value" value="${esc(s(saved,'trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>` : ''}
+    </div>`).join('') : ''}
 
     <div class="tq-section"><h3>Signature</h3>
     <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;">I certify that the information provided is true, correct, and complete to the best of my knowledge.</p>
