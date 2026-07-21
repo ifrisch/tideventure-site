@@ -14,9 +14,10 @@
     .tq-card h1 { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
     .tq-card > p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
     .tq-section h3 { font-size: 0.9rem; font-weight: 700; color: #0d3f5e; margin: 1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid #e5e7eb; }
-    .tq-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; padding: 0.25rem 0; }
-    .tq-row .q { flex: 1; color: #374151; }
+    .tq-row { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; padding: 0.2rem 0; flex-wrap: wrap; }
+    .tq-row .q { flex: 1; color: #374151; min-width: 150px; }
     .tq-row label { font-size: 0.76rem; white-space: nowrap; }
+    .tq-row .note-field { flex: 0.6; min-width: 80px; }
     .tq-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
     .tq-save-msg { font-size: 0.82rem; color: #059669; display: none; }
     #tqForm, #tqForm div, #tqForm input, #tqForm select { min-width: 0; }
@@ -79,9 +80,11 @@ const y = (saved, name) => s(saved,name)==='Y'?'checked':'';
 const n = (saved, name) => s(saved,name)==='N'?'checked':'';
 
 function YN(saved, name, label) {
+  const c = saved[name + '_note'] || '';
   return `<div class="tq-row"><span class="q">${label}</span>
     <label><input type="radio" name="${name}" value="Yes" ${y(saved,name)}> Yes</label>
-    <label><input type="radio" name="${name}" value="No" ${n(saved,name)}> No</label></div>`;
+    <label><input type="radio" name="${name}" value="No" ${n(saved,name)}> No</label>
+    <input name="${name}_note" value="${esc(c)}" placeholder="Notes" style="flex:1;min-width:80px;margin-left:0.3rem;padding:0.15rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;box-sizing:border-box;"></div>`;
 }
 
 function renderQ(saved) {
