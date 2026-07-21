@@ -337,27 +337,41 @@ function tqAddDep() {
   tbody.appendChild(row);
 }
 
+function tqSection(title, questions) {
+  return `<h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">${title}</h3>
+    <div style="display:grid;gap:0.4rem;margin-bottom:0.5rem;">${questions}</div>`;
+}
+
+function tqYN(name, label) {
+  const s = (n) => saved[n] || '';
+  return `<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;padding:0.25rem 0;">
+    <span style="flex:1;color:#374151;">${label}</span>
+    <label style="font-size:0.76rem;"><input type="radio" name="${name}" value="Yes" ${s(name)==='Yes'?'checked':''}> Yes</label>
+    <label style="font-size:0.76rem;"><input type="radio" name="${name}" value="No" ${s(name)==='No'?'checked':''}> No</label>
+  </div>`;
+}
+
 function renderQuestionnaireForm(year, saved) {
   const s = (name) => saved[name] || '';
   const sel = (name, val) => s(name) === val ? 'selected' : '';
   const chk = (name, val) => (s(name)||'').includes(val) ? 'checked' : '';
   const y = (name) => s(name)==='Y'?'checked':'';
   const n = (name) => s(name)==='N'?'checked':'';
+
   document.getElementById('tqForm').innerHTML = `<form id="tqFormData">
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:0 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Engagement Letter</h3>
-    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Engagement Letter</h3>
+    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.5rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
       <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label>
-        <input name="signature" value="${esc(s('signature'))}" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+        <input name="signature" value="${esc(s('signature'))}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
       <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label>
-        <input name="sig_date" type="date" value="${s('sig_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+        <input name="sig_date" type="date" value="${s('sig_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
     </div>
 
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Information</h3>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem 1rem;margin-bottom:1rem;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Personal Information</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
       <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Filing Status</label>
-        <select name="filing_status" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
+        <select name="filing_status" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
           <option value="">Select...</option><option value="1" ${sel('filing_status','1')}>Single</option>
           <option value="2" ${sel('filing_status','2')}>Married Filing Joint</option>
           <option value="3" ${sel('filing_status','3')}>Married Filing Separate</option>
@@ -365,136 +379,128 @@ function renderQuestionnaireForm(year, saved) {
           <option value="5" ${sel('filing_status','5')}>Qualifying Surviving Spouse</option>
         </select></div>
       <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
-        <label style="font-size:0.78rem;"><input type="checkbox" name="nonresident_alien" value="Y" ${chk('nonresident_alien','Y')}> Nonresident alien at year end</label></div>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="nonresident_alien" value="Y" ${chk('nonresident_alien','Y')}> Nonresident alien</label></div>
       <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
-        <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${chk('spouse_no_itin','Y')}> Spouse does not have ITIN</label></div>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${chk('spouse_no_itin','Y')}> Spouse no ITIN</label></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-      <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
-        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Taxpayer</h4>
-        <div style="display:grid;gap:0.4rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div style="background:#f9fafb;padding:0.6rem;border-radius:8px;">
+        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">Taxpayer</h4>
+        <div style="display:grid;gap:0.35rem;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
-            <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
-            <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
           <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
-            <label><input type="checkbox" name="tp_dependent" value="Y" ${chk('tp_dependent','Y')}> Dependent of another taxpayer</label>
+            <label><input type="checkbox" name="tp_dependent" value="Y" ${chk('tp_dependent','Y')}> Dependent of another</label>
             <label><input type="checkbox" name="tp_blind" value="Y" ${chk('tp_blind','Y')}> Legally blind</label>
           </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;">
-            <label>Full-time student (age 18-23):</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;flex-wrap:wrap;">
+            <span>Student (18-23):</span>
             <label><input type="radio" name="tp_student" value="Y" ${y('tp_student')}> Y</label>
             <label><input type="radio" name="tp_student" value="N" ${n('tp_student')}> N</label>
-            <label style="margin-left:0.5rem;">Date of death:</label>
-            <input name="tp_dod" type="date" value="${s('tp_dod')}" style="width:120px;padding:0.25rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <span>DOD:</span>
+            <input name="tp_dod" type="date" value="${s('tp_dod')}" style="width:110px;padding:0.2rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
-            <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_email" placeholder="Email address" value="${esc(s('tp_email'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="tp_email" placeholder="Email" value="${esc(s('tp_email'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
         </div>
       </div>
-      <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
-        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Spouse</h4>
-        <div style="display:grid;gap:0.4rem;">
+      <div style="background:#f9fafb;padding:0.6rem;border-radius:8px;">
+        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">Spouse</h4>
+        <div style="display:grid;gap:0.35rem;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
-            <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
-            <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
+          <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
-            <label><input type="checkbox" name="sp_dependent" value="Y" ${chk('sp_dependent','Y')}> Dependent of another taxpayer</label>
+            <label><input type="checkbox" name="sp_dependent" value="Y" ${chk('sp_dependent','Y')}> Dependent of another</label>
             <label><input type="checkbox" name="sp_blind" value="Y" ${chk('sp_blind','Y')}> Legally blind</label>
           </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;">
-            <label>Full-time student (age 18-23):</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;flex-wrap:wrap;">
+            <span>Student (18-23):</span>
             <label><input type="radio" name="sp_student" value="Y" ${y('sp_student')}> Y</label>
             <label><input type="radio" name="sp_student" value="N" ${n('sp_student')}> N</label>
-            <label style="margin-left:0.5rem;">Date of death:</label>
-            <input name="sp_dod" type="date" value="${s('sp_dod')}" style="width:120px;padding:0.25rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <span>DOD:</span>
+            <input name="sp_dod" type="date" value="${s('sp_dod')}" style="width:110px;padding:0.2rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
         </div>
       </div>
     </div>
 
-    <div style="margin-bottom:1rem;">
+    <div style="margin-bottom:0.75rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-        <div><span style="font-size:0.74rem;font-weight:600;color:#374151;">Taxpayer</span>
+        <div><span style="font-size:0.74rem;font-weight:600;">Taxpayer</span>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-            <input name="dl_number" placeholder="License #" value="${esc(s('dl_number'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="dl_state" placeholder="State" value="${esc(s('dl_state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="dl_exp" placeholder="Exp date" value="${esc(s('dl_exp'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_number" placeholder="License #" value="${esc(s('dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_state" placeholder="State" value="${esc(s('dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_exp" placeholder="Exp" value="${esc(s('dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
         </div>
-        <div><span style="font-size:0.74rem;font-weight:600;color:#374151;">Spouse</span>
+        <div><span style="font-size:0.74rem;font-weight:600;">Spouse</span>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-            <input name="sp_dl_number" placeholder="License #" value="${esc(s('sp_dl_number'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_dl_state" placeholder="State" value="${esc(s('sp_dl_state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_dl_exp" placeholder="Exp date" value="${esc(s('sp_dl_exp'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_number" placeholder="License #" value="${esc(s('sp_dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_state" placeholder="State" value="${esc(s('sp_dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_exp" placeholder="Exp" value="${esc(s('sp_dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
           </div>
         </div>
       </div>
     </div>
 
-    <div style="margin-bottom:1rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Present Mailing Address</label>
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.4rem;">
-        <input name="address" placeholder="Street address" value="${esc(s('address'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="in_care_of" placeholder="In care of" value="${esc(s('in_care_of'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+    <div style="margin-bottom:0.75rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.3rem;">
+        <input name="address" placeholder="Street" value="${esc(s('address'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="in_care_of" placeholder="In care of" value="${esc(s('in_care_of'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.4rem;margin-top:0.4rem;">
-        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.3rem;margin-top:0.3rem;">
+        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
       </div>
     </div>
 
-    <div style="margin-bottom:1rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Refund Direct Deposit</label>
-      <input name="bank_routing" placeholder="Bank routing number" value="${esc(s('bank_routing'))}" style="width:180px;padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.4rem;">
-      <input name="bank_account" placeholder="Account number" value="${esc(s('bank_account'))}" style="width:180px;padding:0.3rem 0.4rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+    <div style="margin-bottom:0.75rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Direct Deposit</label>
+      <input name="bank_routing" placeholder="Routing #" value="${esc(s('bank_routing'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.3rem;">
+      <input name="bank_account" placeholder="Account #" value="${esc(s('bank_account'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
     </div>
 
-    <div style="margin-bottom:1rem;">
-      <label style="font-size:0.78rem;margin-right:1.5rem;"><input type="radio" name="irs_auth" value="Y" ${y('irs_auth')}> Authorize IRS to discuss return with preparer</label>
-      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n('irs_auth')}> Do NOT authorize</label>
+    <div style="margin-bottom:0.75rem;">
+      <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${y('irs_auth')}> Authorize IRS to discuss return</label>
+      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n('irs_auth')}> Do not authorize</label>
     </div>
 
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Dependents</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:0.76rem;margin-bottom:0.25rem;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Dependents</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:0.74rem;margin-bottom:0.3rem;">
       <thead><tr style="background:#f9fafb;">
-        <th style="padding:0.25rem 0.3rem;text-align:left;">First</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">Last</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">DOB</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">SSN</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">Relation</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">Mos</th>
-        <th style="padding:0.25rem 0.3rem;text-align:left;">Code</th>
-        <th style="padding:0.25rem 0.3rem;"></th>
+        <th style="padding:0.2rem 0.25rem;">First</th><th style="padding:0.2rem 0.25rem;">Last</th><th style="padding:0.2rem 0.25rem;">DOB</th>
+        <th style="padding:0.2rem 0.25rem;">SSN</th><th style="padding:0.2rem 0.25rem;">Rel</th><th style="padding:0.2rem 0.25rem;">Mos</th>
+        <th style="padding:0.2rem 0.25rem;">Code</th><th style="padding:0.2rem 0.25rem;"></th>
       </tr></thead>
       <tbody id="tqDepBody">
         ${(saved.dependents || []).map(d => `<tr class="tq-dep-row">
-          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-          <td><select name="dep_code" style="width:45px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <option value="">-</option>
-            <option value="1" ${d.dep_code==='1'?'selected':''}>1</option>
+          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:70px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:70px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:80px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:80px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:40px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:25px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
+          <td><select name="dep_code" style="width:35px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;">
+            <option value="">-</option><option value="1" ${d.dep_code==='1'?'selected':''}>1</option>
             <option value="2" ${d.dep_code==='2'?'selected':''}>2</option>
             <option value="3" ${d.dep_code==='3'?'selected':''}>3</option>
             <option value="4" ${d.dep_code==='4'?'selected':''}>4</option>
@@ -503,29 +509,252 @@ function renderQuestionnaireForm(year, saved) {
         </tr>`).join('')}
       </tbody>
     </table>
-    <button type="button" onclick="tqAddDep()" style="font-size:0.76rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.25rem 0.7rem;cursor:pointer;margin-bottom:0.5rem;">+ Add Dependent</button>
-    <div style="font-size:0.7rem;color:#6b7280;line-height:1.4;">Dependent codes: 1=Child lived with you, 2=Child not lived with you (divorce), 3=Other dependent, 4=Other dependent not qualifying for ODC</div>
+    <button type="button" onclick="tqAddDep()" style="font-size:0.74rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;margin-bottom:0.4rem;">+ Add Dependent</button>
+    <div style="font-size:0.68rem;color:#6b7280;line-height:1.3;">Codes: 1=Child lived with you, 2=Child not with you (divorce), 3=Other dependent, 4=Other dep not qualifying ODC</div>
 
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Questions</h3>
-    <div style="display:grid;gap:0.5rem;margin-bottom:1rem;">
-      ${[
-        ['marital_change','Did your marital status change during the year?'],
-        ['separated','Did you live separately from your spouse during the last six months of the year?'],
-        ['separate_decree','Do you have a separate decree and not living in the same household by year end?'],
-        ['address_change','Did your address change from last year?'],
-        ['claimed_dependent','Can you be claimed as a dependent by another taxpayer?'],
-        ['has_tin','Do you, spouse, and dependents have a taxpayer ID number (SSN, ITIN, ATIN)?'],
-        ['ip_pin','Did you receive an Identity Protection PIN or been a victim of identity theft?'],
-        ['disaster_area','Did you reside in or operate a business in a Federally declared disaster area?'],
-      ].map(([key,label]) => `
-        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;">
-          <span style="flex:1;color:#374151;">${label}</span>
-          <label style="font-size:0.76rem;"><input type="radio" name="${key}" value="Yes" ${s(key)==='Yes'?'checked':''}> Yes</label>
-          <label style="font-size:0.76rem;"><input type="radio" name="${key}" value="No" ${s(key)==='No'?'checked':''}> No</label>
-        </div>`).join('')}
+    ${tqSection('General Questions', [
+      tqYN('marital_change','Did your marital status change during the year?'),
+      tqYN('separated','Did you live separately from your spouse during the last 6 months?'),
+      tqYN('separate_decree','Do you have a separate decree and not living in same household?'),
+      tqYN('address_change','Did your address change from last year?'),
+      tqYN('claimed_dependent','Can you be claimed as a dependent by another taxpayer?'),
+      tqYN('has_tin','Do all family members have SSN/ITIN/ATIN?'),
+      tqYN('ip_pin','Did you receive an IP PIN or been a victim of identity theft?'),
+      tqYN('disaster_area','Did you reside or operate a business in a disaster area?'),
+      tqYN('dep_changes','Were there any changes in dependents from the prior year?'),
+      tqYN('child_unearned','Any child under 19 or student under 24 with unearned income over $2,600?'),
+      tqYN('dep_must_file','Do any dependents need to file a tax return?'),
+      tqYN('support_others','Did you provide over half the support for any other person(s)?'),
+      tqYN('childcare','Did you pay for child care while working/looking for work/student?'),
+      tqYN('other_lived_with','Did any other person live with you more than half the year?'),
+      tqYN('adoption','Did you pay any adoption expenses?'),
+      tqYN('divorce_decree','If divorced/separated with children, do you have a separation agreement?'),
+      tqYN('dep_ip_pin','Did any dependents receive an IP PIN or been identity theft victims?'),
+    ])}
+
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Electronic Filing</h3>
+    <div style="margin-bottom:0.5rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+        <div><label style="font-size:0.74rem;font-weight:600;">Taxpayer PIN (5-digit)</label>
+          <input name="tp_pin" value="${esc(s('tp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
+        <div><label style="font-size:0.74rem;font-weight:600;">Spouse PIN (5-digit)</label>
+          <input name="sp_pin" value="${esc(s('sp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
+      </div>
+      ${tqYN('paper_return','Do you want to file a paper return even if you qualify for e-file?')}
+      ${tqYN('email_notification','Do you want email notification when your e-file is accepted?')}
+      ${tqYN('pay_by_debit','If filing electronically, pay amount due by debiting your account?')}
     </div>
 
-    <div style="display:flex;gap:0.75rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+    ${tqSection('Income Information', [
+      tqYN('foreign_income','Did you have any foreign income or pay foreign taxes?'),
+      tqYN('prior_property_income','Did you receive income from property sold prior to this year?'),
+      tqYN('unemployment','Did you receive any unemployment benefits?'),
+      tqYN('disability','Did you receive any disability income?'),
+      tqYN('medicaid_waiver','Did you receive Medicaid waiver payments?'),
+      tqYN('tip_income','Did you receive tip income not reported to employer?'),
+      tqYN('life_insurance','Did any life insurance policies mature or were surrendered?'),
+      tqYN('hobby_income','Did you receive awards, prizes, hobby income, gambling winnings?'),
+      tqYN('nonemployee_comp','Did you receive nonemployee compensation?'),
+      tqYN('gig_1099','Did you receive Form 1099-K, 1099-MISC, 1099-NEC for gig work?'),
+      tqYN('crowdfunding_1099k','Did you receive Form 1099-K for crowdfunding?'),
+      tqYN('erroneous_1099k','Do you believe any Form 1099-K is in error?'),
+      tqYN('income_fluctuation','Do you expect large fluctuation in income/deductions/withholding next year?'),
+      tqYN('digital_assets','Did you have any sales/exchanges of digital assets?'),
+      tqYN('social_security','Did you receive any Social Security benefits?'),
+    ])}
+
+    ${tqSection('Purchases, Sales & Debt', [
+      tqYN('new_business','Did you start a new business or purchase rental property?'),
+      tqYN('business_interest','Did you have ownership interest in any business?'),
+      tqYN('sold_biz_assets','Did you sell/exchange/purchase any business assets?'),
+      tqYN('new_partnership','Did you acquire interest in a partnership or S corp?'),
+      tqYN('real_estate','Did you sell/exchange/purchase any real estate?'),
+      tqYN('principal_residence','Did you purchase or sell a principal residence?'),
+      tqYN('foreclosure','Did you foreclose or abandon a principal residence or property?'),
+      tqYN('stock','Did you acquire or dispose of any stock?'),
+      tqYN('home_equity','Did you take out a home equity loan?'),
+      tqYN('refinance','Did you refinance a principal residence or second home?'),
+      tqYN('sold_business','Did you sell an existing business, rental, or other property?'),
+      tqYN('bad_debt','Did you lend money that became totally uncollectable?'),
+      tqYN('debt_forgiven','Did you have any debts canceled or forgiven?'),
+      tqYN('clean_vehicle','Did you purchase a clean vehicle eligible for the credit?'),
+      tqYN('personal_property_1099k','Did you receive Form 1099-K for sale of personal property?'),
+      tqYN('us_vehicle','Did you make loan payments on a US-assembled vehicle (final assembly in US)?'),
+    ])}
+
+    ${tqSection('Retirement Information', [
+      tqYN('retirement_participant','Are you an active participant in a pension or retirement plan?'),
+      tqYN('ira_withdrawal','Did you make any IRA, Roth, 401(k) or other retirement withdrawals?'),
+      tqYN('disaster_repayment','If you received qualified disaster distributions, did you repay any?'),
+      tqYN('lump_sum','Did you receive any lump-sum pension/401(k) distributions?'),
+      tqYN('ira_contribution','Did you make contributions to IRA, Roth, 401(k) or other retirement plan?'),
+      tqYN('birth_adoption_dist','Did you receive qualified birth/adoption or emergency distributions?'),
+      tqYN('qcd','Did you make any qualified charitable distributions (QCD)?'),
+    ])}
+
+    ${tqSection('Education Information', [
+      tqYN('post_secondary','Did you, spouse, or dependents attend post-secondary school?'),
+      tqYN('educational_expenses','Did you have educational expenses for yourself, spouse, or dependent?'),
+      tqYN('scholarship','Did anyone in your family receive a scholarship?'),
+      tqYN('529_withdrawal','Did you make any 529 plan withdrawals?'),
+      tqYN('529_contribution','Did you make any 529 plan contributions?'),
+      tqYN('student_loan_interest','Did you pay any student loan interest?'),
+      tqYN('savings_bonds','Did you cash any Series EE or I savings bonds issued after 1989?'),
+      tqYN('fafsa_worksheet','Would you like a worksheet for FAFSA completion?'),
+    ])}
+
+    ${tqSection('Health Care Information', [
+      tqYN('health_coverage','Did you have qualifying health care coverage for your family?'),
+      tqYN('marketplace','Did you enroll in Marketplace coverage through healthcare.gov?'),
+      tqYN('shared_policy','Did you share a Marketplace policy with anyone not in your family?'),
+      tqYN('hsa_contribution','Did you make HSA or Archer MSA contributions?'),
+      tqYN('hsa_distribution','Did you receive HSA, Archer MSA, or Medicare Advantage MSA distributions?'),
+      tqYN('long_term_care_premiums','Did you pay long-term care premiums?'),
+      tqYN('able_contribution','Did you make ABLE account contributions?'),
+      tqYN('able_withdrawal','Did you receive ABLE account withdrawals?'),
+      tqYN('employer_health','If business owner, did you pay employee health insurance premiums?'),
+    ])}
+
+    ${tqSection('Itemized Deductions', [
+      tqYN('casualty_loss','Did you incur a casualty/theft loss or condemnation award?'),
+      tqYN('medical_expenses','Did you pay out-of-pocket medical expenses?'),
+      tqYN('cash_charity','Did you make any cash charitable contributions?'),
+      tqYN('noncash_charity','Did you make any noncash charitable contributions?'),
+      tqYN('vehicle_donation','Did you donate a vehicle or boat?'),
+      tqYN('real_estate_tax','Did you pay real estate taxes on primary/second home?'),
+      tqYN('mortgage_interest','Did you pay mortgage interest on an existing home loan?'),
+      tqYN('investment_interest','Did you incur investment interest expenses?'),
+      tqYN('major_purchases','Did you make any major purchases (cars, boats, etc.)?'),
+      tqYN('out_of_state_tax','Did you make out-of-state purchases where seller did not collect sales/use tax?'),
+    ])}
+
+    ${tqSection('Miscellaneous Information', [
+      tqYN('gifts','Did you make gifts of more than $18,000 to any individual?'),
+      tqYN('bartering','Did you engage in any bartering transactions?'),
+      tqYN('retired_or_job_change','Did you retire or change jobs this year?'),
+      tqYN('moving_armed_forces','Did you incur moving costs as a member of the Armed Forces?'),
+      tqYN('household_employee','Did you pay any individual as a household employee?'),
+      tqYN('energy_improvements','Did you make energy efficient home improvements?'),
+      tqYN('foreign_trust','Did you receive a distribution from or were you grantor of a foreign trust?'),
+      tqYN('foreign_account','Did you have financial interest/signature authority over a foreign account?'),
+      tqYN('foreign_financial_assets','Do you have foreign financial assets or interest in a foreign entity?'),
+      tqYN('boir_owner','Are you an owner or control 25% of a company registered before Jan 1, 2025?'),
+      tqYN('boir_changed','If required to file BOIR, has any previously reported information changed?'),
+      tqYN('irs_correspondence','Did you receive correspondence from the State or IRS?'),
+      tqYN('unfiled_years','Do you have prior years unfiled or with unpaid balances?'),
+      tqYN('presidential_fund','Do you want to designate $3 to the Presidential Election Campaign Fund?'),
+    ])}
+
+    ${tqSection('Estimated Taxes', [
+      tqYN('overpayment_refund','If overpaid in 2025, do you want refund or applied to 2026 estimated?'),
+      tqYN('income_change_2026','Do you expect considerable change in 2026 income?'),
+      tqYN('deduction_change_2026','Do you expect considerable change in 2026 deductions?'),
+      tqYN('withholding_change_2026','Do you expect considerable change in 2026 withholding?'),
+      tqYN('dependents_change_2026','Do you expect a change in dependents claimed for 2026?'),
+      tqYN('fed_estimated_payments','Did you make federal estimated tax payments for 2025?'),
+      tqYN('fed_prior_overpayment','Was any 2024 overpayment applied to 2025 estimated?'),
+      tqYN('state_estimated_payments','Did you make state estimated tax payments for 2025?'),
+      tqYN('state_prior_overpayment','Was any state 2024 overpayment applied to 2025 estimated?'),
+    ])}
+
+    ${tqSection('Traditional IRA', [
+      tqYN('employer_retirement_plan','Are you or spouse covered by an employer retirement plan?'),
+      tqYN('trad_ira_contribution','Did you make traditional IRA contributions for 2025?'),
+    ])}
+    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;padding:0.25rem 0;margin-bottom:0.75rem;">
+      <span style="flex:1;color:#374151;">Value of all traditional IRAs on 12/31/2025:</span>
+      <input name="trad_ira_value" value="${esc(s('trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+    </div>
+
+    ${tqSection('Roth IRA', [
+      tqYN('roth_ira_contribution','Did you make Roth IRA contributions for 2025?'),
+      tqYN('roth_conversion','Did you make a 2025 Roth IRA conversion?'),
+      tqYN('roth_recharacterization','Did you make total Roth IRA contribution recharacterizations for 2025?'),
+    ])}
+
+    ${tqSection('Sales of Stocks & Securities', [
+      tqYN('worthless_securities','Did any securities become worthless during 2025?'),
+      tqYN('uncollectible_debts','Did any debts become uncollectible during 2025?'),
+      tqYN('commodity_sales','Did you have commodity sales, short sales, or straddles?'),
+      tqYN('noncash_exchange','Did you exchange securities/investments for something other than cash?'),
+      tqYN('virtual_assets','Did you receive, sell, exchange, or dispose of any virtual assets?'),
+    ])}
+
+    ${tqSection('Other Income', [
+      tqYN('state_refund','Did you receive state/local income tax refunds during 2025?'),
+      tqYN('alimony_received','Did you receive alimony during 2025?'),
+      tqYN('unemployment_comp','Did you receive unemployment compensation during 2025?'),
+      tqYN('other_income','Did you have other income (commissions, jury pay, director fees, etc.)?'),
+    ])}
+
+    ${tqSection('Social Security Benefits', [
+      tqYN('ssa_1099','Did you receive Form SSA-1099 during 2025?'),
+    ])}
+
+    ${tqSection('Other Adjustments', [
+      tqYN('alimony_paid','Did you pay alimony during 2025?'),
+      tqYN('educator_expenses','Did you have educator expenses (K-12 teacher, counselor, etc.)?'),
+      tqYN('other_adjustments','Did you have any other adjustments to income?'),
+    ])}
+
+    ${tqSection('Schedule A - Medical & Dental', [
+      tqYN('medical_expenses_itemized','Did you have medical/dental expenses (doctors, hospitals, prescriptions, etc.)?'),
+      tqYN('medical_insurance','Did you pay medical insurance premiums?'),
+      tqYN('long_term_care_premiums_itemized','Did you pay long-term care premiums?'),
+      tqYN('prescription_drugs','Did you have prescription medicine expenses?'),
+      tqYN('medical_mileage','Did you drive tax miles for medical (21¢/mile for 2025)?'),
+    ])}
+
+    ${tqSection('Schedule A - Tax Expenses', [
+      tqYN('state_local_income_tax','Did you pay state/local income taxes in 2025?'),
+      tqYN('state_local_2025_tax','Did you pay 2025 state/local income taxes in 2025?'),
+      tqYN('real_estate_taxes','Did you pay real estate taxes in 2025?'),
+      tqYN('personal_property_tax','Did you pay personal property taxes?'),
+      tqYN('other_taxes','Did you pay foreign taxes or state disability taxes?'),
+      tqYN('sales_tax_major','Did you pay sales tax on major purchases?'),
+      tqYN('sales_tax_actual','Did you pay sales tax on actual expenses?'),
+    ])}
+
+    ${tqSection('Interest Expenses', [
+      tqYN('mortgage_interest_1098','Did you pay home mortgage interest reported on Form 1098?'),
+      tqYN('mortgage_interest_individual','Did you pay other home mortgage interest to individuals?'),
+      tqYN('refinance_points','Did you refinance and pay points in 2025?'),
+      tqYN('investment_interest_expense','Did you have investment interest expense other than Schedule K-1?'),
+    ])}
+
+    ${tqSection('Charitable Contributions', [
+      tqYN('charity_cash','Did you make charitable contributions by cash or check?'),
+      tqYN('charity_mileage','Did you drive volunteer miles for charitable purposes?'),
+      tqYN('charity_noncash','Did you donate noncash items (clothing, household, etc.)?'),
+    ])}
+
+    ${tqSection('Miscellaneous Deductions', [
+      tqYN('other_expenses','Did you have other expenses not listed elsewhere?'),
+      tqYN('gambling_losses','Did you have gambling losses (only if you have gambling income)?'),
+    ])}
+
+    ${tqSection('Miscellaneous Itemized Deductions (State)', [
+      tqYN('unreimbursed_expenses','Did you have unreimbursed employee expenses (uniforms, dues, etc.)?'),
+      tqYN('union_dues','Did you pay union dues not on W-2?'),
+      tqYN('tax_prep_fees','Did you pay tax preparation fees?'),
+      tqYN('other_2pct_expenses','Did you have other expenses subject to 2% AGI limit?'),
+      tqYN('safe_deposit','Did you have safe deposit box rental?'),
+      tqYN('investment_expenses','Did you have investment expenses other than Schedule K-1/1099?'),
+    ])}
+
+    ${tqSection('Health Care Coverage', [
+      tqYN('self_employed_health','Did you have self-employed health insurance premiums?'),
+      tqYN('self_employed_ltc','Did you have self-employed long-term care premiums?'),
+    ])}
+
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Signature</h3>
+    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.5rem;">I certify that the information provided in this questionnaire is true, correct, and complete to the best of my knowledge.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+      <div style="flex:1;min-width:200px;"><input name="final_signature" value="${esc(s('final_signature'))}" placeholder="Signature" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+      <div style="flex:1;min-width:150px;"><input name="final_date" type="date" value="${s('final_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;padding-top:0.75rem;border-top:1px solid #e5e7eb;">
       <button type="button" onclick="saveQuestionnaire()" class="btn btn--primary" id="tqSaveBtn" style="padding:0.5rem 1.5rem;font-size:0.82rem;cursor:pointer;">Save Questionnaire</button>
       <button type="button" onclick="closeTq()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Cancel</button>
     </div>
