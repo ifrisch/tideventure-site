@@ -151,6 +151,13 @@
     </div>
 
     <div class="dash-card">
+      <div class="dash-card__header"><h3>Tax Questionnaire</h3></div>
+      <div id="taxQuestionnaireStatus" style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0;">
+        <div style="text-align:center;padding:0.5rem 0;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="dash-card">
       <div class="dash-card__header"><h3>Quick Actions</h3></div>
       <ul>
         <li>QuickBooks Online <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a></li>
@@ -180,6 +187,17 @@
     </div>
   </div>
   <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
+</div>
+
+<!-- Tax Questionnaire Modal -->
+<div id="tqModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.4);overflow-y:auto;padding:2rem 1rem;">
+  <div style="max-width:700px;margin:2rem auto;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+      <h2 style="font-size:1.15rem;font-weight:700;color:#0d3f5e;margin:0;" id="tqTitle">2025 Tax Questionnaire</h2>
+      <button onclick="closeTq()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b7280;">&times;</button>
+    </div>
+    <div id="tqForm"></div>
+  </div>
 </div>
 
 <script>
@@ -231,6 +249,220 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = '/portal';
 });
 
+// ── Tax Questionnaire ──
+async function loadQuestionnaire() {
+  const el = document.getElementById('taxQuestionnaireStatus');
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    if (data.saved) {
+      el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+        <span style="color:#059669;">&#10003; 2025 Questionnaire completed</span>
+        <button class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;cursor:pointer;" onclick="openQuestionnaire(2025)">View / Edit</button>
+      </div>`;
+    } else {
+      el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+        <span style="color:#6b7280;">2025 Questionnaire not started</span>
+        <button class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;cursor:pointer;" onclick="openQuestionnaire(2025)">Start</button>
+      </div>`;
+    }
+  } catch {
+    el.innerHTML = '<div style="text-align:center;padding:0.5rem 0;font-size:0.82rem;color:var(--text-muted);">Unable to load.</div>';
+  }
+}
+
+function closeTq() {
+  document.getElementById('tqModal').style.display = 'none';
+}
+
+async function openQuestionnaire(year) {
+  document.getElementById('tqTitle').textContent = year + ' Tax Questionnaire';
+  document.getElementById('tqModal').style.display = 'block';
+  const token = sessionStorage.getItem('tv_portal_token');
+  const res = await fetch('/api/questionnaire/' + year, { headers: { 'Authorization': `Bearer ${token}` } });
+  const data = await res.json();
+  renderQuestionnaireForm(year, data.data || {});
+}
+
+async function saveQuestionnaire() {
+  const form = document.getElementById('tqFormData');
+  const inputs = form.querySelectorAll('input, select, textarea');
+  const data = {};
+  inputs.forEach(inp => { if (inp.name) data[inp.name] = inp.value; });
+  // Collect checkbox arrays
+  document.querySelectorAll('.tq-checkbox-group').forEach(group => {
+    const name = group.dataset.name;
+    data[name] = [];
+    group.querySelectorAll('input:checked').forEach(cb => data[name].push(cb.value));
+  });
+  // Collect dependents table
+  const deps = [];
+  document.querySelectorAll('.tq-dep-row').forEach(row => {
+    const dep = {};
+    row.querySelectorAll('input, select').forEach(inp => { if (inp.name) dep[inp.name] = inp.value; });
+    if (dep.dep_first) deps.push(dep);
+  });
+  data.dependents = deps;
+  document.getElementById('tqSaveBtn').disabled = true;
+  document.getElementById('tqSaveBtn').textContent = 'Saving…';
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/questionnaire/2025', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      document.getElementById('tqSaveBtn').textContent = 'Saved!';
+      setTimeout(() => { closeTq(); loadQuestionnaire(); }, 1000);
+    } else throw new Error();
+  } catch {
+    document.getElementById('tqSaveBtn').textContent = 'Save Failed';
+    document.getElementById('tqSaveBtn').disabled = false;
+  }
+}
+
+function tqAddDep() {
+  const tbody = document.getElementById('tqDepBody');
+  const row = document.createElement('tr');
+  row.className = 'tq-dep-row';
+  row.innerHTML = `<td><input name="dep_first" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><input name="dep_last" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><input name="dep_dob" type="date" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><input name="dep_ssn" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><input name="dep_rel" style="width:60px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><input name="dep_months" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+    <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;font-size:0.9rem;">&times;</button></td>`;
+  tbody.appendChild(row);
+}
+
+function renderQuestionnaireForm(year, saved) {
+  const s = (name) => saved[name] || '';
+  const sel = (name, val) => s(name) === val ? 'selected' : '';
+  const chk = (name, val) => (saved[name] || []).includes(val) ? 'checked' : '';
+  document.getElementById('tqForm').innerHTML = `<form id="tqFormData">
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:0 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Engagement Letter</h3>
+    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label>
+        <input name="signature" value="${esc(s('signature'))}" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+      <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label>
+        <input name="sig_date" type="date" value="${s('sig_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+    </div>
+
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Information</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem 1rem;margin-bottom:1rem;">
+      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Filing Status</label>
+        <select name="filing_status" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
+          <option value="">Select...</option><option value="1" ${sel('filing_status','1')}>Single</option>
+          <option value="2" ${sel('filing_status','2')}>Married Filing Joint</option>
+          <option value="3" ${sel('filing_status','3')}>Married Filing Separate</option>
+          <option value="4" ${sel('filing_status','4')}>Head of Household</option>
+          <option value="5" ${sel('filing_status','5')}>Qualifying Surviving Spouse</option>
+        </select></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
+        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Taxpayer</h4>
+        <div style="display:grid;gap:0.5rem;">
+          <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="tp_email" placeholder="Email" value="${esc(s('tp_email'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        </div>
+      </div>
+      <div style="background:#f9fafb;padding:0.75rem;border-radius:8px;">
+        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;">Spouse</h4>
+        <div style="display:grid;gap:0.5rem;">
+          <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+          <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.5rem;">
+        <input name="address" placeholder="Street address" value="${esc(s('address'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.5rem;margin-top:0.5rem;">
+        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <input name="bank_routing" placeholder="Bank routing number" value="${esc(s('bank_routing'))}" style="width:200px;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;margin-right:0.5rem;">
+      <input name="bank_account" placeholder="Account number" value="${esc(s('bank_account'))}" style="width:200px;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;">
+      <label style="font-size:0.72rem;color:#6b7280;display:block;margin-top:0.2rem;">For refund direct deposit</label>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.3rem;">Authorize IRS to discuss return with preparer</label>
+      <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${s('irs_auth')==='Y'?'checked':''}> Yes</label>
+      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${s('irs_auth')==='N'?'checked':''}> No</label>
+    </div>
+
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Dependents</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:0.5rem;">
+      <thead><tr style="background:#f9fafb;">
+        <th style="padding:0.3rem 0.4rem;text-align:left;">First</th>
+        <th style="padding:0.3rem 0.4rem;text-align:left;">Last</th>
+        <th style="padding:0.3rem 0.4rem;text-align:left;">DOB</th>
+        <th style="padding:0.3rem 0.4rem;text-align:left;">SSN</th>
+        <th style="padding:0.3rem 0.4rem;text-align:left;">Rel</th>
+        <th style="padding:0.3rem 0.4rem;text-align:left;">Mos</th>
+        <th style="padding:0.3rem 0.4rem;"></th>
+      </tr></thead>
+      <tbody id="tqDepBody">
+        ${(saved.dependents || []).map(d => `<tr class="tq-dep-row">
+          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.78rem;"></td>
+          <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <button type="button" onclick="tqAddDep()" style="font-size:0.78rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:6px;padding:0.3rem 0.8rem;cursor:pointer;margin-bottom:1rem;">+ Add Dependent</button>
+
+    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.75rem;padding-bottom:0.5rem;border-bottom:1px solid #e5e7eb;">Personal Questions</h3>
+    <div style="display:grid;gap:0.6rem;margin-bottom:1rem;">
+      ${[
+        ['marital_change','Did your marital status change during the year?'],
+        ['separated','Did you live separately from your spouse during the last six months of the year?'],
+        ['separate_decree','Do you have a separate decree and not living in the same household by year end?'],
+        ['address_change','Did your address change from last year?'],
+        ['claimed_dependent','Can you be claimed as a dependent by another taxpayer?'],
+        ['has_tin','Do you, spouse, and dependents have a taxpayer ID number (SSN, ITIN, ATIN)?'],
+        ['ip_pin','Did you receive an Identity Protection PIN or been a victim of identity theft?'],
+        ['disaster_area','Did you reside in or operate a business in a Federally declared disaster area?'],
+      ].map(([key,label]) => `
+        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.82rem;">
+          <span style="flex:1;color:#374151;">${label}</span>
+          <label style="font-size:0.78rem;"><input type="radio" name="${key}" value="Yes" ${s(key)==='Yes'?'checked':''}> Yes</label>
+          <label style="font-size:0.78rem;"><input type="radio" name="${key}" value="No" ${s(key)==='No'?'checked':''}> No</label>
+        </div>`).join('')}
+    </div>
+
+    <div style="display:flex;gap:0.75rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+      <button type="button" onclick="saveQuestionnaire()" class="btn btn--primary" id="tqSaveBtn" style="padding:0.5rem 1.5rem;font-size:0.82rem;cursor:pointer;">Save Questionnaire</button>
+      <button type="button" onclick="closeTq()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Cancel</button>
+    </div>
+  </form>`;
+}
+
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function connectQbo() {
@@ -259,6 +491,7 @@ async function loadDashboard() {
     renderActivity(data.recentActivity);
     renderQbo(data.qbo);
     renderRevenue(data.qbo?.revenue);
+    loadQuestionnaire();
   } catch (e) { console.error('Dashboard load failed:', e); }
 }
 

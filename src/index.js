@@ -75,6 +75,8 @@ export default {
     }
 
 
+
+
     // ── Login endpoint ──
     if (url.pathname === '/api/login' && method === 'POST') {
       let email, password;
@@ -152,6 +154,46 @@ export default {
     if (url.pathname === '/api/audit' && method === 'GET') {
       if (!isAdmin(email)) return json(403, { error: 'Admin access required' });
       try { return await handleAuditLog(env); } catch (e) { return json(500, { error: e.message }); }
+    }
+
+    // ── Tax Questionnaire ──
+    const tqMatch = url.pathname.match(/^\/api\/questionnaire\/(\d{4})$/);
+    if (tqMatch) {
+      if (!email) return json(401, { error: 'Not authenticated' });
+      const year = tqMatch[1];
+      const key = `questionnaire/${email}/${year}`;
+      if (method === 'GET') {
+        try {
+          const obj = await env.tideventure_documents.get(key);
+          if (!obj) return json(200, { year, saved: false, data: null });
+          return json(200, { year, saved: true, data: JSON.parse(await obj.text()) });
+        } catch (e) { return json(500, { error: e.message }); }
+      }
+      if (method === 'PUT' || method === 'POST') {
+        try {
+          const body = await request.json();
+          if (!body || typeof body !== 'object') return json(400, { error: 'Invalid body' });
+          const text = JSON.stringify(body);
+          await env.tideventure_documents.put(key, text, { httpMetadata: { contentType: 'application/json' } });
+          return json(200, { ok: true, year, saved: true });
+        } catch (e) { return json(500, { error: 'Save failed: ' + e.message }); }
+      }
+    }
+    // Admin: list all questionnaire responses for a year
+    if (url.pathname.match(/^\/api\/admin\/questionnaire\/\d{4}$/) && method === 'GET' && isAdmin(email)) {
+      try {
+        const year = url.pathname.split('/').pop();
+        const results = [];
+        const list = await env.tideventure_documents.list();
+        for (const obj of list.objects) {
+          const parts = obj.key.split('/');
+          if (parts[0] === 'questionnaire' && parts[2] === year) {
+            const data = await env.tideventure_documents.get(obj.key);
+            if (data) results.push({ email: parts[1], answers: JSON.parse(await data.text()) });
+          }
+        }
+        return json(200, { year, responses: results });
+      } catch (e) { return json(500, { error: e.message }); }
     }
 
     const docMatch = url.pathname.match(/^\/api\/documents\/([^\/]+)$/);
@@ -576,7 +618,10 @@ async function getQboDataForClient(env, email) {
   if (!tokens) return { qboConnected: false, invoices: [], revenue: [] };
 
   try {
-    const invData = await qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20maxresults%201000');
+    const [invData, srData] = await Promise.all([
+      qboFetch(env, email, '/query?query=select%20*%20from%20Invoice%20maxresults%201000'),
+      qboFetch(env, email, '/query?query=select%20*%20from%20SalesReceipt%20maxresults%201000'),
+    ]);
 
     const invoices = (invData.QueryResponse?.Invoice || []).filter(i => i.Balance > 0).map(i => ({
       docNumber: i.DocNumber,
@@ -586,7 +631,11 @@ async function getQboDataForClient(env, email) {
       txnDate: i.TxnDate,
     }));
 
-    // Calculate monthly revenue from invoice totals
+    // Calculate monthly revenue from invoices + sales receipts
+    const allTxns = [
+      ...(invData.QueryResponse?.Invoice || []),
+      ...(srData.QueryResponse?.SalesReceipt || []),
+    ];
     const revenue = [];
     const now = new Date();
     for (let m = 5; m >= 0; m--) {
@@ -594,9 +643,9 @@ async function getQboDataForClient(env, email) {
       const y = d.getFullYear();
       const mo = String(d.getMonth() + 1).padStart(2, '0');
       const monthStr = `${y}-${mo}`;
-      const total = (invData.QueryResponse?.Invoice || [])
-        .filter(i => i.TxnDate && i.TxnDate.startsWith(monthStr))
-        .reduce((sum, i) => sum + (parseFloat(i.TotalAmt) || 0), 0);
+      const total = allTxns
+        .filter(t => t.TxnDate && t.TxnDate.startsWith(monthStr))
+        .reduce((sum, t) => sum + (parseFloat(t.TotalAmt) || 0), 0);
       const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       revenue.push({ month: label, amount: total });
     }
