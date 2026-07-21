@@ -140,21 +140,17 @@ function renderQ(saved) {
     }, '')}
     <div style="margin-bottom:0.75rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
-      <div style="background:#f9fafb;padding:0.5rem;border-radius:8px;margin-bottom:0.3rem;">
-        <span style="font-size:0.74rem;font-weight:600;">Taxpayer</span>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-          <input name="dl_number" placeholder="License #" value="${esc(s(saved,'dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input name="dl_state" placeholder="State" value="${esc(s(saved,'dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input name="dl_exp" placeholder="Exp" value="${esc(s(saved,'dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        </div>
+      <div style="margin-bottom:0.3rem;font-size:0.74rem;font-weight:600;">Taxpayer</div>
+      <input name="dl_number" placeholder="License #" value="${esc(s(saved,'dl_number'))}" style="display:block;width:100%;margin-bottom:0.3rem;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+      <div style="display:flex;gap:0.3rem;margin-bottom:0.5rem;">
+        <input name="dl_state" placeholder="State" value="${esc(s(saved,'dl_state'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="dl_exp" placeholder="Exp" value="${esc(s(saved,'dl_exp'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
       </div>
-      <div style="background:#f9fafb;padding:0.5rem;border-radius:8px;">
-        <span style="font-size:0.74rem;font-weight:600;">Spouse</span>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-          <input name="sp_dl_number" placeholder="License #" value="${esc(s(saved,'sp_dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input name="sp_dl_state" placeholder="State" value="${esc(s(saved,'sp_dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input name="sp_dl_exp" placeholder="Exp" value="${esc(s(saved,'sp_dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        </div>
+      <div style="margin-bottom:0.3rem;font-size:0.74rem;font-weight:600;">Spouse</div>
+      <input name="sp_dl_number" placeholder="License #" value="${esc(s(saved,'sp_dl_number'))}" style="display:block;width:100%;margin-bottom:0.3rem;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+      <div style="display:flex;gap:0.3rem;">
+        <input name="sp_dl_state" placeholder="State" value="${esc(s(saved,'sp_dl_state'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
+        <input name="sp_dl_exp" placeholder="Exp" value="${esc(s(saved,'sp_dl_exp'))}" style="flex:1;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;box-sizing:border-box;">
       </div>
     </div>
     <div style="margin-bottom:0.75rem;">
