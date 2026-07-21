@@ -110,12 +110,13 @@ function renderQ(saved) {
       <div><label style="display:block;font-size:0.75rem;">&nbsp;</label>
         <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${(s(saved,'spouse_no_itin')||'').includes('Y')?'checked':''}> Spouse no ITIN</label></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;min-width:0;">
     ${['Taxpayer','tp_','Spouse','sp_'].reduce((acc, item, i) => {
       if (i % 2 !== 0) return acc;
       const label = item;
       const pfx = ['Taxpayer','tp_','Spouse','sp_'][i + 1];
       const isTp = i === 0;
-      return acc + `<div style="background:#f9fafb;padding:0.6rem;border-radius:8px;"><h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">${label}</h4>
+      return acc + `<div style="background:#f9fafb;padding:0.6rem;border-radius:8px;overflow:hidden;"><h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">${label}</h4>
         <div style="display:grid;gap:0.35rem;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
             <input name="${pfx}ssn" placeholder="SSN" value="${esc(s(saved,pfx+'ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
