@@ -210,7 +210,7 @@ export default {
 
     // ── Inject user data + key material into portal/admin pages ──
     const path = url.pathname.replace(/\.html$/, '');
-    if (path === '/portal' || path === '/admin' || url.pathname === '/portal.html' || url.pathname === '/admin.html') {
+    if (path === '/portal' || path === '/admin' || path === '/questionnaire' || url.pathname === '/portal.html' || url.pathname === '/admin.html' || url.pathname === '/questionnaire.html') {
       const response = await env.ASSETS.fetch(request);
       if (!email) return response;
       const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);

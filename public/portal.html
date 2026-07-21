@@ -189,17 +189,6 @@
   <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
 </div>
 
-<!-- Tax Questionnaire Modal -->
-<div id="tqModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.4);overflow-y:auto;padding:2rem 1rem;">
-  <div style="max-width:700px;margin:2rem auto;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
-      <h2 style="font-size:1.15rem;font-weight:700;color:#0d3f5e;margin:0;" id="tqTitle">2025 Tax Questionnaire</h2>
-      <button onclick="closeTq()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b7280;">&times;</button>
-    </div>
-    <div id="tqForm"></div>
-  </div>
-</div>
-
 <script>
 const authToken = sessionStorage.getItem('tv_portal_token');
 
@@ -256,17 +245,13 @@ async function loadQuestionnaire() {
     const token = sessionStorage.getItem('tv_portal_token');
     const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
-    if (data.saved) {
-      el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-        <span style="color:#059669;">&#10003; 2025 Questionnaire completed</span>
-        <button class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;cursor:pointer;" onclick="openQuestionnaire(2025)">View / Edit</button>
-      </div>`;
-    } else {
-      el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-        <span style="color:#6b7280;">2025 Questionnaire not started</span>
-        <button class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;cursor:pointer;" onclick="openQuestionnaire(2025)">Start</button>
-      </div>`;
-    }
+    const label = data.saved ? 'View / Edit' : 'Start';
+    const status = data.saved ? '&#10003; 2025 Questionnaire completed' : '2025 Questionnaire not started';
+    const color = data.saved ? '#059669' : '#6b7280';
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+      <span style="color:${color};">${status}</span>
+      <a href="/questionnaire" class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;text-decoration:none;">${label}</a>
+    </div>`;
   } catch {
     el.innerHTML = '<div style="text-align:center;padding:0.5rem 0;font-size:0.82rem;color:var(--text-muted);">Unable to load.</div>';
   }

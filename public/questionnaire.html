@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tax Questionnaire — TideVenture CPA</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: var(--sand); }
+    .tq-page { max-width: 800px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    .tq-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2rem; margin-bottom: 1.5rem; }
+    .tq-card h1 { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
+    .tq-card > p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
+    .tq-section h3 { font-size: 0.9rem; font-weight: 700; color: #0d3f5e; margin: 1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid #e5e7eb; }
+    .tq-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; padding: 0.25rem 0; }
+    .tq-row .q { flex: 1; color: #374151; }
+    .tq-row label { font-size: 0.76rem; white-space: nowrap; }
+    .tq-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .tq-save-msg { font-size: 0.82rem; color: #059669; display: none; }
+    input, select { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
+    </a>
+    <a href="/portal" class="btn--portal" style="margin-left:auto;">&#8592; Back to Portal</a>
+  </div>
+</nav>
+
+<div class="tq-page">
+  <div class="tq-card" id="tqLoading" style="text-align:center;padding:3rem;font-size:0.9rem;color:var(--text-muted);">Loading questionnaire…</div>
+  <div class="tq-card" id="tqContent" style="display:none;">
+    <div class="tq-top">
+      <div>
+        <h1>2025 Tax Questionnaire</h1>
+        <p>Complete all sections and save before exiting.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span class="tq-save-msg" id="tqSaveMsg">&#10003; Saved</span>
+        <button class="btn btn--primary" id="tqSaveBtn" onclick="saveQ()" style="padding:0.5rem 1.25rem;font-size:0.82rem;">Save</button>
+      </div>
+    </div>
+    <form id="tqForm"></form>
+  </div>
+</div>
+
+<script>
+const PAGE_DATA = window.__PAGE_DATA__;
+const TOKEN = sessionStorage.getItem('tv_portal_token') || (PAGE_DATA && 'token');
+const EMAIL = PAGE_DATA?.email;
+
+async function loadQ() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  if (!token) { window.location.href = '/portal'; return; }
+  try {
+    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) { window.location.href = '/portal'; return; }
+    const data = await res.json();
+    renderQ(data.data || {});
+    document.getElementById('tqLoading').style.display = 'none';
+    document.getElementById('tqContent').style.display = 'block';
+  } catch {
+    document.getElementById('tqLoading').textContent = 'Failed to load. Please go back and try again.';
+  }
+}
+
+const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const s = (saved, name) => saved[name] || '';
+const sel = (saved, name, val) => s(saved,name) === val ? 'selected' : '';
+const y = (saved, name) => s(saved,name)==='Y'?'checked':'';
+const n = (saved, name) => s(saved,name)==='N'?'checked':'';
+
+function YN(saved, name, label) {
+  return `<div class="tq-row"><span class="q">${label}</span>
+    <label><input type="radio" name="${name}" value="Yes" ${y(saved,name)}> Yes</label>
+    <label><input type="radio" name="${name}" value="No" ${n(saved,name)}> No</label></div>`;
+}
+
+function renderQ(saved) {
+  const sec = (title, questions) => `<div class="tq-section"><h3>${title}</h3>${questions}</div>`;
+
+  document.getElementById('tqForm').innerHTML = `
+    <div class="tq-section"><h3>Engagement Letter</h3>
+    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label>
+        <input name="signature" value="${esc(s(saved,'signature'))}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+      <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label>
+        <input name="sig_date" type="date" value="${s(saved,'sig_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+    </div></div>
+
+    <div class="tq-section"><h3>Personal Information</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Filing Status</label>
+        <select name="filing_status" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
+          <option value="">Select...</option><option value="1" ${sel(saved,'filing_status','1')}>Single</option>
+          <option value="2" ${sel(saved,'filing_status','2')}>Married Filing Joint</option>
+          <option value="3" ${sel(saved,'filing_status','3')}>Married Filing Separate</option>
+          <option value="4" ${sel(saved,'filing_status','4')}>Head of Household</option>
+          <option value="5" ${sel(saved,'filing_status','5')}>Qualifying Surviving Spouse</option>
+        </select></div>
+      <div><label style="display:block;font-size:0.75rem;">&nbsp;</label>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="nonresident_alien" value="Y" ${(s(saved,'nonresident_alien')||'').includes('Y')?'checked':''}> Nonresident alien</label></div>
+      <div><label style="display:block;font-size:0.75rem;">&nbsp;</label>
+        <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${(s(saved,'spouse_no_itin')||'').includes('Y')?'checked':''}> Spouse no ITIN</label></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      ${['Taxpayer','tp_','Spouse','sp_'].reduce((acc,item,i) => {
+        const pfx = item;
+        const label = i%2===0 ? item : '';
+        return acc + `<div style="background:#f9fafb;padding:0.6rem;border-radius:8px;"><h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">${i<2 ? 'Taxpayer' : 'Spouse'}</h4>
+          <div style="display:grid;gap:0.35rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+              <input name="${pfx}ssn" placeholder="SSN" value="${esc(s(saved,pfx+'ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+              <input name="${pfx}first" placeholder="First" value="${esc(s(saved,pfx+'first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+              <input name="${pfx}last" placeholder="Last" value="${esc(s(saved,pfx+'last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            </div>
+            <input name="${pfx}occupation" placeholder="Occupation" value="${esc(s(saved,pfx+'occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="${pfx}dob" type="date" value="${s(saved,pfx+'dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
+              <label><input type="checkbox" name="${pfx}dependent" value="Y" ${(s(saved,pfx+'dependent')||'').includes('Y')?'checked':''}> Dependent</label>
+              <label><input type="checkbox" name="${pfx}blind" value="Y" ${(s(saved,pfx+'blind')||'').includes('Y')?'checked':''}> Blind</label>
+              <span>Student:</span><label><input type="radio" name="${pfx}student" value="Y" ${y(saved,pfx+'student')}>Y</label>
+              <label><input type="radio" name="${pfx}student" value="N" ${n(saved,pfx+'student')}>N</label>
+              <span>DOD:</span><input name="${pfx}dod" type="date" value="${s(saved,pfx+'dod')}" style="width:100px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;">
+            </div>
+            ${i<2 ? `<input name="${pfx}phone" placeholder="Mobile phone" value="${esc(s(saved,pfx+'phone'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="${pfx}email" placeholder="Email" value="${esc(s(saved,pfx+'email'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">` : ''}
+          </div></div>`;
+      }, '')}
+    </div>
+    <div style="margin-bottom:0.75rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div><span style="font-size:0.74rem;font-weight:600;">Taxpayer</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
+            <input name="dl_number" placeholder="License #" value="${esc(s(saved,'dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_state" placeholder="State" value="${esc(s(saved,'dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="dl_exp" placeholder="Exp" value="${esc(s(saved,'dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+        </div>
+        <div><span style="font-size:0.74rem;font-weight:600;">Spouse</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
+            <input name="sp_dl_number" placeholder="License #" value="${esc(s(saved,'sp_dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_state" placeholder="State" value="${esc(s(saved,'sp_dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+            <input name="sp_dl_exp" placeholder="Exp" value="${esc(s(saved,'sp_dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:0.75rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.3rem;">
+        <input name="address" placeholder="Street" value="${esc(s(saved,'address'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="apt" placeholder="Apt" value="${esc(s(saved,'apt'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="in_care_of" placeholder="In care of" value="${esc(s(saved,'in_care_of'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.3rem;margin-top:0.3rem;">
+        <input name="city" placeholder="City" value="${esc(s(saved,'city'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="state" placeholder="State" value="${esc(s(saved,'state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+        <input name="zip" placeholder="ZIP" value="${esc(s(saved,'zip'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+      </div>
+    </div>
+    <div style="margin-bottom:0.75rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Direct Deposit</label>
+      <input name="bank_routing" placeholder="Routing #" value="${esc(s(saved,'bank_routing'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.3rem;">
+      <input name="bank_account" placeholder="Account #" value="${esc(s(saved,'bank_account'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
+    </div>
+    <div style="margin-bottom:0.5rem;">
+      <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${y(saved,'irs_auth')}> Authorize IRS to discuss return</label>
+      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n(saved,'irs_auth')}> Do not authorize</label>
+    </div></div>
+
+    ${sec('General Questions', [
+      'marital_change','Did your marital status change during the year?',
+      'separated','Live separately from spouse during last 6 months?',
+      'separate_decree','Separate decree and not living in same household?',
+      'address_change','Did your address change from last year?',
+      'claimed_dependent','Can you be claimed as a dependent?',
+      'has_tin','Do all family members have SSN/ITIN/ATIN?',
+      'ip_pin','Received IP PIN or been identity theft victim?',
+      'disaster_area','Reside/operate in a disaster area?',
+      'dep_changes','Changes in dependents from prior year?',
+      'child_unearned','Child under 19/student under 24 with unearned income >$2,600?',
+      'dep_must_file','Do dependents need to file a return?',
+      'support_others','Provided over half support for other persons?',
+      'childcare','Paid for child care while working/student?',
+      'other_lived_with','Other person lived with you more than half year?',
+      'adoption','Paid adoption expenses?',
+      'divorce_decree','If divorced/separated, have separation agreement?',
+      'dep_ip_pin','Did dependents receive IP PIN?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Electronic Filing',
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">'
+      +['tp_pin','Taxpayer PIN (5-digit)','sp_pin','Spouse PIN (5-digit)'].reduce((h,_,i,a) => i%2===0 ? h + `<div><label style="font-size:0.74rem;font-weight:600;">${a[i+1]}</label><input name="${a[i]}" value="${esc(s(saved,a[i]))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>` : h, '')
+      +'</div>'
+      +YN(saved,'paper_return','File paper return if eligible for e-file?')
+      +YN(saved,'email_notification','Email notification when e-file accepted?')
+      +YN(saved,'pay_by_debit','Pay amount due by debiting account?')
+    )}
+
+    ${[['Income Information',[
+      'foreign_income','Any foreign income or pay foreign taxes?',
+      'prior_property_income','Income from property sold prior to this year?',
+      'unemployment','Receive unemployment benefits?',
+      'disability','Receive disability income?',
+      'medicaid_waiver','Medicaid waiver payments?',
+      'tip_income','Tip income not reported to employer?',
+      'life_insurance','Life insurance policies mature or surrendered?',
+      'hobby_income','Awards, prizes, hobby income, gambling winnings?',
+      'nonemployee_comp','Nonemployee compensation?',
+      'gig_1099','Form 1099-K/MISC/NEC for gig work?',
+      'crowdfunding_1099k','Form 1099-K for crowdfunding?',
+      'erroneous_1099k','Any Form 1099-K in error?',
+      'income_fluctuation','Expect large income fluctuation next year?',
+      'digital_assets','Sales/exchanges of digital assets?',
+      'social_security','Receive Social Security benefits?',
+    ]],['Purchases, Sales & Debt',[
+      'new_business','Start new business or buy rental property?',
+      'business_interest','Ownership interest in any business?',
+      'sold_biz_assets','Sell/exchange/purchase business assets?',
+      'new_partnership','Acquire interest in partnership or S corp?',
+      'real_estate','Sell/exchange/purchase real estate?',
+      'principal_residence','Purchase or sell principal residence?',
+      'foreclosure','Foreclose or abandon residence/property?',
+      'stock','Acquire or dispose of stock?',
+      'home_equity','Take out home equity loan?',
+      'refinance','Refinance residence or second home?',
+      'sold_business','Sell existing business, rental or property?',
+      'bad_debt','Lend money that became uncollectable?',
+      'debt_forgiven','Debts canceled or forgiven?',
+      'clean_vehicle','Purchase clean vehicle eligible for credit?',
+      'personal_property_1099k','Form 1099-K for personal property sale?',
+      'us_vehicle','Loan payments on US-assembled vehicle?',
+    ]],['Retirement Information',[
+      'retirement_participant','Active participant in pension/retirement plan?',
+      'ira_withdrawal','IRA/Roth/401(k) or other withdrawals?',
+      'disaster_repayment','Repay qualified disaster distributions?',
+      'lump_sum','Lump-sum pension/401(k) distributions?',
+      'ira_contribution','Contributions to IRA/Roth/401(k)?',
+      'birth_adoption_dist','Qualified birth/adoption distributions?',
+      'qcd','Qualified charitable distributions (QCD)?',
+    ]],['Education Information',[
+      'post_secondary','Attend post-secondary school?',
+      'educational_expenses','Educational expenses for self/spouse/dependent?',
+      'scholarship','Family member receive scholarship?',
+      '529_withdrawal','529 plan withdrawals?',
+      '529_contribution','529 plan contributions?',
+      'student_loan_interest','Pay student loan interest?',
+      'savings_bonds','Cash Series EE/I bonds issued after 1989?',
+      'fafsa_worksheet','Want FAFSA worksheet?',
+    ]],['Health Care Information',[
+      'health_coverage','Qualifying health coverage for family?',
+      'marketplace','Enroll in Marketplace via healthcare.gov?',
+      'shared_policy','Share Marketplace policy outside family?',
+      'hsa_contribution','HSA or Archer MSA contributions?',
+      'hsa_distribution','HSA/MSA distributions received?',
+      'long_term_care_premiums','Pay long-term care premiums?',
+      'able_contribution','ABLE account contributions?',
+      'able_withdrawal','ABLE account withdrawals?',
+      'employer_health','Business owner - pay employee health premiums?',
+    ]],['Itemized Deductions',[
+      'casualty_loss','Casualty/theft loss or condemnation award?',
+      'medical_expenses','Out-of-pocket medical expenses?',
+      'cash_charity','Cash charitable contributions?',
+      'noncash_charity','Noncash charitable contributions?',
+      'vehicle_donation','Donate vehicle or boat?',
+      'real_estate_tax','Pay real estate taxes?',
+      'mortgage_interest','Pay mortgage interest?',
+      'investment_interest','Investment interest expenses?',
+      'major_purchases','Major purchases (cars, boats)?',
+      'out_of_state_tax','Out-of-state purchases no sales/use tax collected?',
+    ]],['Miscellaneous Information',[
+      'gifts','Gifts over $18,000 to any individual?',
+      'bartering','Bartering transactions?',
+      'retired_or_job_change','Retire or change jobs?',
+      'moving_armed_forces','Moving costs as Armed Forces member?',
+      'household_employee','Pay household employee?',
+      'energy_improvements','Energy efficient home improvements?',
+      'foreign_trust','Foreign trust distribution or grantor?',
+      'foreign_account','Foreign financial account interest/signature?',
+      'foreign_financial_assets','Foreign financial assets or entity interest?',
+      'boir_owner','Own/control 25% of company pre-Jan 1 2025?',
+      'boir_changed','BOIR info changed?',
+      'irs_correspondence','Correspondence from State or IRS?',
+      'unfiled_years','Prior years unfiled or unpaid balances?',
+      'presidential_fund','Designate $3 to Presidential Campaign Fund?',
+    ]],['Estimated Taxes',[
+      'overpayment_refund','Overpayment refund or apply to 2026 estimated?',
+      'income_change_2026','Expect considerable 2026 income change?',
+      'deduction_change_2026','Expect considerable 2026 deduction change?',
+      'withholding_change_2026','Expect considerable 2026 withholding change?',
+      'dependents_change_2026','Expect change in dependents for 2026?',
+      'fed_estimated_payments','Federal estimated payments for 2025?',
+      'fed_prior_overpayment','2024 overpayment applied to 2025?',
+      'state_estimated_payments','State estimated payments for 2025?',
+      'state_prior_overpayment','State 2024 overpayment applied to 2025?',
+    ]],['Traditional IRA',[
+      'employer_retirement_plan','Covered by employer retirement plan?',
+      'trad_ira_contribution','Traditional IRA contributions for 2025?',
+    ]]].map(([title, qs]) => sec(title, qs.reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))).join('')}
+
+    <div class="tq-section"><h3>Traditional IRA (cont.)</h3>
+    <div class="tq-row"><span class="q">Value of all traditional IRAs on 12/31/2025:</span>
+    <input name="trad_ira_value" value="${esc(s(saved,'trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div></div>
+
+    ${sec('Roth IRA', [
+      'roth_ira_contribution','Roth IRA contributions for 2025?',
+      'roth_conversion','Roth IRA conversion for 2025?',
+      'roth_recharacterization','Roth IRA recharacterizations for 2025?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Sales of Stocks & Securities', [
+      'worthless_securities','Securities become worthless in 2025?',
+      'uncollectible_debts','Debts become uncollectible in 2025?',
+      'commodity_sales','Commodity sales, short sales, straddles?',
+      'noncash_exchange','Exchange securities for non-cash?',
+      'virtual_assets','Sell/exchange/dispose of virtual assets?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Other Income', [
+      'state_refund','State/local income tax refunds in 2025?',
+      'alimony_received','Receive alimony in 2025?',
+      'unemployment_comp','Receive unemployment compensation in 2025?',
+      'other_income','Other income (commissions, jury pay, etc.)?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Social Security Benefits', YN(saved,'ssa_1099','Receive Form SSA-1099 in 2025?'))}
+
+    ${sec('Other Adjustments', [
+      'alimony_paid','Pay alimony in 2025?',
+      'educator_expenses','Educator expenses (K-12 teacher)?',
+      'other_adjustments','Other adjustments to income?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Schedule A - Medical & Dental', [
+      'medical_expenses_itemized','Medical/dental expenses?',
+      'medical_insurance','Medical insurance premiums?',
+      'long_term_care_premiums_itemized','Long-term care premiums?',
+      'prescription_drugs','Prescription medicine expenses?',
+      'medical_mileage','Medical miles driven (21¢/mi)?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Schedule A - Tax Expenses', [
+      'state_local_income_tax','State/local income taxes in 2025?',
+      'state_local_2025_tax','2025 state/local income taxes paid in 2025?',
+      'real_estate_taxes','Real estate taxes in 2025?',
+      'personal_property_tax','Personal property taxes?',
+      'other_taxes','Foreign taxes or state disability taxes?',
+      'sales_tax_major','Sales tax on major purchases?',
+      'sales_tax_actual','Sales tax on actual expenses?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Interest Expenses', [
+      'mortgage_interest_1098','Home mortgage interest on Form 1098?',
+      'mortgage_interest_individual','Mortgage interest to individuals?',
+      'refinance_points','Refinance and pay points in 2025?',
+      'investment_interest_expense','Investment interest other than K-1?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Charitable Contributions', [
+      'charity_cash','Cash/check charitable contributions?',
+      'charity_mileage','Volunteer miles for charity?',
+      'charity_noncash','Noncash donations (clothing, household)?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Miscellaneous Deductions', [
+      'other_expenses','Other expenses not listed?',
+      'gambling_losses','Gambling losses (only if gambling income)?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Misc. Itemized Deductions (State)', [
+      'unreimbursed_expenses','Unreimbursed employee expenses?',
+      'union_dues','Union dues not on W-2?',
+      'tax_prep_fees','Tax preparation fees?',
+      'other_2pct_expenses','Other expenses subject to 2% AGI limit?',
+      'safe_deposit','Safe deposit box rental?',
+      'investment_expenses','Investment expenses other than K-1/1099?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    ${sec('Health Care Coverage', [
+      'self_employed_health','Self-employed health insurance premiums?',
+      'self_employed_ltc','Self-employed long-term care premiums?',
+    ].reduce((h,_,i,a) => i%2===0 ? h + YN(saved,a[i],a[i+1]) : h, ''))}
+
+    <div class="tq-section"><h3>Signature</h3>
+    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;">I certify that the information provided is true, correct, and complete to the best of my knowledge.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;"><input name="final_signature" value="${esc(s(saved,'final_signature'))}" placeholder="Signature" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+      <div style="flex:1;min-width:150px;"><input name="final_date" type="date" value="${s(saved,'final_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
+    </div></div>
+  `;
+}
+
+async function saveQ() {
+  const form = document.getElementById('tqForm');
+  const inputs = form.querySelectorAll('input, select');
+  const data = {};
+  inputs.forEach(inp => { if (inp.name) data[inp.name] = inp.value; });
+  const btn = document.getElementById('tqSaveBtn');
+  const msg = document.getElementById('tqSaveMsg');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/questionnaire/2025', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) { msg.style.display = 'inline'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
+    else throw Error();
+  } catch { alert('Save failed. Please try again.'); }
+  btn.disabled = false; btn.textContent = 'Save';
+}
+
+loadQ();
+</script>
+</body>
+</html>
