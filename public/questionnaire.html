@@ -10,7 +10,7 @@
   <style>
     body { background: var(--sand); }
     .tq-page { max-width: 800px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
-    .tq-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2rem; margin-bottom: 1.5rem; }
+    .tq-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; overflow: hidden; }
     .tq-card h1 { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
     .tq-card > p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
     .tq-section h3 { font-size: 0.9rem; font-weight: 700; color: #0d3f5e; margin: 1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid #e5e7eb; }
@@ -19,9 +19,9 @@
     .tq-row label { font-size: 0.76rem; white-space: nowrap; }
     .tq-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
     .tq-save-msg { font-size: 0.82rem; color: #059669; display: none; }
-    input, select, .tq-card input, .tq-card select { box-sizing: border-box; max-width: 100%; width: 100%; }
-    .tq-card [style*="grid-template-columns"] { min-width: 0; }
-    .tq-card input[type="checkbox"], .tq-card input[type="radio"] { width: auto; }
+    #tqForm, #tqForm div, #tqForm input, #tqForm select { min-width: 0; }
+    #tqForm input, #tqForm select { box-sizing: border-box; max-width: 100%; width: 100%; }
+    #tqForm input[type="checkbox"], #tqForm input[type="radio"] { width: auto; }
   </style>
 </head>
 <body>
