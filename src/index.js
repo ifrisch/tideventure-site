@@ -195,6 +195,25 @@ export default {
         return json(200, { year, responses: results });
       } catch (e) { return json(500, { error: e.message }); }
     }
+    // Admin: update questionnaire schema
+    const schemaMatch = url.pathname.match(/^\/api\/questionnaire\/schema\/(\d{4})$/);
+    if (schemaMatch) {
+      const year = schemaMatch[1];
+      const key = `questionnaire/schema/${year}`;
+      if (method === 'GET') {
+        try {
+          const obj = await env.tideventure_documents.get(key);
+          if (obj) return json(200, JSON.parse(await obj.text()));
+          return json(200, DEFAULT_TQ_SCHEMA);
+        } catch (e) { return json(500, { error: e.message }); }
+      }
+      if ((method === 'PUT' || method === 'POST') && isAdmin(email)) {
+        try {
+          await env.tideventure_documents.put(key, JSON.stringify(await request.json()), { httpMetadata: { contentType: 'application/json' } });
+          return json(200, { ok: true });
+        } catch (e) { return json(500, { error: e.message }); }
+      }
+    }
 
     const docMatch = url.pathname.match(/^\/api\/documents\/([^\/]+)$/);
     if (docMatch) {
@@ -678,6 +697,184 @@ async function decryptWithWorkerKey(secret, uploaderEmail, ciphertext) {
   );
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, encrypted);
 }
+
+const DEFAULT_TQ_SCHEMA = {
+  year: 2025, sections: [
+    {title:'General Questions',questions:[
+      ['marital_change','Did your marital status change during the year?'],
+      ['separated','Did you live separately from your spouse during the last 6 months?'],
+      ['separate_decree','Do you have a separate decree and not living in same household?'],
+      ['address_change','Did your address change from last year?'],
+      ['claimed_dependent','Can you be claimed as a dependent by another taxpayer?'],
+      ['has_tin','Do all family members have SSN/ITIN/ATIN?'],
+      ['ip_pin','Did you receive an IP PIN or been a victim of identity theft?'],
+      ['disaster_area','Did you reside or operate a business in a disaster area?'],
+      ['dep_changes','Were there any changes in dependents from the prior year?'],
+      ['child_unearned','Any child under 19 or student under 24 with unearned income over $2,600?'],
+      ['dep_must_file','Do any dependents need to file a tax return?'],
+      ['support_others','Did you provide over half the support for any other person(s)?'],
+      ['childcare','Did you pay for child care while working/looking for work/student?'],
+      ['other_lived_with','Did any other person live with you more than half the year?'],
+      ['adoption','Did you pay any adoption expenses?'],
+      ['divorce_decree','If divorced/separated with children, do you have a separation agreement?'],
+      ['dep_ip_pin','Did any dependents receive an IP PIN or been identity theft victims?'],
+    ]},{title:'Income Information',questions:[
+      ['foreign_income','Did you have any foreign income or pay foreign taxes?'],
+      ['prior_property_income','Did you receive income from property sold prior to this year?'],
+      ['unemployment','Did you receive any unemployment benefits?'],
+      ['disability','Did you receive any disability income?'],
+      ['medicaid_waiver','Did you receive Medicaid waiver payments?'],
+      ['tip_income','Did you receive tip income not reported to employer?'],
+      ['life_insurance','Did any life insurance policies mature or were surrendered?'],
+      ['hobby_income','Did you receive awards, prizes, hobby income, gambling winnings?'],
+      ['nonemployee_comp','Did you receive nonemployee compensation?'],
+      ['gig_1099','Did you receive Form 1099-K/MISC/NEC for gig work?'],
+      ['crowdfunding_1099k','Did you receive Form 1099-K for crowdfunding?'],
+      ['erroneous_1099k','Do you believe any Form 1099-K is in error?'],
+      ['income_fluctuation','Do you expect large fluctuation in income/deductions/withholding next year?'],
+      ['digital_assets','Did you have any sales/exchanges of digital assets?'],
+      ['social_security','Did you receive any Social Security benefits?'],
+    ]},{title:'Purchases, Sales & Debt',questions:[
+      ['new_business','Did you start a new business or purchase rental property?'],
+      ['business_interest','Did you have ownership interest in any business?'],
+      ['sold_biz_assets','Did you sell/exchange/purchase any business assets?'],
+      ['new_partnership','Did you acquire interest in a partnership or S corp?'],
+      ['real_estate','Did you sell/exchange/purchase any real estate?'],
+      ['principal_residence','Did you purchase or sell a principal residence?'],
+      ['foreclosure','Did you foreclose or abandon a principal residence or property?'],
+      ['stock','Did you acquire or dispose of any stock?'],
+      ['home_equity','Did you take out a home equity loan?'],
+      ['refinance','Did you refinance a principal residence or second home?'],
+      ['sold_business','Did you sell an existing business, rental, or other property?'],
+      ['bad_debt','Did you lend money that became totally uncollectable?'],
+      ['debt_forgiven','Did you have any debts canceled or forgiven?'],
+      ['clean_vehicle','Did you purchase a clean vehicle eligible for the credit?'],
+      ['personal_property_1099k','Did you receive Form 1099-K for sale of personal property?'],
+      ['us_vehicle','Did you make loan payments on a US-assembled vehicle?'],
+    ]},{title:'Retirement Information',questions:[
+      ['retirement_participant','Are you an active participant in a pension or retirement plan?'],
+      ['ira_withdrawal','Did you make any IRA, Roth, 401(k) or other retirement withdrawals?'],
+      ['disaster_repayment','If you received qualified disaster distributions, did you repay any?'],
+      ['lump_sum','Did you receive any lump-sum pension/401(k) distributions?'],
+      ['ira_contribution','Did you make contributions to IRA, Roth, 401(k) or other retirement plan?'],
+      ['birth_adoption_dist','Did you receive qualified birth/adoption or emergency distributions?'],
+      ['qcd','Did you make any qualified charitable distributions (QCD)?'],
+    ]},{title:'Education Information',questions:[
+      ['post_secondary','Did you, spouse, or dependents attend post-secondary school?'],
+      ['educational_expenses','Did you have educational expenses for yourself/spouse/dependent?'],
+      ['scholarship','Did anyone in your family receive a scholarship?'],
+      ['529_withdrawal','Did you make any 529 plan withdrawals?'],
+      ['529_contribution','Did you make any 529 plan contributions?'],
+      ['student_loan_interest','Did you pay any student loan interest?'],
+      ['savings_bonds','Did you cash any Series EE or I savings bonds issued after 1989?'],
+      ['fafsa_worksheet','Would you like a worksheet for FAFSA completion?'],
+    ]},{title:'Health Care Information',questions:[
+      ['health_coverage','Did you have qualifying health care coverage for your family?'],
+      ['marketplace','Did you enroll in Marketplace coverage through healthcare.gov?'],
+      ['shared_policy','Did you share a Marketplace policy with anyone not in your family?'],
+      ['hsa_contribution','Did you make HSA or Archer MSA contributions?'],
+      ['hsa_distribution','Did you receive HSA/MSA distributions?'],
+      ['long_term_care_premiums','Did you pay long-term care premiums?'],
+      ['able_contribution','Did you make ABLE account contributions?'],
+      ['able_withdrawal','Did you receive ABLE account withdrawals?'],
+      ['employer_health','If business owner, did you pay employee health insurance premiums?'],
+    ]},{title:'Itemized Deductions',questions:[
+      ['casualty_loss','Did you incur a casualty/theft loss or condemnation award?'],
+      ['medical_expenses','Did you pay out-of-pocket medical expenses?'],
+      ['cash_charity','Did you make any cash charitable contributions?'],
+      ['noncash_charity','Did you make any noncash charitable contributions?'],
+      ['vehicle_donation','Did you donate a vehicle or boat?'],
+      ['real_estate_tax','Did you pay real estate taxes?'],
+      ['mortgage_interest','Did you pay mortgage interest?'],
+      ['investment_interest','Did you incur investment interest expenses?'],
+      ['major_purchases','Did you make any major purchases (cars, boats, etc.)?'],
+      ['out_of_state_tax','Did you make out-of-state purchases where seller did not collect sales/use tax?'],
+    ]},{title:'Miscellaneous Information',questions:[
+      ['gifts','Did you make gifts of more than $18,000 to any individual?'],
+      ['bartering','Did you engage in any bartering transactions?'],
+      ['retired_or_job_change','Did you retire or change jobs this year?'],
+      ['moving_armed_forces','Did you incur moving costs as a member of the Armed Forces?'],
+      ['household_employee','Did you pay any individual as a household employee?'],
+      ['energy_improvements','Did you make energy efficient home improvements?'],
+      ['foreign_trust','Did you receive a distribution from or were you grantor of a foreign trust?'],
+      ['foreign_account','Did you have financial interest/signature authority over a foreign account?'],
+      ['foreign_financial_assets','Do you have foreign financial assets or interest in a foreign entity?'],
+      ['boir_owner','Are you an owner or control 25% of a company registered before Jan 1, 2025?'],
+      ['boir_changed','If required to file BOIR, has any previously reported information changed?'],
+      ['irs_correspondence','Did you receive correspondence from the State or IRS?'],
+      ['unfiled_years','Do you have prior years unfiled or with unpaid balances?'],
+      ['presidential_fund','Do you want to designate $3 to the Presidential Election Campaign Fund?'],
+    ]},{title:'Estimated Taxes',questions:[
+      ['overpayment_refund','If overpaid, do you want refund or applied to 2026 estimated?'],
+      ['income_change_2026','Do you expect considerable change in 2026 income?'],
+      ['deduction_change_2026','Do you expect considerable change in 2026 deductions?'],
+      ['withholding_change_2026','Do you expect considerable change in 2026 withholding?'],
+      ['dependents_change_2026','Do you expect a change in dependents claimed for 2026?'],
+      ['fed_estimated_payments','Did you make federal estimated tax payments for 2025?'],
+      ['fed_prior_overpayment','Was any 2024 overpayment applied to 2025 estimated?'],
+      ['state_estimated_payments','Did you make state estimated tax payments for 2025?'],
+      ['state_prior_overpayment','Was any state 2024 overpayment applied to 2025 estimated?'],
+    ]},{title:'Traditional IRA',questions:[
+      ['employer_retirement_plan','Are you or spouse covered by an employer retirement plan?'],
+      ['trad_ira_contribution','Did you make traditional IRA contributions for 2025?'],
+    ]},{title:'Roth IRA',questions:[
+      ['roth_ira_contribution','Did you make Roth IRA contributions for 2025?'],
+      ['roth_conversion','Did you make a 2025 Roth IRA conversion?'],
+      ['roth_recharacterization','Did you make total Roth IRA contribution recharacterizations?'],
+    ]},{title:'Sales of Stocks & Securities',questions:[
+      ['worthless_securities','Did any securities become worthless during 2025?'],
+      ['uncollectible_debts','Did any debts become uncollectible during 2025?'],
+      ['commodity_sales','Did you have commodity sales, short sales, or straddles?'],
+      ['noncash_exchange','Did you exchange securities/investments for something other than cash?'],
+      ['virtual_assets','Did you receive, sell, exchange, or dispose of any virtual assets?'],
+    ]},{title:'Other Income',questions:[
+      ['state_refund','Did you receive state/local income tax refunds during 2025?'],
+      ['alimony_received','Did you receive alimony during 2025?'],
+      ['unemployment_comp','Did you receive unemployment compensation during 2025?'],
+      ['other_income','Did you have other income (commissions, jury pay, director fees, etc.)?'],
+    ]},{title:'Other Adjustments',questions:[
+      ['alimony_paid','Did you pay alimony during 2025?'],
+      ['educator_expenses','Did you have educator expenses (K-12 teacher, counselor, etc.)?'],
+      ['other_adjustments','Did you have any other adjustments to income?'],
+    ]},{title:'Schedule A - Medical & Dental',questions:[
+      ['medical_expenses_itemized','Did you have medical/dental expenses?'],
+      ['medical_insurance','Did you pay medical insurance premiums?'],
+      ['long_term_care_premiums_itemized','Did you pay long-term care premiums?'],
+      ['prescription_drugs','Did you have prescription medicine expenses?'],
+      ['medical_mileage','Did you drive tax miles for medical (21¢/mile)?'],
+    ]},{title:'Schedule A - Tax Expenses',questions:[
+      ['state_local_income_tax','Did you pay state/local income taxes in 2025?'],
+      ['state_local_2025_tax','Did you pay 2025 state/local income taxes in 2025?'],
+      ['real_estate_taxes','Did you pay real estate taxes?'],
+      ['personal_property_tax','Did you pay personal property taxes?'],
+      ['other_taxes','Did you pay foreign taxes or state disability taxes?'],
+      ['sales_tax_major','Did you pay sales tax on major purchases?'],
+      ['sales_tax_actual','Did you pay sales tax on actual expenses?'],
+    ]},{title:'Interest Expenses',questions:[
+      ['mortgage_interest_1098','Pay home mortgage interest on Form 1098?'],
+      ['mortgage_interest_individual','Pay other mortgage interest to individuals?'],
+      ['refinance_points','Refinance and pay points in 2025?'],
+      ['investment_interest_expense','Investment interest other than Schedule K-1?'],
+    ]},{title:'Charitable Contributions',questions:[
+      ['charity_cash','Charitable contributions by cash or check?'],
+      ['charity_mileage','Volunteer miles for charity?'],
+      ['charity_noncash','Noncash donations (clothing, household, etc.)?'],
+    ]},{title:'Miscellaneous Deductions',questions:[
+      ['other_expenses','Other expenses not listed elsewhere?'],
+      ['gambling_losses','Gambling losses (only if you have gambling income)?'],
+    ]},{title:'Misc. Itemized Deductions (State)',questions:[
+      ['unreimbursed_expenses','Unreimbursed employee expenses (uniforms, dues, etc.)?'],
+      ['union_dues','Union dues not on W-2?'],
+      ['tax_prep_fees','Tax preparation fees?'],
+      ['other_2pct_expenses','Other expenses subject to 2% AGI limit?'],
+      ['safe_deposit','Safe deposit box rental?'],
+      ['investment_expenses','Investment expenses other than K-1/1099?'],
+    ]},{title:'Health Care Coverage',questions:[
+      ['self_employed_health','Self-employed health insurance premiums?'],
+      ['self_employed_ltc','Self-employed long-term care premiums?'],
+    ]},
+  ]
+};
 
 function hexToBytes(hex) {
   const bytes = new Uint8Array(hex.length / 2);
