@@ -156,6 +156,11 @@ export default {
       try { return await handleAuditLog(env); } catch (e) { return json(500, { error: e.message }); }
     }
 
+    // ── Admin Dashboard ──
+    if (url.pathname === '/api/admin/dashboard' && method === 'GET' && isAdmin(email)) {
+      try { return await handleAdminDashboard(env); } catch (e) { return json(500, { error: e.message }); }
+    }
+
     // ── Tax Questionnaire ──
     const tqMatch = url.pathname.match(/^\/api\/questionnaire\/(\d{4})$/);
     if (tqMatch) {
@@ -485,6 +490,73 @@ async function handleDeleteDocument(env, docId, email, admin) {
   await env.tideventure_documents.delete(found.key);
   await logAudit(env, 'DELETE', email, name);
   return json(200, { success: true });
+}
+
+async function handleAdminDashboard(env) {
+  const clients = [];
+  const adminEmail = 'admin@tideventurecpa.com';
+  
+  for (const [email] of Object.entries(USERS)) {
+    if (email === adminEmail) continue;
+    const profileKey = `profile/${email}`;
+    let profile = {};
+    const profileObj = await env.tideventure_documents.get(profileKey);
+    if (profileObj) { try { profile = JSON.parse(await profileObj.text()); } catch {} }
+
+    // Questionnaire status
+    let qStatus = 'not_started';
+    const qObj = await env.tideventure_documents.get(`questionnaire/${email}/2025`);
+    if (qObj) {
+      try {
+        const answers = JSON.parse(await qObj.text());
+        qStatus = answers.final_signature ? 'completed' : 'in_progress';
+      } catch {}
+    }
+
+    // Document count
+    let docCount = 0;
+    const docs = await env.tideventure_documents.list();
+    for (const obj of docs.objects) {
+      if (obj.key.startsWith(email + '/')) docCount++;
+    }
+
+    // Outstanding from QBO cached data
+    let balance = 0;
+    const invObj = await env.tideventure_documents.get('qbo/invoices');
+    const custObj = await env.tideventure_documents.get('qbo/customers');
+    if (invObj && custObj) {
+      const invoices = JSON.parse(await invObj.text());
+      const customers = JSON.parse(await custObj.text());
+      const matched = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
+      if (matched) {
+        balance = invoices
+          .filter(i => i.customerRef === matched.id)
+          .reduce((s, i) => s + (i.balance || 0), 0);
+      }
+    }
+
+    clients.push({
+      email,
+      name: profile.businessName || email.split('@')[0],
+      state: profile.state || '',
+      questionnaire: qStatus,
+      documents: docCount,
+      balance,
+    });
+  }
+
+  // Counts
+  const total = clients.length;
+  const completed = clients.filter(c => c.questionnaire === 'completed').length;
+  const inProgress = clients.filter(c => c.questionnaire === 'in_progress').length;
+  const notStarted = clients.filter(c => c.questionnaire === 'not_started').length;
+  const totalAR = clients.reduce((s, c) => s + c.balance, 0);
+  const totalDocs = clients.reduce((s, c) => s + c.documents, 0);
+
+  return json(200, {
+    stats: { total, completed, inProgress, notStarted, totalAR, totalDocs },
+    clients,
+  });
 }
 
 async function handleAuditLog(env) {

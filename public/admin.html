@@ -3,151 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Portal — TideVenture CPA</title>
+  <title>Admin — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    body { background: var(--sand); }
-    .portal-body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .portal-card { background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
-    .portal-card h1 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
-    .portal-card p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1.5rem; }
-    .portal-card .form-group { margin-bottom: 1rem; }
-    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
-    .portal-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--ink); background: var(--white); outline: none; box-sizing: border-box; }
-    .portal-card .form-group input:focus { border-color: var(--brand-teal); }
-    .portal-card .btn--primary { width: 100%; }
-    .portal-error { font-size: 0.78rem; color: #c00; text-align: center; display: none; margin-bottom: 0.75rem; }
+    body { background: #f1f5f9; }
+    .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+    .login-card { background:#fff; border-radius:12px; padding:2.5rem 2rem; width:100%; max-width:380px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .login-card h1 { font-size:1.15rem; font-weight:700; color:#0d3f5e; margin:0 0 0.2rem; }
+    .login-card p { font-size:0.82rem; color:#6b7280; margin:0 0 1.5rem; }
+    .login-card .form-group { margin-bottom:1rem; }
+    .login-card .form-group label { display:block; font-size:0.78rem; font-weight:600; color:#374151; margin-bottom:0.3rem; }
+    .login-card .form-group input { width:100%; padding:0.6rem 0.75rem; border:1px solid #e5e7eb; border-radius:8px; font-size:0.88rem; outline:none; box-sizing:border-box; }
+    .login-card .btn--primary { width:100%; }
+    .login-error { font-size:0.78rem; color:#dc2626; text-align:center; display:none; margin-bottom:0.75rem; }
 
-    .admin-dash { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
-    .admin-dash h1 { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 0.2rem; }
-    .admin-dash > p { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem; }
-    .dash-logout { font-size: 0.8rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.4rem 0.85rem; cursor: pointer; font-family: inherit; }
-    .dash-logout:hover { color: #c00; border-color: #c00; }
-
-    .admin-table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 1.5rem; }
-    .admin-table-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 0.75rem; }
-    .admin-table-header h3 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin: 0; }
-    .doc-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1.25rem; border-bottom: 1px solid var(--sand); font-size: 0.82rem; }
-    .doc-row:hover { background: var(--sand); }
-    .doc-row:last-child { border-bottom: none; }
-    .doc-client { font-weight: 600; color: var(--ink); min-width: 9rem; }
-    .doc-name { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .doc-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; min-width: 5rem; }
-    .doc-actions { display: flex; gap: 0.5rem; white-space: nowrap; }
-    .doc-actions a, .doc-actions button { font-size: 0.78rem; font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
-    .doc-actions .dl-link { color: var(--brand-teal); text-decoration: none; }
-    .doc-actions .dl-link:hover { text-decoration: underline; }
-    .doc-actions .del-btn { color: #c00; }
-    .doc-actions .del-btn:hover { text-decoration: underline; }
-    .doc-empty { text-align: center; padding: 2rem 0; font-size: 0.82rem; color: var(--text-muted); }
-    .doc-err { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #c00; display: none; }
-    .audit-entry { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 1.25rem; border-bottom: 1px solid var(--sand); font-size: 0.78rem; color: var(--text-muted); }
-    .audit-entry:last-child { border-bottom: none; }
-    .audit-entry .audit-action { min-width: 5.5rem; font-weight: 700; }
-    .audit-entry .audit-action.UPLOAD { color: #2d7a40; }
-    .audit-entry .audit-action.DOWNLOAD { color: #1a5a8c; }
-    .audit-entry .audit-action.DELETE { color: #c00; }
-    .audit-entry .audit-user { min-width: 10rem; color: var(--ink); }
-    .audit-entry .audit-detail { flex: 1; }
-    .audit-entry .audit-time { font-size: 0.72rem; white-space: nowrap; }
-    .dash-footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 2rem 0 1rem; border-top: 1px solid var(--border); }
+    .dash { max-width:1200px; margin:2rem auto; padding:0 1.5rem; display:none; }
+    .dash-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; }
+    .dash-header h1 { font-size:1.3rem; font-weight:700; color:#0d3f5e; margin:0; }
+    .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .stat-card { background:#fff; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+    .stat-card .num { font-size:1.6rem; font-weight:800; color:#0d3f5e; }
+    .stat-card .label { font-size:0.78rem; color:#6b7280; margin-top:0.15rem; }
+    .stat-card .sub { font-size:0.72rem; color:#9ca3af; margin-top:0.1rem; }
+    .stat-card.alert .num { color:#dc2626; }
+    .stat-card.green .num { color:#059669; }
+    .section { background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); margin-bottom:1.5rem; overflow:hidden; }
+    .section-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid #f3f4f6; flex-wrap:wrap; gap:0.5rem; }
+    .section-header h3 { font-size:0.9rem; font-weight:600; color:#111; margin:0; }
+    .client-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 100px; gap:0.5rem; padding:0.55rem 1.25rem; border-bottom:1px solid #f9fafb; font-size:0.82rem; align-items:center; }
+    .client-row:hover { background:#f8fafc; }
+    .client-row:last-child { border-bottom:none; }
+    .client-name { font-weight:600; color:#111; }
+    .client-email { font-size:0.72rem; color:#9ca3af; }
+    .badge { display:inline-block; padding:0.1rem 0.45rem; border-radius:9999px; font-size:0.7rem; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-yellow { background:#fef3c7; color:#d97706; }
+    .badge-gray { background:#f3f4f6; color:#6b7280; }
+    .badge-red { background:#fef2f2; color:#dc2626; }
+    .footer { text-align:center; font-size:0.75rem; color:#9ca3af; padding:2rem 0 1rem; border-top:1px solid #e5e7eb; }
+    input, select { box-sizing:border-box; }
+    .schema-editor { padding:1rem 1.25rem; }
+    .schema-section { background:#f8fafc; border-radius:8px; padding:0.75rem; margin-bottom:0.75rem; }
+    .schema-section-title { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; }
+    .schema-section-title input { flex:1; padding:0.3rem 0.5rem; border:1px solid #e5e7eb; border-radius:4px; font-size:0.82rem; font-weight:600; }
+    .q-row { display:flex; align-items:center; gap:0.3rem; margin-bottom:0.3rem; }
+    .q-row input:first-child { width:120px; padding:0.2rem 0.3rem; border:1px solid #e5e7eb; border-radius:4px; font-size:0.76rem; }
+    .q-row input:last-child { flex:1; padding:0.2rem 0.3rem; border:1px solid #e5e7eb; border-radius:4px; font-size:0.76rem; }
+    .btn-sm { font-size:0.74rem; color:#1a7fa0; background:none; border:1px dashed #d1d5db; border-radius:4px; padding:0.2rem 0.6rem; cursor:pointer; }
+    .btn-sm:hover { background:#f0f9ff; }
+    .btn-del { background:none; border:none; color:#c00; cursor:pointer; font-size:0.9rem; padding:0; }
+    @media (max-width:800px) { .client-row { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
-
 <nav class="nav">
   <div class="container nav__inner">
     <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
       <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
       <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
     </a>
-    <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
+    <a href="index.html" class="btn--portal" style="margin-left:auto;">&#8592; Back</a>
   </div>
 </nav>
 
-<!-- Login -->
-<div class="portal-body" id="loginView">
-  <div class="portal-card">
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
     <h1>Admin Portal</h1>
     <p>Staff only. Unauthorized use is prohibited.</p>
-    <div class="portal-error" id="loginError">Invalid email or password.</div>
-    <form id="loginForm" action="/api/login" method="POST">
+    <div class="login-error" id="loginError">Invalid email or password.</div>
+    <form id="loginForm">
       <div class="form-group">
         <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" name="email" required />
+        <input type="email" id="loginEmail" required />
       </div>
       <div class="form-group">
         <label for="loginPass">Password</label>
-        <input type="password" id="loginPass" name="password" required />
+        <input type="password" id="loginPass" required />
       </div>
       <button type="submit" class="btn btn--primary">Sign In</button>
     </form>
-    <div class="portal-error" id="loginError" style="margin-top:0.75rem;">Invalid email or password.</div>
   </div>
 </div>
 
-<!-- Dashboard -->
-<div class="admin-dash" id="dashView">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.25rem;">
+<div class="dash" id="dashView">
+  <div class="dash-header">
     <h1>Dashboard</h1>
-    <button class="dash-logout" id="logoutBtn">Sign Out</button>
-  </div>
-  <p>Admin portal — all client documents</p>
-
-  <div class="admin-table-wrap">
-    <div class="admin-table-header">
-      <h3>All Documents</h3>
-      <span id="docCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
-    </div>
-    <div id="docList"><div class="doc-empty">Loading documents…</div></div>
-    <div class="doc-err" id="docErr"></div>
+    <button class="dash-logout" id="logoutBtn" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.8rem;">Sign Out</button>
   </div>
 
-  <div class="admin-table-wrap" style="margin-bottom:1.5rem;">
-    <div class="admin-table-header">
-      <h3>Client States</h3>
-    </div>
+  <div class="stat-grid" id="statGrid"></div>
+
+  <div class="section">
+    <div class="section-header"><h3>Clients</h3><span id="clientCount" style="font-size:0.75rem;color:#9ca3af;"></span></div>
+    <div id="clientList"><div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h3>All Documents</h3></div>
+    <div id="adminDocList"><div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h3>Client State</h3></div>
     <div style="padding:1rem 1.25rem;">
       <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-        <input type="email" id="stateClientEmail" value="isaac@tideventure.com" style="padding:0.45rem 0.7rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.82rem;outline:none;min-width:200px;" />
-        <select id="stateSelect" style="padding:0.45rem 0.7rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.82rem;background:#fff;">
-          <option value="">— Select state —</option>
-        </select>
+        <input type="email" id="stateClientEmail" value="isaac@tideventure.com" style="padding:0.45rem 0.7rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.82rem;min-width:200px;" />
+        <select id="stateSelect" style="padding:0.45rem 0.7rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.82rem;background:#fff;"><option value="">— Select —</option></select>
         <button class="btn btn--primary" style="padding:0.45rem 1rem;font-size:0.8rem;" onclick="setClientState()">Save</button>
-        <span id="stateStatus" style="font-size:0.78rem;color:var(--text-muted);"></span>
+        <span id="stateStatus" style="font-size:0.78rem;color:#6b7280;"></span>
       </div>
     </div>
   </div>
 
-  <div class="admin-table-wrap">
-    <div class="admin-table-header">
-      <h3>Tax Questionnaire — Client Responses (2025)</h3>
-    </div>
-    <div id="tqClientResponses" style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--text-muted);">Loading…</div>
+  <div class="section">
+    <div class="section-header"><h3>Tax Questionnaire Editor (2025)</h3><button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;cursor:pointer;" onclick="tqSaveSchema()">Save Schema</button></div>
+    <div class="schema-editor" id="tqSchemaEditor">Loading…</div>
   </div>
 
-  <div class="admin-table-wrap">
-    <div class="admin-table-header">
-      <h3>Tax Questionnaire — Schema Editor</h3>
-      <button onclick="tqSaveSchema()" class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;cursor:pointer;">Save Schema</button>
-    </div>
-    <div id="tqSchemaEditor" style="padding:1rem 1.25rem;font-size:0.82rem;">Loading schema…</div>
+  <div class="section">
+    <div class="section-header"><h3>Audit Log</h3></div>
+    <div id="adminAuditList"><div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
   </div>
 
-  <div class="admin-table-wrap">
-    <div class="admin-table-header">
-      <h3>Audit Log</h3>
-      <span id="auditCount" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
-    </div>
-    <div id="auditList"><div class="doc-empty">Loading audit log…</div></div>
-    <div class="doc-err" id="auditErr"></div>
-  </div>
-
-  <div class="dash-footer">TideVenture CPA &mdash; Admin Portal &mdash; Internal Use Only</div>
+  <div class="footer">TideVenture CPA &mdash; Internal Use Only</div>
 </div>
 
 <script>
@@ -156,13 +136,7 @@ const adminToken = sessionStorage.getItem('tv_admin_token');
 if (adminToken) {
   fetch('/api/session', { headers: { 'Authorization': `Bearer ${adminToken}` } })
     .then(r => r.json())
-    .then(data => {
-      if (data.role === 'admin') {
-        showAdmin(data);
-      } else {
-        sessionStorage.removeItem('tv_admin_token');
-      }
-    });
+    .then(d => { if (d.role === 'admin') showAdmin(d); else sessionStorage.removeItem('tv_admin_token'); });
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -173,8 +147,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   err.style.display = 'none';
   try {
     const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
     if (res.ok) {
@@ -182,9 +155,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       if (data.role !== 'admin') { err.textContent = 'Admin access only.'; err.style.display = 'block'; return; }
       sessionStorage.setItem('tv_admin_token', data.token);
       showAdmin(data);
-    } else {
-      err.style.display = 'block';
-    }
+    } else { err.style.display = 'block'; }
   } catch { err.textContent = 'Network error.'; err.style.display = 'block'; }
 });
 
@@ -193,11 +164,16 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = '/admin';
 });
 
-function showAdmin(data) {
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showAdmin() {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('dashView').style.display = 'block';
-  initAdmin(data);
+  loadDashboard();
+  loadDocs();
+  loadAudit();
   setupStateSelector();
+  loadTQSchema();
 }
 
 function setupStateSelector() {
@@ -214,173 +190,118 @@ async function setClientState() {
   try {
     const token = sessionStorage.getItem('tv_admin_token');
     const res = await fetch('/api/profile', {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, state }),
     });
     if (!res.ok) throw new Error();
-    status.textContent = `State set to ${state} for ${email}`;
-    status.style.color = '#059669';
-  } catch (e) { status.textContent = 'Failed to save.'; status.style.color = '#dc2626'; }
+    status.textContent = `State set to ${state} for ${email}`; status.style.color = '#059669';
+  } catch { status.textContent = 'Failed.'; status.style.color = '#dc2626'; }
 }
 
-function initAdmin(data) {
-  const token = adminToken || sessionStorage.getItem('tv_admin_token');
-  function authFetch(url, opts = {}) { opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` }; return fetch(url, opts); }
+// ── Dashboard ──
+async function loadDashboard() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
 
-  async function loadDocs() {
-    const listEl = document.getElementById('docList');
-    const countEl = document.getElementById('docCount');
-    const errEl = document.getElementById('docErr');
-    errEl.style.display = 'none';
-    try {
-      const res = await authFetch('/api/documents');
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      renderDocs(data.documents, listEl, countEl);
-    } catch (e) {
-      errEl.textContent = 'Failed to load documents.';
-      errEl.style.display = 'block';
-      listEl.innerHTML = '<div class="doc-empty">Failed to load.</div>';
-    }
-  }
-
-  function renderDocs(docs, listEl, countEl) {
-    countEl.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
-    if (!docs.length) { listEl.innerHTML = '<div class="doc-empty">No documents yet.</div>'; return; }
-    listEl.innerHTML = '<div class="doc-row" style="font-weight:600;font-size:0.72rem;text-transform:uppercase;color:var(--text-muted);background:var(--sand);"><span class="doc-client">Client</span><span class="doc-name">Document</span><span class="doc-date">Uploaded</span><span class="doc-actions">Actions</span></div>';
-    docs.forEach(d => {
-      const row = document.createElement('div');
-      row.className = 'doc-row';
-      const displayName = d.uploadedBy ? d.uploadedBy.split('@')[0] : 'Unknown';
-      row.innerHTML = `
-        <span class="doc-client">${esc(displayName)}</span>
-        <span class="doc-name">${esc(d.name)}</span>
-        <span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span>
-        <span class="doc-actions">
-          <a href="/api/documents/${esc(d.id)}" class="dl-link">Download</a>
-          <button class="del-btn" data-id="${esc(d.id)}" onclick="deleteDoc(this)">Delete</button>
-        </span>
-      `;
-      listEl.appendChild(row);
-    });
-  }
-
-  window.deleteDoc = async (btn) => {
-    if (!confirm('Permanently delete this document?')) return;
-    try {
-      const res = await authFetch(`/api/documents/${btn.dataset.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      loadDocs(); loadAudit();
-    } catch (e) { alert('Delete failed.'); }
-  };
-
-  async function loadAudit() {
-    const listEl = document.getElementById('auditList');
-    const countEl = document.getElementById('auditCount');
-    const errEl = document.getElementById('auditErr');
-    errEl.style.display = 'none';
-    try {
-      const res = await authFetch('/api/audit');
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      renderAudit(data.audit, listEl, countEl);
-    } catch (e) {
-      errEl.textContent = 'Failed to load audit log.';
-      errEl.style.display = 'block';
-      listEl.innerHTML = '<div class="doc-empty">Failed to load.</div>';
-    }
-  }
-
-  function renderAudit(entries, listEl, countEl) {
-    countEl.textContent = `${entries.length} event${entries.length !== 1 ? 's' : ''}`;
-    if (!entries.length) { listEl.innerHTML = '<div class="doc-empty">No events yet.</div>'; return; }
-    listEl.innerHTML = '';
-    entries.forEach(e => {
-      const div = document.createElement('div');
-      div.className = 'audit-entry';
-      div.innerHTML = `
-        <span class="audit-action ${e.action}">${e.action}</span>
-        <span class="audit-user">${esc(e.email)}</span>
-        <span class="audit-detail">${esc(e.detail)}</span>
-        <span class="audit-time">${new Date(e.timestamp).toLocaleString()}</span>
-      `;
-      listEl.appendChild(div);
-    });
-  }
-
-  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-  // ── Tax Questionnaire Admin ──
-  async function tqLoad() {
-    const token = sessionStorage.getItem('tv_admin_token');
-    // Load client responses
-    const resResp = await fetch('/api/admin/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
-    const respData = await resResp.json();
-    const respEl = document.getElementById('tqClientResponses');
-    if (!respData.responses || !respData.responses.length) {
-      respEl.innerHTML = '<div style="color:var(--text-muted);">No client responses yet.</div>';
-    } else {
-      respEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">'
-        + '<tr style="background:#f9fafb;"><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Client</th><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Status</th><th style="padding:0.4rem;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th></tr>'
-        + respData.responses.map(r => {
-          const sig = r.answers?.final_signature || r.answers?.signature || '';
-          const name = r.answers?.tp_first ? r.answers.tp_first + ' ' + r.answers.tp_last : r.email;
-          return `<tr><td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;">${esc(name)}<br><span style="font-size:0.72rem;color:var(--text-muted);">${esc(r.email)}</span></td>
-            <td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;"><span style="color:#059669;">${sig ? '&#10003; Signed' : 'Incomplete'}</span></td>
-            <td style="padding:0.4rem;border-bottom:1px solid #e5e7eb;"><a href="/api/admin/questionnaire/view/${r.email}/2025" target="_blank" style="color:var(--brand-teal);font-size:0.78rem;">View</a></td></tr>`;
-        }).join('') + '</table>';
-    }
-
-    // Load schema for editing
-    const resSchema = await fetch('/api/questionnaire/schema/2025');
-    let schema = await resSchema.json();
-    if (!schema.sections) schema = { sections: [] };
-    window.tqSchema = schema;
-    renderSchemaEditor(schema);
-  }
-
-  function renderSchemaEditor(schema) {
-    const el = document.getElementById('tqSchemaEditor');
-    el.innerHTML = schema.sections.map((sec, si) => `
-      <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-          <input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value" style="flex:1;padding:0.3rem 0.5rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.82rem;font-weight:600;">
-          <button onclick="tqSchema.sections.splice(${si},1);renderSchemaEditor(tqSchema)" style="background:none;border:none;color:#c00;cursor:pointer;">Remove Section</button>
-        </div>
-        ${sec.questions.map((q, qi) => `
-        <div style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.3rem;">
-          <input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" placeholder="Field name" style="width:120px;padding:0.2rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input value="${esc(q[1])}" onchange="tqSchema.sections[${si}].questions[${qi}][1]=this.value" placeholder="Question text" style="flex:1;padding:0.2rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <button onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchemaEditor(tqSchema)" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button>
-        </div>`).join('')}
-        <button onclick="tqSchema.sections[${si}].questions.push(['','New question']);renderSchemaEditor(tqSchema)" style="font-size:0.74rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;">+ Add Question</button>
-      </div>
-    `).join('') + `
-      <button onclick="tqSchema.sections.push({title:'New Section',questions:[['','New question']]});renderSchemaEditor(tqSchema)" class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;cursor:pointer;">+ Add Section</button>
+    document.getElementById('statGrid').innerHTML = `
+      <div class="stat-card"><div class="num">${data.stats.total}</div><div class="label">Total Clients</div></div>
+      <div class="stat-card green"><div class="num">${data.stats.completed}</div><div class="label">Questionnaires Completed</div></div>
+      <div class="stat-card ${data.stats.notStarted > 0 ? 'alert' : ''}"><div class="num">${data.stats.notStarted}</div><div class="label">Not Started</div><div class="sub">${data.stats.notStarted > 0 ? 'Action needed' : 'All done'}</div></div>
+      <div class="stat-card"><div class="num">${data.stats.totalDocs}</div><div class="label">Total Documents</div></div>
+      <div class="stat-card${data.stats.totalAR > 0 ? ' alert' : ''}"><div class="num">$${data.stats.totalAR.toFixed(0)}</div><div class="label">Outstanding A/R</div><div class="sub">${data.stats.totalAR > 0 ? 'Bills unpaid' : 'All paid'}</div></div>
     `;
-  }
 
-  async function tqSaveSchema() {
-    const token = sessionStorage.getItem('tv_admin_token');
-    const btns = document.querySelectorAll('.admin-table-wrap .btn--primary');
-    const btn = btns[1];
-    if (!btn) return;
-    try {
-      await fetch('/api/questionnaire/schema/2025', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(window.tqSchema),
-      });
-      btn.textContent = 'Saved!';
-      setTimeout(() => { btn.textContent = 'Save Schema'; btn.disabled = false; }, 2000);
-    } catch { btn.textContent = 'Failed'; btn.disabled = false; }
-  }
+    document.getElementById('clientCount').textContent = `${data.clients.length} clients`;
+    document.getElementById('clientList').innerHTML = data.clients.map(c => `
+      <div class="client-row">
+        <div><div class="client-name">${esc(c.name)}</div><div class="client-email">${esc(c.email)}</div></div>
+        <div><span class="badge ${c.questionnaire === 'completed' ? 'badge-green' : c.questionnaire === 'in_progress' ? 'badge-yellow' : 'badge-gray'}">${c.questionnaire === 'completed' ? '&#10003; Done' : c.questionnaire === 'in_progress' ? 'In Progress' : 'Not Started'}</span></div>
+        <div style="font-size:0.78rem;color:#6b7280;">${c.documents} files</div>
+        <div style="font-weight:600;${c.balance > 0 ? 'color:#dc2626;' : 'color:#059669;'}">${c.balance > 0 ? '$' + c.balance.toFixed(2) : '&#10003; Paid'}</div>
+        <div><span class="badge badge-${c.state ? 'green' : 'gray'}">${c.state || 'None'}</span></div>
+      </div>
+    `).join('');
+  } catch { document.getElementById('clientList').innerHTML = '<div style="text-align:center;padding:2rem;color:#c00;">Failed to load.</div>'; }
+}
 
-  // Load everything
-  loadDocs();
-  loadAudit();
-  tqLoad();
+// ── Documents ──
+async function loadDocs() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/documents', { headers: { 'Authorization': `Bearer ${token}` } });
+    const docs = (await res.json()).documents || [];
+    const el = document.getElementById('adminDocList');
+    if (!docs.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.82rem;">No documents.</div>'; return; }
+    el.innerHTML = docs.slice(0, 20).map(d => `
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1.25rem;border-bottom:1px solid #f9fafb;font-size:0.8rem;">
+        <span style="font-weight:600;color:#111;min-width:8rem;">${esc(d.uploadedBy?.split('@')[0] || 'Unknown')}</span>
+        <span style="flex:1;color:#374151;">${esc(d.name)}</span>
+        <span style="font-size:0.72rem;color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span>
+        <a href="/api/documents/${esc(d.id)}" style="font-size:0.76rem;color:#1a7fa0;text-decoration:none;">Download</a>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+// ── Audit ──
+async function loadAudit() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/audit', { headers: { 'Authorization': `Bearer ${token}` } });
+    const entries = (await res.json()).audit || [];
+    const el = document.getElementById('adminAuditList');
+    if (!entries.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:#9ca3af;">No events.</div>'; return; }
+    el.innerHTML = entries.slice(0, 30).map(e => `
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 1.25rem;border-bottom:1px solid #f9fafb;font-size:0.76rem;color:#6b7280;">
+        <span style="font-weight:700;min-width:5.5rem;${e.action === 'UPLOAD' ? 'color:#059669' : e.action === 'DOWNLOAD' ? 'color:#2563eb' : 'color:#dc2626'}">${e.action}</span>
+        <span style="min-width:9rem;color:#111;">${esc(e.email)}</span>
+        <span style="flex:1;">${esc(e.detail)}</span>
+        <span style="font-size:0.7rem;">${new Date(e.timestamp).toLocaleString()}</span>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+// ── Questionnaire Schema Editor ──
+async function loadTQSchema() {
+  const res = await fetch('/api/questionnaire/schema/2025');
+  let schema = await res.json();
+  if (!schema.sections) schema = { sections: [] };
+  window.tqSchema = schema;
+  renderSchema(schema);
+}
+
+function renderSchema(schema) {
+  const el = document.getElementById('tqSchemaEditor');
+  el.innerHTML = schema.sections.map((sec, si) => `
+    <div class="schema-section">
+      <div class="schema-section-title">
+        <input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value">
+        <button class="btn-del" onclick="tqSchema.sections.splice(${si},1);renderSchema(tqSchema)">&times;</button>
+      </div>
+      ${sec.questions.map((q, qi) => `
+        <div class="q-row">
+          <input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" placeholder="Field">
+          <input value="${esc(q[1])}" onchange="tqSchema.sections[${si}].questions[${qi}][1]=this.value" placeholder="Question">
+          <button class="btn-del" onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchema(tqSchema)">&times;</button>
+        </div>`).join('')}
+      <button class="btn-sm" onclick="tqSchema.sections[${si}].questions.push(['','New question']);renderSchema(tqSchema)">+ Add Question</button>
+    </div>`).join('') +
+    '<button class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;cursor:pointer;" onclick="tqSchema.sections.push({title:\'New Section\',questions:[[\'\',\'New question\']]});renderSchema(tqSchema)">+ Add Section</button>';
+}
+
+async function tqSaveSchema() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/questionnaire/schema/2025', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(window.tqSchema),
+    });
+    if (res.ok) alert('Schema saved!');
+    else throw Error();
+  } catch { alert('Save failed.'); }
 }
 </script>
 </body>
