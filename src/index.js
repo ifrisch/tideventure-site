@@ -1,10 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const USERS = {
-  'admin@tideventurecpa.com': 'admin123',
-  'isaac@tideventure.com': 'test123',
-};
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -88,7 +83,8 @@ export default {
         email = fd.get('email');
         password = fd.get('password');
       }
-      if (USERS[email] && USERS[email] === password) {
+      const users = JSON.parse(env.USERS_JSON || '{}');
+      if (users[email] && users[email] === password) {
         const token = await new SignJWT({ email, role: isAdmin(email) ? 'admin' : 'client' })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('24h')
@@ -515,7 +511,8 @@ async function handleAdminDashboard(env) {
   const clients = [];
   const adminEmail = 'admin@tideventurecpa.com';
   
-  for (const [email] of Object.entries(USERS)) {
+  const users = JSON.parse(env.USERS_JSON || '{}');
+  for (const [email] of Object.entries(users)) {
     if (email === adminEmail) continue;
     const profileKey = `profile/${email}`;
     let profile = {};
