@@ -171,15 +171,22 @@ export default {
         try {
           const obj = await env.tideventure_documents.get(key);
           if (!obj) return json(200, { year, saved: false, data: null });
-          return json(200, { year, saved: true, data: JSON.parse(await obj.text()) });
+          const encrypted = await obj.arrayBuffer();
+          try {
+            const decrypted = await decryptQuestionnaire(env.DOC_ENC_KEY, email, encrypted);
+            return json(200, { year, saved: true, data: JSON.parse(new TextDecoder().decode(decrypted)) });
+          } catch {
+            // Fallback for legacy unencrypted data
+            return json(200, { year, saved: true, data: JSON.parse(await obj.text()) });
+          }
         } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'PUT' || method === 'POST') {
         try {
           const body = await request.json();
           if (!body || typeof body !== 'object') return json(400, { error: 'Invalid body' });
-          const text = JSON.stringify(body);
-          await env.tideventure_documents.put(key, text, { httpMetadata: { contentType: 'application/json' } });
+          const encrypted = await encryptQuestionnaire(env.DOC_ENC_KEY, email, new TextEncoder().encode(JSON.stringify(body)));
+          await env.tideventure_documents.put(key, encrypted, { httpMetadata: { contentType: 'application/octet-stream' } });
           return json(200, { ok: true, year, saved: true });
         } catch (e) { return json(500, { error: 'Save failed: ' + e.message }); }
       }
@@ -192,7 +199,13 @@ export default {
         const year = adminViewMatch[2];
         const obj = await env.tideventure_documents.get(`questionnaire/${viewEmail}/${year}`);
         if (!obj) return json(404, { error: 'Not found' });
-        return json(200, { email: viewEmail, year, answers: JSON.parse(await obj.text()) });
+        try {
+          const encrypted = await obj.arrayBuffer();
+          const decrypted = await decryptQuestionnaire(env.DOC_ENC_KEY, viewEmail, encrypted);
+          return json(200, { email: viewEmail, year, answers: JSON.parse(new TextDecoder().decode(decrypted)) });
+        } catch {
+          return json(200, { email: viewEmail, year, answers: JSON.parse(await obj.text()) });
+        }
       } catch (e) { return json(500, { error: e.message }); }
     }
     // Admin: list all questionnaire responses for a year
@@ -205,7 +218,13 @@ export default {
           const parts = obj.key.split('/');
           if (parts[0] === 'questionnaire' && parts[2] === year) {
             const data = await env.tideventure_documents.get(obj.key);
-            if (data) results.push({ email: parts[1], answers: JSON.parse(await data.text()) });
+            if (data) {
+              try {
+                const buf = await data.arrayBuffer();
+                const dec = await decryptQuestionnaire(env.DOC_ENC_KEY, parts[1], buf);
+                results.push({ email: parts[1], answers: JSON.parse(new TextDecoder().decode(dec)) });
+              } catch { results.push({ email: parts[1], answers: {} }); }
+            }
           }
         }
         return json(200, { year, responses: results });
@@ -756,6 +775,28 @@ async function getQboDataForClient(env, email) {
   } catch (e) {
     return { qboConnected: false, invoices: [], revenue: [] };
   }
+}
+
+// ── Questionnaire encryption ──
+async function encryptQuestionnaire(secret, email, plaintext) {
+  const kmHex = await deriveKeyMaterial(secret, email);
+  const kmBytes = hexToBytes(kmHex);
+  const key = await crypto.subtle.importKey('raw', kmBytes.slice(0, 32), { name: 'AES-GCM' }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const out = new Uint8Array(iv.length + encrypted.byteLength);
+  out.set(iv, 0); out.set(new Uint8Array(encrypted), iv.length);
+  return out.buffer;
+}
+
+async function decryptQuestionnaire(secret, email, ciphertext) {
+  const kmHex = await deriveKeyMaterial(secret, email);
+  const kmBytes = hexToBytes(kmHex);
+  const key = await crypto.subtle.importKey('raw', kmBytes.slice(0, 32), { name: 'AES-GCM' }, false, ['decrypt']);
+  const bytes = new Uint8Array(ciphertext);
+  const iv = bytes.slice(0, 12);
+  const encrypted = bytes.slice(12);
+  return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
 }
 
 // ── Encryption helpers (paired with browser-side Web Crypto) ──
