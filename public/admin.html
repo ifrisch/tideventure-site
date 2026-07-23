@@ -150,12 +150,12 @@
   </div>
 
   <div class="section">
-    <div class="section-hdr"><h3>Set Client State</h3></div>
-    <div class="state-bar">
-      <input type="email" id="stateClientEmail" value="isaac@tideventure.com" />
-      <select id="stateSelect"><option value="">— Select state —</option></select>
-      <button class="btn btn--primary" onclick="setClientState()">Save</button>
-      <span class="state-status" id="stateStatus"></span>
+    <div class="section-hdr"><h3>View Client Details</h3></div>
+    <div style="padding:1rem 1.25rem;">
+      <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+        <select id="clientSelect" style="flex:1;min-width:200px;padding:0.5rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:var(--white);font-family:var(--font-body);"><option value="">— Select a client —</option></select>
+        <a id="clientGoBtn" class="btn btn--primary" style="padding:0.5rem 1.25rem;font-size:0.82rem;text-decoration:none;" href="/admin">Go</a>
+      </div>
     </div>
   </div>
 
@@ -197,6 +197,7 @@ function showAdmin() { document.getElementById('loginView').style.display = 'non
 
 function setupStateSelector() {
   const s = document.getElementById('stateSelect');
+  if (!s) return;
   'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',').forEach(st => { const o = document.createElement('option'); o.value = st; o.textContent = st; s.appendChild(o); });
 }
 async function setClientState() {
@@ -224,6 +225,14 @@ async function loadDashboard() {
       <div class="stat"><div class="stat-num">${data.stats.totalDocs}</div><div class="stat-label">Documents</div></div>
       <div class="stat ${data.stats.totalAR > 0 ? 'alert' : ''}"><div class="stat-num">$${data.stats.totalAR.toFixed(0)}</div><div class="stat-label">Outstanding A/R</div><div class="stat-sub">${data.stats.totalAR > 0 ? 'Unpaid balances' : 'All paid'}</div></div>
     `;
+    // Populate client dropdown
+    const sel = document.getElementById('clientSelect');
+    const goBtn = document.getElementById('clientGoBtn');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select a client —</option>' + data.clients.map(c => `<option value="${esc(c.email)}">${esc(c.name)} (${esc(c.email)})</option>`).join('');
+      sel.onchange = () => { goBtn.href = sel.value ? '/admin-client?email=' + encodeURIComponent(sel.value) : '/admin'; };
+    }
+
     document.getElementById('clientCount').textContent = `${data.clients.length} clients`;
     document.getElementById('clientList').innerHTML = data.clients.map(c => `
       <div class="client-row">

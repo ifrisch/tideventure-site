@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Details — TideVenture CPA</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: var(--sand); font-family: var(--font-body); }
+    .page { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--brand-dark); margin: 0 0 0.5rem; }
+    .card h3 { font-family: var(--font-heading); font-size: 0.85rem; font-weight: 700; color: var(--ink); margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .top-bar h1 { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--brand-dark); margin: 0; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .info-item { }
+    .info-item .label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .info-item .value { font-size: 0.9rem; font-weight: 600; color: var(--ink); margin-top: 0.15rem; }
+    .tag { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .tag-green { background: #ecfdf5; color: #059669; }
+    .tag-yellow { background: #fef3c7; color: #d97706; }
+    .tag-gray { background: #f3f4f6; color: #6b7280; }
+    .doc-row { display: flex; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--sand); font-size: 0.8rem; }
+    .doc-row:last-child { border-bottom: none; }
+    .doc-name { flex: 1; color: var(--ink); }
+    .doc-date { font-size: 0.72rem; color: var(--text-muted); margin-right: 1rem; }
+    .doc-dl { font-size: 0.76rem; color: var(--brand-teal); text-decoration: none; font-weight: 600; }
+    .empty { text-align: center; padding: 2rem; font-size: 0.82rem; color: var(--text-muted); }
+    .answer-row { display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--sand); font-size: 0.78rem; }
+    details summary { cursor: pointer; font-size: 0.82rem; color: var(--brand-teal); font-weight: 600; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+      <svg class="nav__logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
+    </a>
+    <a href="/admin" class="btn--portal" style="margin-left:auto;">&#8592; Back to Dashboard</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="top-bar">
+    <h1 id="pageTitle">Client Details</h1>
+    <select id="clientNav" style="padding:0.45rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:var(--white);font-family:var(--font-body);min-width:200px;"><option value="">— Select client —</option></select>
+  </div>
+
+  <div id="loading" style="text-align:center;padding:3rem;font-size:0.9rem;color:var(--text-muted);">Loading client data…</div>
+
+  <div id="content" style="display:none;">
+    <div class="card">
+      <h2 id="clientName"></h2>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Email</div><div class="value" id="cEmail"></div></div>
+        <div class="info-item"><div class="label">State</div><div class="value" id="cState"></div></div>
+        <div class="info-item"><div class="label">Questionnaire 2025</div><div class="value" id="cQuestionnaire"></div></div>
+        <div class="info-item"><div class="label">Documents</div><div class="value" id="cDocCount"></div></div>
+        <div class="info-item"><div class="label">Outstanding Balance</div><div class="value" id="cBalance"></div></div>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Set state:</span>
+        <select id="stateSelect" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.8rem;"><option value="">—</option></select>
+        <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="setState()">Save</button>
+        <span id="stateStatus" style="font-size:0.76rem;color:var(--text-muted);"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Documents</h3>
+      <div id="docsList"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="card">
+      <h3>Questionnaire Answers (2025)</h3>
+      <div id="answersList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PAGE_DATA = window.__PAGE_DATA__;
+const TOKEN = sessionStorage.getItem('tv_admin_token');
+
+if (!TOKEN) { window.location.href = '/admin'; }
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function getEmail() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('email') || '';
+}
+
+async function loadClient(email) {
+  if (!email) { document.getElementById('loading').textContent = 'No client selected.'; return; }
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('pageTitle').textContent = 'Client: ' + email.split('@')[0];
+
+  const token = sessionStorage.getItem('tv_admin_token');
+
+  // Profile
+  try {
+    const pr = await fetch('/api/profile?email=' + encodeURIComponent(email), { headers: { 'Authorization': `Bearer ${token}` } });
+    const profile = await pr.json();
+    document.getElementById('clientName').textContent = profile.businessName || email.split('@')[0];
+    document.getElementById('cEmail').textContent = email;
+    document.getElementById('cState').textContent = profile.state || 'Not set';
+    if (document.getElementById('stateSelect').querySelector('option[value="' + (profile.state||'') + '"]')) {
+      document.getElementById('stateSelect').value = profile.state || '';
+    }
+  } catch {}
+
+  // Questionnaire
+  try {
+    const qr = await fetch('/api/admin/questionnaire/view/' + encodeURIComponent(email) + '/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (qr.ok) {
+      const qd = await qr.json();
+      const answers = qd.answers || {};
+      const sig = answers.final_signature || answers.signature || '';
+      document.getElementById('cQuestionnaire').innerHTML = sig
+        ? '<span class="tag tag-green">Completed &#10003;</span>'
+        : '<span class="tag tag-yellow">In Progress</span>';
+      renderAnswers(answers);
+    } else {
+      document.getElementById('cQuestionnaire').innerHTML = '<span class="tag tag-gray">Not Started</span>';
+      document.getElementById('answersList').innerHTML = '<div class="empty">No questionnaire data.</div>';
+    }
+  } catch {}
+
+  // Documents
+  try {
+    const dr = await fetch('/api/documents', { headers: { 'Authorization': `Bearer ${token}` } });
+    const dd = await dr.json();
+    const clientDocs = (dd.documents || []).filter(d => d.uploadedBy === email);
+    document.getElementById('cDocCount').textContent = clientDocs.length;
+    const el = document.getElementById('docsList');
+    if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
+    else {
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}" class="doc-dl">Download</a></div>`).join('');
+    }
+  } catch {}
+
+  // Balance from admin dashboard data
+  try {
+    const dr2 = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+    const dd2 = await dr2.json();
+    const client = dd2.clients.find(c => c.email === email);
+    document.getElementById('cBalance').textContent = client ? '$' + (client.balance || 0).toFixed(2) : '$0.00';
+    document.getElementById('cBalance').style.color = client && client.balance > 0 ? '#b91c1c' : '#059669';
+  } catch {}
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+function renderAnswers(answers) {
+  const el = document.getElementById('answersList');
+  if (!answers || !Object.keys(answers).length) { el.innerHTML = '<div class="empty">No answers yet.</div>'; return; }
+  const yesNo = Object.entries(answers).filter(([k,v]) => v === 'Yes' || v === 'No');
+  if (!yesNo.length) { el.innerHTML = '<div class="empty">No Yes/No answers.</div>'; return; }
+  const yes = yesNo.filter(([k,v]) => v === 'Yes').length;
+  const no = yesNo.filter(([k,v]) => v === 'No').length;
+  el.innerHTML = `<div style="margin-bottom:0.75rem;"><span class="tag tag-green">${yes} Yes</span> <span class="tag tag-gray" style="margin-left:0.3rem;">${no} No</span></div>
+    <details><summary>View all ${yesNo.length} answers</summary>
+    <div style="max-height:500px;overflow-y:auto;">${yesNo.map(([k,v]) =>
+      `<div class="answer-row"><span>${esc(k)}</span><span class="tag ${v === 'Yes' ? 'tag-green' : 'tag-gray'}">${v}</span></div>`
+    ).join('')}</div></details>`;
+}
+
+async function setState() {
+  const state = document.getElementById('stateSelect').value;
+  const email = getEmail();
+  if (!state || !email) return;
+  try {
+    const token = sessionStorage.getItem('tv_admin_token');
+    await fetch('/api/profile', { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, state }) });
+    document.getElementById('cState').textContent = state;
+    document.getElementById('stateStatus').textContent = 'Saved';
+  } catch {}
+}
+
+// Populate state selector
+const STATES = 'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',');
+const sel = document.getElementById('stateSelect');
+STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+
+// Populate client nav dropdown
+(async () => {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const nav = document.getElementById('clientNav');
+    data.clients.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.email;
+      o.textContent = c.name + ' (' + c.email + ')';
+      if (c.email === getEmail()) o.selected = true;
+      nav.appendChild(o);
+    });
+    nav.onchange = () => { if (nav.value) window.location.href = '/admin-client?email=' + encodeURIComponent(nav.value); };
+  } catch {}
+
+  // Load the selected client
+  loadClient(getEmail());
+})();
+</script>
+</body>
+</html>

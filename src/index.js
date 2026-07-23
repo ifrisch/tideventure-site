@@ -170,7 +170,8 @@ export default {
 
     if (url.pathname === '/api/profile' && method === 'GET') {
       if (!email) return json(401, { error: 'Unauthorized' });
-      try { return await handleGetProfile(env, email); } catch (e) { return json(500, { error: e.message }); }
+      const profileEmail = isAdmin(email) && url.searchParams.get('email') ? url.searchParams.get('email') : email;
+      try { return await handleGetProfile(env, profileEmail); } catch (e) { return json(500, { error: e.message }); }
     }
 
     if (url.pathname === '/api/profile' && method === 'PUT') {
@@ -338,7 +339,7 @@ export default {
 
     // ── Inject user data + key material into portal/admin pages ──
     const path = url.pathname.replace(/\.html$/, '');
-    if (path === '/portal' || path === '/admin' || path === '/questionnaire' || url.pathname === '/portal.html' || url.pathname === '/admin.html' || url.pathname === '/questionnaire.html') {
+    if (path === '/portal' || path === '/admin' || path === '/questionnaire' || path === '/admin-client' || url.pathname === '/portal.html' || url.pathname === '/admin.html' || url.pathname === '/questionnaire.html' || url.pathname === '/admin-client.html') {
       const response = await env.ASSETS.fetch(request);
       if (!email) return response;
       const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
