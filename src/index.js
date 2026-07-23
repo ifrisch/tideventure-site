@@ -215,8 +215,17 @@ export default {
     }
     if (url.pathname.match(/^\/api\/admin\/users\/[^\/]+$/) && method === 'DELETE' && isAdmin(email)) {
       try {
-        const delEmail = decodeURIComponent(url.pathname.split('/').pop());
-        await env.tideventure_documents.delete(`user/${delEmail.toLowerCase()}`);
+        const delEmail = decodeURIComponent(url.pathname.split('/').pop()).toLowerCase();
+        await env.tideventure_documents.delete(`user/${delEmail}`);
+        await env.tideventure_documents.delete(`ratelimit/login/${delEmail}`).catch(() => {});
+        return json(200, { ok: true });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    // Admin: clear rate limit for a user
+    if (url.pathname === '/api/admin/ratelimit' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        await env.tideventure_documents.delete(`ratelimit/login/${body.email.toLowerCase()}`).catch(() => {});
         return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -865,7 +874,7 @@ async function verifyPassword(password, stored, env) {
   if (!stored) return false;
   const parts = stored.split(':');
   if (parts.length !== 2) return password === stored; // legacy plaintext
-  const salt = hexBytes(parts[0]);
+  const salt = hexToBytes(parts[0]);
   const storedHash = parts[1];
   const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password + env.DOC_ENC_KEY), 'PBKDF2', false, ['deriveBits']);
   const hash = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
@@ -874,7 +883,6 @@ async function verifyPassword(password, stored, env) {
 }
 
 function saltHex(bytes) { return Array.from(new Uint8Array(bytes)).map(b => b.toString(16).padStart(2, '0')).join(''); }
-function hexBytes(hex) { const b = new Uint8Array(hex.length / 2); for (let i = 0; i < hex.length; i += 2) b[i/2] = parseInt(hex.substr(i, 2), 16); return b; }
 
 // ── Questionnaire encryption ──
 async function encryptQuestionnaire(secret, email, plaintext) {
