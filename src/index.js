@@ -83,15 +83,51 @@ export default {
         email = fd.get('email');
         password = fd.get('password');
       }
-      const users = JSON.parse(env.USERS_JSON || '{}');
-      if (users[email] && users[email] === password) {
-        const token = await new SignJWT({ email, role: isAdmin(email) ? 'admin' : 'client' })
+      if (!email || !password) return json(400, { error: 'Email and password required' });
+      const lowerEmail = email.toLowerCase().trim();
+
+      // Rate limiting: check login attempts
+      const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+      const rateKey = `ratelimit/login/${lowerEmail}`;
+      const rateObj = await env.tideventure_documents.get(rateKey);
+      let attempts = 0;
+      if (rateObj) {
+        try { attempts = JSON.parse(await rateObj.text()).count || 0; } catch {}
+      }
+      if (attempts >= 5) return json(429, { error: 'Too many attempts. Try again later.' });
+
+      // Look up user from R2 or fallback secret
+      let userObj = null;
+      try {
+        const stored = await env.tideventure_documents.get(`user/${lowerEmail}`);
+        if (stored) userObj = JSON.parse(await stored.text());
+      } catch {}
+      if (!userObj) {
+        const legacy = JSON.parse(env.USERS_JSON || '{}');
+        if (legacy[lowerEmail]) {
+          // Migrate legacy user to R2
+          userObj = { email: lowerEmail, password: await hashPassword(legacy[lowerEmail], env), role: isAdmin(lowerEmail) ? 'admin' : 'client', createdAt: new Date().toISOString() };
+          await env.tideventure_documents.put(`user/${lowerEmail}`, JSON.stringify(userObj), { httpMetadata: { contentType: 'application/json' } });
+        }
+      }
+
+      if (userObj && await verifyPassword(password, userObj.password, env)) {
+        // Success — clear rate limit
+        await env.tideventure_documents.delete(rateKey).catch(() => {});
+        const token = await new SignJWT({ email: lowerEmail, role: userObj.role || 'client' })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('24h')
           .sign(new TextEncoder().encode(env.DOC_ENC_KEY));
-        const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, email);
-        return json(200, { token, keyMaterial, email, role: isAdmin(email) ? 'admin' : 'client' });
+        const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, lowerEmail);
+        return json(200, { token, keyMaterial, email: lowerEmail, role: userObj.role || 'client' });
       }
+
+      // Failed attempt — increment counter
+      attempts++;
+      await env.tideventure_documents.put(rateKey, JSON.stringify({ count: attempts, lastAttempt: new Date().toISOString() }), {
+        httpMetadata: { contentType: 'application/json' },
+        customMetadata: { expiresAt: Date.now() + 900000 }, // 15 min
+      });
       return json(401, { error: 'Invalid credentials' });
     }
 
@@ -150,6 +186,39 @@ export default {
     if (url.pathname === '/api/audit' && method === 'GET') {
       if (!isAdmin(email)) return json(403, { error: 'Admin access required' });
       try { return await handleAuditLog(env); } catch (e) { return json(500, { error: e.message }); }
+    }
+
+    // ── Admin: User management ──
+    if (url.pathname === '/api/admin/users' && isAdmin(email)) {
+      if (method === 'GET') {
+        try {
+          const results = [];
+          const list = await env.tideventure_documents.list();
+          for (const obj of list.objects) {
+            if (obj.key.startsWith('user/')) {
+              try { results.push(JSON.parse(await (await env.tideventure_documents.get(obj.key)).text())); } catch {}
+            }
+          }
+          return json(200, { users: results });
+        } catch (e) { return json(500, { error: e.message }); }
+      }
+      if (method === 'PUT') {
+        try {
+          const body = await request.json();
+          if (!body.email || !body.password) return json(400, { error: 'Email and password required' });
+          const lower = body.email.toLowerCase().trim();
+          const user = { email: lower, password: await hashPassword(body.password, env), role: body.role || 'client', businessName: body.businessName || '', state: body.state || '', createdAt: new Date().toISOString() };
+          await env.tideventure_documents.put(`user/${lower}`, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+          return json(200, { ok: true });
+        } catch (e) { return json(500, { error: e.message }); }
+      }
+    }
+    if (url.pathname.match(/^\/api\/admin\/users\/[^\/]+$/) && method === 'DELETE' && isAdmin(email)) {
+      try {
+        const delEmail = decodeURIComponent(url.pathname.split('/').pop());
+        await env.tideventure_documents.delete(`user/${delEmail.toLowerCase()}`);
+        return json(200, { ok: true });
+      } catch (e) { return json(500, { error: e.message }); }
     }
 
     // ── Admin Dashboard ──
@@ -510,16 +579,30 @@ async function handleDeleteDocument(env, docId, email, admin) {
 async function handleAdminDashboard(env) {
   const clients = [];
   const adminEmail = 'admin@tideventurecpa.com';
-  
-  const users = JSON.parse(env.USERS_JSON || '{}');
-  for (const [email] of Object.entries(users)) {
+
+  const allEmails = new Set();
+  const listResult = await env.tideventure_documents.list();
+  for (const obj of listResult.objects) {
+    if (obj.key.startsWith('user/')) {
+      try {
+        const u = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
+        allEmails.add(u.email);
+      } catch {}
+    }
+  }
+  // Fallback: legacy secret
+  if (!allEmails.size) {
+    const legacy = JSON.parse(env.USERS_JSON || '{}');
+    for (const email of Object.keys(legacy)) allEmails.add(email);
+  }
+
+  for (const email of allEmails) {
     if (email === adminEmail) continue;
     const profileKey = `profile/${email}`;
     let profile = {};
     const profileObj = await env.tideventure_documents.get(profileKey);
     if (profileObj) { try { profile = JSON.parse(await profileObj.text()); } catch {} }
 
-    // Questionnaire status
     let qStatus = 'not_started';
     const qObj = await env.tideventure_documents.get(`questionnaire/${email}/2025`);
     if (qObj) {
@@ -529,14 +612,12 @@ async function handleAdminDashboard(env) {
       } catch {}
     }
 
-    // Document count
     let docCount = 0;
     const docs = await env.tideventure_documents.list();
     for (const obj of docs.objects) {
       if (obj.key.startsWith(email + '/')) docCount++;
     }
 
-    // Outstanding from QBO cached data
     let balance = 0;
     const invObj = await env.tideventure_documents.get('qbo/invoices');
     const custObj = await env.tideventure_documents.get('qbo/customers');
@@ -545,9 +626,7 @@ async function handleAdminDashboard(env) {
       const customers = JSON.parse(await custObj.text());
       const matched = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
       if (matched) {
-        balance = invoices
-          .filter(i => i.customerRef === matched.id)
-          .reduce((s, i) => s + (i.balance || 0), 0);
+        balance = invoices.filter(i => i.customerRef === matched.id).reduce((s, i) => s + (i.balance || 0), 0);
       }
     }
 
@@ -561,7 +640,6 @@ async function handleAdminDashboard(env) {
     });
   }
 
-  // Counts
   const total = clients.length;
   const completed = clients.filter(c => c.questionnaire === 'completed').length;
   const inProgress = clients.filter(c => c.questionnaire === 'in_progress').length;
@@ -773,6 +851,30 @@ async function getQboDataForClient(env, email) {
     return { qboConnected: false, invoices: [], revenue: [] };
   }
 }
+
+// ── Password hashing ──
+async function hashPassword(password, env) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password + env.DOC_ENC_KEY), 'PBKDF2', false, ['deriveBits']);
+  const hash = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
+  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return saltHex(salt) + ':' + hashHex;
+}
+
+async function verifyPassword(password, stored, env) {
+  if (!stored) return false;
+  const parts = stored.split(':');
+  if (parts.length !== 2) return password === stored; // legacy plaintext
+  const salt = hexBytes(parts[0]);
+  const storedHash = parts[1];
+  const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password + env.DOC_ENC_KEY), 'PBKDF2', false, ['deriveBits']);
+  const hash = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
+  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === storedHash;
+}
+
+function saltHex(bytes) { return Array.from(new Uint8Array(bytes)).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function hexBytes(hex) { const b = new Uint8Array(hex.length / 2); for (let i = 0; i < hex.length; i += 2) b[i/2] = parseInt(hex.substr(i, 2), 16); return b; }
 
 // ── Questionnaire encryption ──
 async function encryptQuestionnaire(secret, email, plaintext) {
