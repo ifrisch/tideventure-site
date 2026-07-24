@@ -145,6 +145,11 @@
   </div>
 
   <div class="section">
+    <div class="section-hdr"><h3>Prospects</h3><span id="prospectCount" style="font-size:0.75rem;color:var(--text-muted);"></span></div>
+    <div id="prospectList"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="section">
     <div class="section-hdr"><h3>All Documents</h3></div>
     <div id="adminDocList"><div class="empty">Loading…</div></div>
   </div>
@@ -193,7 +198,7 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tv_admin_token'); window.location.href = '/admin'; });
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function showAdmin() { document.getElementById('loginView').style.display = 'none'; document.getElementById('dashView').style.display = 'block'; loadDashboard(); loadDocs(); loadAudit(); setupStateSelector(); loadTQSchema(); }
+function showAdmin() { document.getElementById('loginView').style.display = 'none'; document.getElementById('dashView').style.display = 'block'; loadDashboard(); loadProspects(); loadDocs(); loadAudit(); setupStateSelector(); loadTQSchema(); }
 
 function setupStateSelector() {
   const s = document.getElementById('stateSelect');
@@ -224,6 +229,7 @@ async function loadDashboard() {
       <div class="stat ${data.stats.notStarted > 0 ? 'alert' : ''}"><div class="stat-num">${data.stats.notStarted}</div><div class="stat-label">Not Started</div><div class="stat-sub">${data.stats.notStarted > 0 ? 'Needs follow-up' : 'All submitted'}</div></div>
       <div class="stat"><div class="stat-num">${data.stats.totalDocs}</div><div class="stat-label">Documents</div></div>
       <div class="stat ${data.stats.totalAR > 0 ? 'alert' : ''}"><div class="stat-num">$${data.stats.totalAR.toFixed(0)}</div><div class="stat-label">Outstanding A/R</div><div class="stat-sub">${data.stats.totalAR > 0 ? 'Unpaid balances' : 'All paid'}</div></div>
+      <div class="stat ${data.stats.prospects > 0 ? '' : ''}"><div class="stat-num">${data.stats.prospects}</div><div class="stat-label">Prospects</div><div class="stat-sub">Awaiting contact</div></div>
     `;
     // Populate client dropdown
     const sel = document.getElementById('clientSelect');
@@ -240,9 +246,59 @@ async function loadDashboard() {
         <div><span class="tag ${c.questionnaire === 'completed' ? 'tag-green' : c.questionnaire === 'in_progress' ? 'tag-yellow' : 'tag-gray'}">${c.questionnaire === 'completed' ? 'Done' : c.questionnaire === 'in_progress' ? 'Started' : 'Pending'}</span></div>
         <div class="cstate">${c.documents} file${c.documents !== 1 ? 's' : ''}</div>
         <div class="amt ${c.balance > 0 ? 'due' : 'paid'}">${c.balance > 0 ? '$' + c.balance.toFixed(2) : '&#10003;'}</div>
-        <div><span class="tag ${c.state ? 'tag-green' : 'tag-gray'}">${c.state || '—'}</span></div>
+        <div><span class="tag ${c.state ? 'tag-green' : 'tag-gray'}">${c.state || '—'}</span> ${c.customerType ? `<span class="tag tag-yellow">${c.customerType}</span>` : ''}</div>
       </div>`).join('');
   } catch { document.getElementById('clientList').innerHTML = '<div class="empty">Failed to load.</div>'; }
+}
+
+async function loadProspects() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/prospects', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const el = document.getElementById('prospectList');
+    document.getElementById('prospectCount').textContent = data.prospects.length + ' prospects';
+    if (!data.prospects.length) { el.innerHTML = '<div class="empty">No prospects yet.</div>'; return; }
+    el.innerHTML = data.prospects.map(p => `
+      <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 120px;gap:0.5rem;padding:0.55rem 1.25rem;border-bottom:1px solid var(--sand);font-size:0.82rem;align-items:center;">
+        <div><div style="font-weight:600;color:var(--ink);">${esc(p.name || 'Unknown')}</div><div style="font-size:0.72rem;color:var(--text-muted);">${esc(p.email)} ${p.phone ? '| ' + esc(p.phone) : ''}</div></div>
+        <div style="font-size:0.76rem;color:var(--text-muted);">${esc(p.entityType || '—')} ${p.services?.length ? '<br>' + esc(p.services.join(', ')) : ''}</div>
+        <div style="font-size:0.76rem;color:var(--text-muted);">${p.revenue ? esc(p.revenue) : ''}<br><span style="font-size:0.7rem;">${new Date(p.createdAt).toLocaleDateString()}</span></div>
+        <div>
+          <button class="btn btn--primary" style="padding:0.3rem 0.6rem;font-size:0.72rem;" onclick="convertProspect('${p.id}')">Convert</button>
+          <button class="btn-del" style="margin-left:0.3rem;font-size:0.8rem;" onclick="deleteProspect('${p.id}')">&times;</button>
+        </div>
+      </div>
+    `).join('');
+  } catch { document.getElementById('prospectList').innerHTML = '<div class="empty">Failed to load.</div>'; }
+}
+
+async function convertProspect(id) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const pw = prompt('Set password for new client:', 'welcome1');
+  if (!pw) return;
+  const type = prompt('Customer type (tax, bookkeeping, both):', 'tax');
+  if (!type) return;
+  try {
+    const res = await fetch('/api/admin/prospects/convert', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, password: pw, customerType: type }),
+    });
+    if (res.ok) { alert('Client created!'); loadProspects(); loadDashboard(); }
+    else alert('Conversion failed.');
+  } catch { alert('Error.'); }
+}
+
+async function deleteProspect(id) {
+  if (!confirm('Delete this prospect?')) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/prospects/delete', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    loadProspects();
+  } catch {}
 }
 
 async function loadDocs() {

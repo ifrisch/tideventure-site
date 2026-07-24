@@ -189,6 +189,59 @@ export default {
       try { return await handleAuditLog(env); } catch (e) { return json(500, { error: e.message }); }
     }
 
+    // ── Prospect capture (from pricing/contact pages) ──
+    if (url.pathname === '/api/prospect' && method === 'POST') {
+      try {
+        const body = await request.json();
+        if (!body.email) return json(400, { error: 'Email required' });
+        const id = crypto.randomUUID();
+        const prospect = { id, email: body.email.toLowerCase(), name: body.name || '', phone: body.phone || '', entityType: body.entityType || '', services: body.services || [], revenue: body.revenue || '', notes: body.notes || '', source: body.source || 'pricing', createdAt: new Date().toISOString(), status: 'new' };
+        await env.tideventure_documents.put(`prospect/${id}`, JSON.stringify(prospect), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true, id });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
+    // ── Admin: Prospect management ──
+    if (url.pathname === '/api/admin/prospects' && method === 'GET' && isAdmin(email)) {
+      try {
+        const results = [];
+        const list = await env.tideventure_documents.list();
+        for (const obj of list.objects) {
+          if (obj.key.startsWith('prospect/')) {
+            try { results.push(JSON.parse(await (await env.tideventure_documents.get(obj.key)).text())); } catch {}
+          }
+        }
+        results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return json(200, { prospects: results });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    if (url.pathname === '/api/admin/prospects/delete' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        await env.tideventure_documents.delete(`prospect/${body.id}`).catch(() => {});
+        return json(200, { ok: true });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    if (url.pathname === '/api/admin/prospects/convert' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        const prospectKey = `prospect/${body.id}`;
+        const obj = await env.tideventure_documents.get(prospectKey);
+        if (!obj) return json(404, { error: 'Prospect not found' });
+        const prospect = JSON.parse(await obj.text());
+        const userEmail = prospect.email;
+        const password = body.password || 'welcome1';
+        const customerType = body.customerType || 'tax';
+        const user = { email: userEmail, password: await hashPassword(password, env), role: 'client', businessName: body.businessName || prospect.name || userEmail.split('@')[0], state: '', customerType, createdAt: new Date().toISOString() };
+        await env.tideventure_documents.put(`user/${userEmail}`, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        // Mark prospect as converted
+        prospect.status = 'converted';
+        prospect.convertedAt = new Date().toISOString();
+        await env.tideventure_documents.put(prospectKey, JSON.stringify(prospect), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true, email: userEmail, password });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     // ── Admin: User management ──
     if (url.pathname === '/api/admin/users' && isAdmin(email)) {
       if (method === 'GET') {
@@ -505,7 +558,7 @@ function getStateDeadline(state) {
 async function handleGetProfile(env, email) {
   const key = `profile/${email}`;
   const obj = await env.tideventure_documents.get(key);
-  if (!obj) return json(200, { state: null, businessName: email.split('@')[0], ein: '' });
+  if (!obj) return json(200, { state: null, businessName: email.split('@')[0], ein: '', customerType: null });
   const body = await obj.text();
   try { return json(200, JSON.parse(body)); } catch { return json(200, { state: null }); }
 }
@@ -514,8 +567,8 @@ async function handleUpdateProfile(request, env, email, admin) {
   const data = await request.json();
   const targetEmail = (admin && data.email) ? data.email : email;
   const key = `profile/${targetEmail}`;
-  // Only admin can change state for now
-  if (data.state && !admin) return json(403, { error: 'Admin access required' });
+  // Only admin can change state and customerType
+  if ((data.state || data.customerType) && !admin) return json(403, { error: 'Admin access required' });
   const existing = await env.tideventure_documents.get(key);
   let profile = {};
   if (existing) { try { profile = JSON.parse(await existing.text()); } catch {} }
@@ -644,6 +697,7 @@ async function handleAdminDashboard(env) {
       email,
       name: profile.businessName || email.split('@')[0],
       state: profile.state || '',
+      customerType: profile.customerType || '',
       questionnaire: qStatus,
       documents: docCount,
       balance,
@@ -657,8 +711,15 @@ async function handleAdminDashboard(env) {
   const totalAR = clients.reduce((s, c) => s + c.balance, 0);
   const totalDocs = clients.reduce((s, c) => s + c.documents, 0);
 
+  // Count prospects
+  let prospectCount = 0;
+  const prospectList = await env.tideventure_documents.list();
+  for (const obj of prospectList.objects) {
+    if (obj.key.startsWith('prospect/')) prospectCount++;
+  }
+
   return json(200, {
-    stats: { total, completed, inProgress, notStarted, totalAR, totalDocs },
+    stats: { total, completed, inProgress, notStarted, totalAR, totalDocs, prospects: prospectCount },
     clients,
   });
 }
