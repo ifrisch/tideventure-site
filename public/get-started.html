@@ -94,7 +94,7 @@
         <textarea id="message" rows="3" placeholder="Questions, specific needs, timing — whatever you'd like me to know."></textarea>
       </div>
 
-      <button type="submit" class="btn btn--primary" id="submitBtn">Send to Isaac →</button>
+      <button type="submit" class="btn btn--primary" id="submitBtn">Send</button>
       <div class="note" style="text-align:center;margin-top:0.5rem;">No commitment. No spam. Just a real conversation.</div>
     </form>
   </div>
@@ -117,13 +117,48 @@ const revenue = params.get('revenue') || '';
 const LABELS = { scorp: 'S-Corp', ccorp: 'C-Corp', partnership: 'Partnership', mmllc: 'Multi-Member LLC', smllc: 'Single-Member LLC', soleprop: 'Sole Proprietor' };
 const REV_LABELS = { under500k: 'Under $500k', '500k1m': '$500k–$1M', '1m5m': '$1M–$5M', over5m: 'Over $5M' };
 const SVC_LABELS = { tax: 'Business Tax Return', quarterly: 'Quarterly Planning', monthly: 'Monthly Financial Review', bookkeeping: 'Bookkeeping', other: 'Custom Service' };
+const REV_MULT = { under500k: 1.0, '500k1m': 1.3, '1m5m': 1.7, over5m: 2.3 };
+const TAX_BASE = { scorp: [1500,2800], ccorp: [1800,3200], partnership: [1400,2600], mmllc: [1400,2600], smllc: [900,1800], soleprop: [700,1500] };
+const QTR_BASE = { scorp: [325,650], ccorp: [375,700], partnership: [300,600], mmllc: [300,600], smllc: [225,450], soleprop: [175,375] };
+const MON_BASE = { scorp: [450,950], ccorp: [500,1100], partnership: [425,900], mmllc: [400,875], smllc: [325,700], soleprop: [275,575] };
+const BK_BASE = { scorp: [350,700], ccorp: [400,800], partnership: [325,650], mmllc: [300,600], smllc: [250,500], soleprop: [200,400] };
 
 if (entityType || services.length) {
+  const revMult = REV_MULT[revenue] || 1.0;
+  let totalLow = 0, totalHigh = 0;
+  const lines = [];
+
+  if (services.includes('tax') && TAX_BASE[entityType]) {
+    const l = TAX_BASE[entityType][0] * revMult;
+    const h = TAX_BASE[entityType][1] * revMult;
+    totalLow += l; totalHigh += h;
+    lines.push(`${SVC_LABELS.tax}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
+  }
+  if (services.includes('quarterly') && QTR_BASE[entityType]) {
+    const l = QTR_BASE[entityType][0] * revMult * 4;
+    const h = QTR_BASE[entityType][1] * revMult * 4;
+    totalLow += l; totalHigh += h;
+    lines.push(`${SVC_LABELS.quarterly}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
+  }
+  if (services.includes('monthly') && MON_BASE[entityType]) {
+    const l = MON_BASE[entityType][0] * revMult * 12;
+    const h = MON_BASE[entityType][1] * revMult * 12;
+    totalLow += l; totalHigh += h;
+    lines.push(`${SVC_LABELS.monthly}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
+  }
+  if (services.includes('bookkeeping') && BK_BASE[entityType]) {
+    const l = BK_BASE[entityType][0] * revMult * 12;
+    const h = BK_BASE[entityType][1] * revMult * 12;
+    totalLow += l; totalHigh += h;
+    lines.push(`${SVC_LABELS.bookkeeping}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
+  }
+
   document.getElementById('pricingSummary').innerHTML = `
-    <div style="font-size:0.78rem;font-weight:600;color:var(--brand-dark);margin-bottom:0.4rem;">Your pricing estimate summary</div>
+    <div style="font-size:0.78rem;font-weight:600;color:var(--brand-dark);margin-bottom:0.4rem;">Your pricing estimate</div>
     ${entityType ? `<div class="summary-item"><span>Entity type</span><span class="val">${LABELS[entityType] || entityType}</span></div>` : ''}
-    ${services.length ? `<div class="summary-item"><span>Services selected</span><span class="val">${services.map(s => SVC_LABELS[s] || s).join(', ')}</span></div>` : ''}
     ${revenue ? `<div class="summary-item"><span>Revenue range</span><span class="val">${REV_LABELS[revenue] || revenue}</span></div>` : ''}
+    ${lines.map(l => `<div class="summary-item"><span>${l.split(':')[0]}</span><span class="val">${l.split(':')[1]}</span></div>`).join('')}
+    ${totalLow > 0 ? `<div class="summary-item" style="border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.4rem;font-weight:700;"><span>Estimated annual total</span><span class="val" style="color:var(--brand-dark);">$${Math.round(totalLow).toLocaleString()}–$${Math.round(totalHigh).toLocaleString()}</span></div>` : ''}
   `;
 } else {
   document.getElementById('pricingSummary').style.display = 'none';
