@@ -49,8 +49,56 @@
     <select id="clientNav" style="padding:0.45rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:var(--white);font-family:var(--font-body);min-width:200px;"><option value="">— Select client —</option></select>
   </div>
 
-  <div id="loading" style="text-align:center;padding:3rem;font-size:0.9rem;color:var(--text-muted);">Loading client data…</div>
+  <div id="loading" style="text-align:center;padding:3rem;font-size:0.9rem;color:var(--text-muted);">Loading…</div>
 
+  <!-- Prospect setup (shown when converting a new prospect) -->
+  <div class="card" id="setupView" style="display:none;">
+    <h2>Set Up New Client</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;">Configure services and pricing, then generate a welcome link for the client.</p>
+    <div id="prospectInfo" style="background:var(--brand-pale);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Business name</label>
+        <input id="setupBusinessName" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Customer type</label>
+        <select id="setupCustomerType" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:var(--white);"><option value="tax">Tax Only</option><option value="bookkeeping">Bookkeeping</option><option value="both">Both</option></select>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Services</label>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcTax" checked> Business Tax Return</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcQuarterly"> Quarterly Planning</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcMonthly"> Monthly Financial Review</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcBookkeeping"> Bookkeeping</label>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Monthly price ($)</label>
+        <input type="number" id="setupMonthly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Yearly price ($)</label>
+        <input type="number" id="setupYearly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <button class="btn btn--primary" id="generateLinkBtn" onclick="generateSetupLink()" style="padding:0.5rem 1.25rem;">Generate Welcome Link</button>
+      <button class="btn--back" onclick="window.location.href='/admin'" style="padding:0.5rem 1.25rem;">Cancel</button>
+    </div>
+    <div id="setupResult" style="margin-top:1rem;display:none;padding:1rem;background:#f0fdf4;border-radius:var(--radius-sm);font-size:0.82rem;">
+      <strong style="color:#059669;">&#10003; Client created!</strong>
+      <p style="margin:0.5rem 0 0.25rem;color:var(--ink);">Send this link to the client to set up their account:</p>
+      <input id="setupLinkOutput" readonly style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--white);margin-bottom:0.5rem;box-sizing:border-box;">
+      <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="navigator.clipboard.writeText(document.getElementById('setupLinkOutput').value).then(()=>this.textContent='Copied!')">Copy Link</button>
+      <a href="/admin" class="btn--back" style="margin-left:0.5rem;padding:0.3rem 0.8rem;font-size:0.78rem;">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Existing client view -->
   <div id="content" style="display:none;">
     <div class="card">
       <h2 id="clientName"></h2>
@@ -183,14 +231,59 @@ async function setState() {
   } catch {}
 }
 
+const setupMonthlyDefault = 0;
+const prospectId = new URLSearchParams(window.location.search).get('prospect');
+
 // Populate state selector
 const STATES = 'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',');
 const sel = document.getElementById('stateSelect');
 STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 
-// Populate client nav dropdown
+async function generateSetupLink() {
+  const btn = document.getElementById('generateLinkBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const token = sessionStorage.getItem('tv_admin_token');
+  const services = [];
+  if (document.getElementById('svcTax').checked) services.push('tax');
+  if (document.getElementById('svcQuarterly').checked) services.push('quarterly');
+  if (document.getElementById('svcMonthly').checked) services.push('monthly');
+  if (document.getElementById('svcBookkeeping').checked) services.push('bookkeeping');
+  try {
+    const res = await fetch('/api/admin/prospects/convert', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: prospectId,
+        customerType: document.getElementById('setupCustomerType').value,
+        businessName: document.getElementById('setupBusinessName').value,
+        services,
+        monthlyPrice: parseFloat(document.getElementById('setupMonthly').value) || 0,
+        yearlyPrice: parseFloat(document.getElementById('setupYearly').value) || 0,
+      }),
+    });
+    const data = await res.json();
+    if (data.setupUrl) {
+      document.getElementById('setupLinkOutput').value = data.setupUrl;
+      document.getElementById('setupResult').style.display = 'block';
+      btn.style.display = 'none';
+      document.querySelector('#setupView .btn--back').style.display = 'none';
+    } else throw Error();
+  } catch { alert('Failed to create client.'); btn.disabled = false; btn.textContent = 'Generate Welcome Link'; }
+}
+
 (async () => {
   const token = sessionStorage.getItem('tv_admin_token');
+  const email = getEmail();
+
+  // Prospect flow
+  if (prospectId && email) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('setupView').style.display = 'block';
+    document.getElementById('prospectInfo').innerHTML = `<div style="font-weight:600;">${esc(email)}</div><div style="font-size:0.78rem;color:var(--text-muted);">New prospect — configure their plan below.</div>`;
+    document.getElementById('setupBusinessName').value = email.split('@')[0];
+    return;
+  }
+
+  // Existing client flow
   try {
     const res = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
@@ -199,14 +292,13 @@ STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o
       const o = document.createElement('option');
       o.value = c.email;
       o.textContent = c.name + ' (' + c.email + ')';
-      if (c.email === getEmail()) o.selected = true;
+      if (c.email === email) o.selected = true;
       nav.appendChild(o);
     });
     nav.onchange = () => { if (nav.value) window.location.href = '/admin-client?email=' + encodeURIComponent(nav.value); };
   } catch {}
 
-  // Load the selected client
-  loadClient(getEmail());
+  loadClient(email);
 })();
 </script>
 </body>
