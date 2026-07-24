@@ -112,14 +112,16 @@ export default {
       }
 
       if (userObj && await verifyPassword(password, userObj.password, env)) {
+        // Check account status
+        if (userObj.status === 'pending_setup') return json(403, { error: 'Account not yet set up. Please use the link from your welcome email.' });
         // Success — clear rate limit
         await env.tideventure_documents.delete(rateKey).catch(() => {});
-        const token = await new SignJWT({ email: lowerEmail, role: userObj.role || 'client' })
+        const token = await new SignJWT({ email: lowerEmail, role: userObj.role || 'client', status: userObj.status || 'active' })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('24h')
           .sign(new TextEncoder().encode(env.DOC_ENC_KEY));
         const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, lowerEmail);
-        return json(200, { token, keyMaterial, email: lowerEmail, role: userObj.role || 'client' });
+        return json(200, { token, keyMaterial, email: lowerEmail, role: userObj.role || 'client', status: userObj.status || 'active' });
       }
 
       // Failed attempt — increment counter
@@ -230,15 +232,83 @@ export default {
         if (!obj) return json(404, { error: 'Prospect not found' });
         const prospect = JSON.parse(await obj.text());
         const userEmail = prospect.email;
-        const password = body.password || 'welcome1';
-        const customerType = body.customerType || 'tax';
-        const user = { email: userEmail, password: await hashPassword(password, env), role: 'client', businessName: body.businessName || prospect.name || userEmail.split('@')[0], state: '', customerType, createdAt: new Date().toISOString() };
+        // Create user with pending status and no password (they'll set it)
+        const user = { email: userEmail, role: 'client', businessName: body.businessName || prospect.name || userEmail.split('@')[0], state: body.state || '', customerType: body.customerType || 'tax', services: body.services || (prospect.services || []), monthlyPrice: body.monthlyPrice || 0, yearlyPrice: body.yearlyPrice || 0, status: 'pending_setup', createdAt: new Date().toISOString() };
         await env.tideventure_documents.put(`user/${userEmail}`, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        // Generate setup token
+        const setupToken = crypto.randomUUID();
+        const setupKey = `setup/${setupToken}`;
+        await env.tideventure_documents.put(setupKey, JSON.stringify({ email: userEmail, createdAt: Date.now() }), { httpMetadata: { contentType: 'application/json' }, customMetadata: { expiresAt: Date.now() + 86400000 } }); // 24h expiry
         // Mark prospect as converted
         prospect.status = 'converted';
         prospect.convertedAt = new Date().toISOString();
         await env.tideventure_documents.put(prospectKey, JSON.stringify(prospect), { httpMetadata: { contentType: 'application/json' } });
-        return json(200, { ok: true, email: userEmail, password });
+        return json(200, { ok: true, email: userEmail, setupToken, setupUrl: `https://tideventurecpa.com/setup-account?token=${setupToken}` });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    // Admin: update client services/pricing
+    if (url.pathname === '/api/admin/client-settings' && method === 'PUT' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        if (!body.email) return json(400, { error: 'Email required' });
+        const key = `user/${body.email.toLowerCase()}`;
+        const obj = await env.tideventure_documents.get(key);
+        let user = obj ? JSON.parse(await obj.text()) : {};
+        if (body.services) user.services = body.services;
+        if (body.monthlyPrice !== undefined) user.monthlyPrice = body.monthlyPrice;
+        if (body.yearlyPrice !== undefined) user.yearlyPrice = body.yearlyPrice;
+        if (body.customerType) user.customerType = body.customerType;
+        if (body.businessName) user.businessName = body.businessName;
+        await env.tideventure_documents.put(key, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    // Client: setup account (set password)
+    if (url.pathname === '/api/setup-account' && method === 'GET') {
+      const setupToken = url.searchParams.get('token');
+      if (!setupToken) return json(400, { error: 'Token required' });
+      try {
+        const obj = await env.tideventure_documents.get(`setup/${setupToken}`);
+        if (!obj) return json(404, { error: 'Invalid or expired token' });
+        const data = JSON.parse(await obj.text());
+        const userObj = await env.tideventure_documents.get(`user/${data.email}`);
+        const user = userObj ? JSON.parse(await userObj.text()) : {};
+        return json(200, { email: data.email, businessName: user.businessName || data.email.split('@')[0], services: user.services || [], monthlyPrice: user.monthlyPrice || 0, yearlyPrice: user.yearlyPrice || 0 });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    if (url.pathname === '/api/setup-account' && method === 'POST') {
+      try {
+        const body = await request.json();
+        const obj = await env.tideventure_documents.get(`setup/${body.token}`);
+        if (!obj) return json(404, { error: 'Invalid or expired token' });
+        const data = JSON.parse(await obj.text());
+        if (!body.password || body.password.length < 4) return json(400, { error: 'Password must be at least 4 characters' });
+        const key = `user/${data.email}`;
+        const userObj = await env.tideventure_documents.get(key);
+        let user = userObj ? JSON.parse(await userObj.text()) : {};
+        user.password = await hashPassword(body.password, env);
+        user.status = 'pending_engagement';
+        await env.tideventure_documents.put(key, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        await env.tideventure_documents.delete(`setup/${body.token}`).catch(() => {});
+        // Create a JWT token so they're logged in after setup
+        const jwt = await new SignJWT({ email: data.email, role: 'client' }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime('24h').sign(new TextEncoder().encode(env.DOC_ENC_KEY));
+        const keyMaterial = await deriveKeyMaterial(env.DOC_ENC_KEY, data.email);
+        return json(200, { ok: true, token: jwt, keyMaterial, email: data.email });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    // Client: accept engagement letter
+    if (url.pathname === '/api/accept-engagement' && method === 'POST') {
+      if (!email) return json(401, { error: 'Not authenticated' });
+      try {
+        const body = await request.json();
+        const key = `user/${email}`;
+        const obj = await env.tideventure_documents.get(key);
+        let user = obj ? JSON.parse(await obj.text()) : {};
+        user.status = 'active';
+        user.engagementAcceptedAt = new Date().toISOString();
+        user.engagementSignature = body.signature || '';
+        await env.tideventure_documents.put(key, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
 
@@ -698,6 +768,10 @@ async function handleAdminDashboard(env) {
       name: profile.businessName || email.split('@')[0],
       state: profile.state || '',
       customerType: profile.customerType || '',
+      status: profile.status || 'active',
+      services: profile.services || [],
+      monthlyPrice: profile.monthlyPrice || 0,
+      yearlyPrice: profile.yearlyPrice || 0,
       questionnaire: qStatus,
       documents: docCount,
       balance,

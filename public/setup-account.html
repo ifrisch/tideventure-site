@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Set Up Your Account — TideVenture CPA</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: var(--sand); font-family: var(--font-body); }
+    .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; width: 100%; max-width: 460px; box-shadow: var(--shadow-sm); }
+    .card h1 { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--brand-dark); margin: 0 0 0.3rem; }
+    .card p { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.25rem; line-height: 1.5; }
+    .card .summary { background: var(--brand-pale); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; }
+    .card .summary .row { display: flex; justify-content: space-between; padding: 0.2rem 0; }
+    .card .summary .row .val { font-weight: 600; color: var(--ink); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.25rem; }
+    .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; outline: none; box-sizing: border-box; }
+    .form-group input:focus { border-color: var(--brand-teal); }
+    .card .btn--primary { width: 100%; }
+    .card .note { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }
+    .error { font-size: 0.78rem; color: #c00; display: none; margin-bottom: 0.75rem; }
+    .success { display: none; text-align: center; padding: 1rem 0; }
+    .success h2 { font-family: var(--font-heading); font-size: 1.15rem; color: var(--brand-dark); margin: 0 0 0.5rem; }
+    .success p { font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="loadingView" style="text-align:center;padding:3rem;color:var(--text-muted);">Loading…</div>
+
+  <div class="card" id="formView" style="display:none;">
+    <h1>Welcome to TideVenture CPA</h1>
+    <p>Set up your account and review your services before getting started.</p>
+    <div class="error" id="errorMsg"></div>
+    <div class="summary" id="pricingSummary"></div>
+    <form id="setupForm">
+      <div class="form-group">
+        <label for="password">Create a password</label>
+        <input type="password" id="password" minlength="4" required />
+      </div>
+      <div class="form-group">
+        <label for="confirm">Confirm password</label>
+        <input type="password" id="confirm" minlength="4" required />
+      </div>
+      <button type="submit" class="btn btn--primary" id="submitBtn">Set Up Account</button>
+    </form>
+  </div>
+
+  <div class="card success" id="successView">
+    <h2>Account created!</h2>
+    <p>You'll be redirected to your portal where you'll need to sign the engagement letter to get started.</p>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+
+if (!token) { document.getElementById('loadingView').textContent = 'Invalid link. Please contact your accountant.'; }
+else {
+  (async () => {
+    try {
+      const res = await fetch('/api/setup-account?token=' + encodeURIComponent(token));
+      if (!res.ok) throw Error();
+      const data = await res.json();
+      document.getElementById('loadingView').style.display = 'none';
+      document.getElementById('formView').style.display = 'block';
+
+      let html = '';
+      if (data.businessName) html += `<div class="row"><span>Business</span><span class="val">${data.businessName}</span></div>`;
+      html += `<div class="row"><span>Email</span><span class="val">${data.email}</span></div>`;
+      if (data.services && data.services.length) html += `<div class="row"><span>Services</span><span class="val">${data.services.join(', ')}</span></div>`;
+      if (data.monthlyPrice > 0) html += `<div class="row"><span>Monthly price</span><span class="val">$${data.monthlyPrice}</span></div>`;
+      if (data.yearlyPrice > 0) html += `<div class="row"><span>Yearly price</span><span class="val">$${data.yearlyPrice}</span></div>`;
+      document.getElementById('pricingSummary').innerHTML = html;
+
+      document.getElementById('setupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pw = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm').value;
+        if (pw !== confirm) { showError('Passwords do not match.'); return; }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.textContent = 'Setting up…';
+        try {
+          const res = await fetch('/api/setup-account', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, password: pw }),
+          });
+          if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+          const d = await res.json();
+          sessionStorage.setItem('tv_portal_token', d.token);
+          document.getElementById('formView').style.display = 'none';
+          document.getElementById('successView').style.display = 'block';
+          setTimeout(() => window.location.href = '/portal', 1500);
+        } catch (e) { showError(e.message); btn.disabled = false; btn.textContent = 'Set Up Account'; }
+      });
+    } catch { document.getElementById('loadingView').textContent = 'This link has expired or is invalid.'; }
+  })();
+  function showError(m) { const el = document.getElementById('errorMsg'); el.textContent = m; el.style.display = 'block'; }
+}
+</script>
+</body>
+</html>

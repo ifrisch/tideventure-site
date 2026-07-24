@@ -189,6 +189,34 @@
   <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
 </div>
 
+<!-- Engagement Letter View -->
+<div class="dash" id="engagementView" style="display:none;">
+  <div style="max-width:700px;margin:2rem auto;">
+    <div class="dash-card" style="padding:2rem;">
+      <h2 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:700;color:var(--brand-dark);margin:0 0 0.75rem;">Engagement Letter</h2>
+      <div id="engagementText" style="font-size:0.82rem;color:var(--text);line-height:1.6;max-height:60vh;overflow-y:auto;margin-bottom:1.5rem;padding:1rem;background:var(--sand);border-radius:var(--radius-sm);">
+        <p>This letter confirms the terms of our engagement and clarifies the scope of tax and accounting services we will provide. We will prepare your federal and requested state income tax returns based on the information you provide to us.</p>
+        <p>You represent that all information you supply is accurate and complete to the best of your knowledge, and that you have disclosed all relevant facts affecting your returns. We will not independently verify the information you provide, though we may request additional clarification as needed.</p>
+        <p>The filing deadline is April 15. Please provide all information as early as possible, but no later than March 25.</p>
+        <p>We may communicate with you via email and our secure web portal. You consent to our use of these technologies during this engagement.</p>
+        <p>We may withdraw from this engagement if you fail to provide requested information in a timely manner, refuse to cooperate with our reasonable requests, or misrepresent any facts.</p>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.2rem;">Signature</label>
+          <input id="engSignature" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;outline:none;box-sizing:border-box;">
+        </div>
+        <div style="flex:1;min-width:150px;">
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.2rem;">Date</label>
+          <input id="engDate" type="date" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <button class="btn btn--primary" id="engSubmitBtn" onclick="acceptEngagement()" style="margin-top:1rem;width:100%;">Accept &amp; Continue</button>
+      <div id="engError" style="font-size:0.78rem;color:#c00;display:none;margin-top:0.5rem;"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const authToken = sessionStorage.getItem('tv_portal_token');
 
@@ -756,6 +784,12 @@ function connectQbo() {
 
 function showDashboard(data) {
   document.getElementById('loginView').style.display = 'none';
+  if (data.status === 'pending_engagement') {
+    document.getElementById('dashView').style.display = 'none';
+    document.getElementById('engagementView').style.display = 'block';
+    renderEngagement(data);
+    return;
+  }
   document.getElementById('dashView').style.display = 'block';
   document.getElementById('dashGreeting').textContent = `Welcome back, ${data.email.split('@')[0]}`;
   initDocManager(data);
@@ -820,6 +854,27 @@ function renderStateDeadline(stateDeadlineArr, state) {
     const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(sd.label)}</div>`;
   }
+}
+
+function renderEngagement(data) {
+  document.getElementById('engDate').value = new Date().toISOString().slice(0, 10);
+}
+async function acceptEngagement() {
+  const sig = document.getElementById('engSignature').value.trim();
+  if (!sig) { document.getElementById('engError').textContent = 'Please enter your signature.'; document.getElementById('engError').style.display = 'block'; return; }
+  document.getElementById('engError').style.display = 'none';
+  document.getElementById('engSubmitBtn').disabled = true;
+  document.getElementById('engSubmitBtn').textContent = 'Submitting…';
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/accept-engagement', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signature: sig }),
+    });
+    if (!res.ok) throw Error();
+    // Relogin to get fresh token with active status
+    window.location.href = '/portal';
+  } catch { document.getElementById('engError').textContent = 'Failed to submit. Please try again.'; document.getElementById('engError').style.display = 'block'; document.getElementById('engSubmitBtn').disabled = false; document.getElementById('engSubmitBtn').textContent = 'Accept & Continue'; }
 }
 
 function renderRevenue(revenue) {
