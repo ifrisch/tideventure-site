@@ -275,17 +275,23 @@ async function loadProspects() {
 
 async function convertProspect(id) {
   const token = sessionStorage.getItem('tv_admin_token');
-  const pw = prompt('Set password for new client:', 'welcome1');
-  if (!pw) return;
   const type = prompt('Customer type (tax, bookkeeping, both):', 'tax');
   if (!type) return;
   try {
     const res = await fetch('/api/admin/prospects/convert', {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, password: pw, customerType: type }),
+      body: JSON.stringify({ id, customerType: type }),
     });
-    if (res.ok) { alert('Client created!'); loadProspects(); loadDashboard(); }
-    else alert('Conversion failed.');
+    if (res.ok) {
+      const data = await res.json();
+      const setupLink = data.setupUrl || '';
+      if (setupLink) {
+        if (confirm('Client created!\n\nSetup link (send this to the client):\n' + setupLink + '\n\nCopy to clipboard?')) {
+          navigator.clipboard.writeText(setupLink).then(() => alert('Link copied!')).catch(() => prompt('Copy this link:', setupLink));
+        }
+      } else alert('Client created!');
+      loadProspects(); loadDashboard();
+    } else alert('Conversion failed.');
   } catch { alert('Error.'); }
 }
 
