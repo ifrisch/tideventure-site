@@ -80,11 +80,11 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label for="email">Email <span class="optional">(at least one contact method required)</span></label>
-          <input type="email" id="email" />
+          <label for="email">Email <span style="color:#b91c1c;">*</span></label>
+          <input type="email" id="email" required />
         </div>
         <div class="form-group">
-          <label for="phone">Phone <span class="optional">(at least one contact method required)</span></label>
+          <label for="phone">Phone <span class="optional">(optional)</span></label>
           <input type="tel" id="phone" />
         </div>
       </div>
@@ -172,8 +172,7 @@ document.getElementById('prospectForm').addEventListener('submit', async (e) => 
   const phone = document.getElementById('phone').value.trim();
   const message = document.getElementById('message').value.trim();
 
-  if (!firstName || !lastName) return;
-  if (!email && !phone) { alert('Please provide at least an email or phone number.'); return; }
+  if (!firstName || !lastName || !email) return;
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
