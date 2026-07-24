@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started — TideVenture CPA</title>
+  <meta name="description" content="Take the next step. Share a few details and I'll reach out personally." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: var(--sand); }
+    .gs-page { max-width: 600px; margin: 3rem auto; padding: 0 1.5rem; }
+    .gs-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; box-shadow: var(--shadow-sm); }
+    .gs-card h1 { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: var(--brand-dark); margin: 0 0 0.3rem; }
+    .gs-card .sub { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 1.5rem; }
+    .gs-card .sub strong { color: var(--ink); }
+    .gs-card .from-isaac { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--brand-pale); border-radius: var(--radius); margin-bottom: 1.5rem; }
+    .gs-card .from-isaac .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--brand-dark); color: var(--white); display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+    .gs-card .from-isaac p { margin: 0; font-size: 0.82rem; color: var(--text); line-height: 1.4; }
+    .gs-card .from-isaac p strong { color: var(--brand-dark); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.25rem; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--ink); background: var(--white); outline: none; box-sizing: border-box; font-family: var(--font-body); transition: border-color var(--transition); }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--brand-teal); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .form-group .optional { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; }
+    .form-group .note { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .gs-card .btn--primary { width: 100%; padding: 0.75rem !important; font-size: 0.95rem !important; }
+    .gs-card .btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .summary { background: var(--brand-pale); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.82rem; }
+    .summary-item { display: flex; justify-content: space-between; padding: 0.2rem 0; font-size: 0.82rem; }
+    .summary-item .val { font-weight: 600; color: var(--ink); }
+    .sent { text-align: center; padding: 2rem 0; display: none; }
+    .sent h2 { font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: var(--brand-dark); margin: 0 0 0.5rem; }
+    .sent p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; }
+    .sent .btn { margin-top: 1rem; display: inline-flex; }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
+      <svg class="nav__logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
+    </a>
+  </div>
+</nav>
+
+<div class="gs-page">
+  <div class="gs-card" id="formView">
+    <h1>You're almost there.</h1>
+    <p class="sub">I'll review your pricing estimate and reach out within <strong>one business day</strong> to set up your free strategy session.</p>
+
+    <div class="from-isaac">
+      <div class="avatar">IF</div>
+      <p><strong>Isaac Frisch, CPA</strong><br />Hey! Thanks for checking out TideVenture. Just fill in a few details so I know where to reach you — this goes straight to me.</p>
+    </div>
+
+    <div class="summary" id="pricingSummary"></div>
+
+    <form id="prospectForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" required />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="businessName">Business name</label>
+        <input type="text" id="businessName" placeholder="Your business or company name" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email <span class="optional">(at least one contact method required)</span></label>
+          <input type="email" id="email" />
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone <span class="optional">(at least one contact method required)</span></label>
+          <input type="tel" id="phone" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Anything else? <span class="optional">(optional)</span></label>
+        <textarea id="message" rows="3" placeholder="Questions, specific needs, timing — whatever you'd like me to know."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn--primary" id="submitBtn">Send to Isaac →</button>
+      <div class="note" style="text-align:center;margin-top:0.5rem;">No commitment. No spam. Just a real conversation.</div>
+    </form>
+  </div>
+
+  <div class="gs-card sent" id="sentView">
+    <h2>Thanks, <span id="sentName"></span>.</h2>
+    <p>I got your info and I'll be in touch shortly — typically within one business day. Keep an eye out for a call or email from me.</p>
+    <p style="font-size:0.82rem;color:var(--text-muted);">In the meantime, feel free to <a href="index.html" style="color:var(--brand-teal);">browse the site</a> or check out your <a href="pricing.html" style="color:var(--brand-teal);">pricing estimate</a> again.</p>
+    <a href="index.html" class="btn btn--primary" style="margin-top:1rem;display:inline-flex;">Back to Homepage</a>
+  </div>
+</div>
+
+<script>
+// Load pricing data from URL params
+const params = new URLSearchParams(window.location.search);
+const entityType = params.get('entity') || '';
+const services = (params.get('services') || '').split(',').filter(Boolean);
+const revenue = params.get('revenue') || '';
+
+const LABELS = { scorp: 'S-Corp', ccorp: 'C-Corp', partnership: 'Partnership', mmllc: 'Multi-Member LLC', smllc: 'Single-Member LLC', soleprop: 'Sole Proprietor' };
+const REV_LABELS = { under500k: 'Under $500k', '500k1m': '$500k–$1M', '1m5m': '$1M–$5M', over5m: 'Over $5M' };
+const SVC_LABELS = { tax: 'Business Tax Return', quarterly: 'Quarterly Planning', monthly: 'Monthly Financial Review', bookkeeping: 'Bookkeeping', other: 'Custom Service' };
+
+if (entityType || services.length) {
+  document.getElementById('pricingSummary').innerHTML = `
+    <div style="font-size:0.78rem;font-weight:600;color:var(--brand-dark);margin-bottom:0.4rem;">Your pricing estimate summary</div>
+    ${entityType ? `<div class="summary-item"><span>Entity type</span><span class="val">${LABELS[entityType] || entityType}</span></div>` : ''}
+    ${services.length ? `<div class="summary-item"><span>Services selected</span><span class="val">${services.map(s => SVC_LABELS[s] || s).join(', ')}</span></div>` : ''}
+    ${revenue ? `<div class="summary-item"><span>Revenue range</span><span class="val">${REV_LABELS[revenue] || revenue}</span></div>` : ''}
+  `;
+} else {
+  document.getElementById('pricingSummary').style.display = 'none';
+}
+
+document.getElementById('prospectForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const businessName = document.getElementById('businessName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const message = document.getElementById('message').value.trim();
+
+  if (!firstName || !lastName) return;
+  if (!email && !phone) { alert('Please provide at least an email or phone number.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try {
+    await fetch('/api/prospect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email || '',
+        name: firstName + ' ' + lastName,
+        phone: phone || '',
+        businessName,
+        entityType,
+        services,
+        revenue,
+        notes: message,
+        source: 'pricing',
+      }),
+    });
+  } catch {}
+
+  document.getElementById('sentName').textContent = firstName;
+  document.getElementById('formView').style.display = 'none';
+  document.getElementById('sentView').style.display = 'block';
+});
+</script>
+</body>
+</html>

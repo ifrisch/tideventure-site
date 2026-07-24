@@ -740,25 +740,8 @@
     // ── Prospect capture ──
     async function submitProspect() {
       const btn = event.target;
-      btn.disabled = true; btn.textContent = 'Submitting…';
-      try {
-        await fetch('/api/prospect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: '',
-            name: '',
-            phone: '',
-            entityType: selectedEntity,
-            services: Array.from(selectedServices),
-            revenue: selectedRevenue,
-            source: 'pricing',
-          }),
-        });
-        window.location.href = '/contact.html?from=pricing';
-      } catch {
-        window.location.href = '/contact.html?from=pricing';
-      }
+      const svcs = Array.from(selectedServices).join(',');
+      window.location.href = `/get-started.html?entity=${encodeURIComponent(selectedEntity || '')}&services=${encodeURIComponent(svcs)}&revenue=${encodeURIComponent(selectedRevenue || '')}`;
     }
   </script>
 </body>
