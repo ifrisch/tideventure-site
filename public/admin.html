@@ -296,15 +296,21 @@ async function loadTQSchema() {
     const schema=await res.json();
     window.tqSchema=schema;
     const el=document.getElementById('tqSchemaEditor');
-    el.innerHTML=(schema.sections||[]).map((sec,si)=>`<div class="schema-sec"><div class="schema-sec-hdr"><input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value"><button class="btn-del" onclick="tqSchema.sections.splice(${si},1);renderSchema(tqSchema)">&times;</button></div>${(sec.questions||[]).map((q,qi)=>`<div class="sch-q"><input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" placeholder="Key"><input value="${esc(q[1])}" onchange="tqSchema.sections[${si}].questions[${qi}][1]=this.value" placeholder="Question"><button class="btn-del" onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchema(tqSchema)">&times;</button></div>`).join('')}<button class="btn-sm" onclick="tqSchema.sections[${si}].questions.push(['','New question']);renderSchema(tqSchema)">+ Add</button></div>`).join('')
-      + '<button class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;margin-top:0.5rem;cursor:pointer;" onclick="tqSchema.sections.push({title:\'New Section\',questions:[[\'\',\'New question\']]});renderSchema(tqSchema)">+ Add Section</button>';
+    el.innerHTML=(schema.sections||[]).map((sec,si)=>`<div class="schema-sec"><div class="schema-sec-hdr"><input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value"><button class="btn-del" onclick="tqSchema.sections.splice(${si},1);renderSchema(tqSchema)">&times;</button></div>${(sec.questions||[]).map((q,qi)=>`<div class="sch-q"><input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" style="display:none;"><input value="${esc(q[1])}" oninput="tqKeyGen(this,${si},${qi})" placeholder="Question text"><button class="btn-del" onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchema(tqSchema)">&times;</button></div>`).join('')}<button class="btn-sm" onclick="tqSchema.sections[${si}].questions.push(['','']);renderSchema(tqSchema)">+ Add</button></div>`).join('')
+      + '<button class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;margin-top:0.5rem;cursor:pointer;" onclick="tqSchema.sections.push({title:\'New Section\',questions:[[\'\',\'\']]});renderSchema(tqSchema)">+ Add Section</button>';
   } catch { document.getElementById('tqSchemaEditor').innerHTML='<div class="empty">Failed.</div>'; }
 }
 
 function renderSchema(schema) {
   const el=document.getElementById('tqSchemaEditor');
-  el.innerHTML=(schema.sections||[]).map((sec,si)=>`<div class="schema-sec"><div class="schema-sec-hdr"><input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value"><button class="btn-del" onclick="tqSchema.sections.splice(${si},1);renderSchema(tqSchema)">&times;</button></div>${(sec.questions||[]).map((q,qi)=>`<div class="sch-q"><input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" placeholder="Key"><input value="${esc(q[1])}" onchange="tqSchema.sections[${si}].questions[${qi}][1]=this.value" placeholder="Question"><button class="btn-del" onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchema(tqSchema)">&times;</button></div>`).join('')}<button class="btn-sm" onclick="tqSchema.sections[${si}].questions.push(['','New question']);renderSchema(tqSchema)">+ Add</button></div>`).join('')
-    + '<button class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;margin-top:0.5rem;cursor:pointer;" onclick="tqSchema.sections.push({title:\'New Section\',questions:[[\'\',\'New question\']]});renderSchema(tqSchema)">+ Add Section</button>';
+  el.innerHTML=(schema.sections||[]).map((sec,si)=>`<div class="schema-sec"><div class="schema-sec-hdr"><input value="${esc(sec.title)}" onchange="tqSchema.sections[${si}].title=this.value"><button class="btn-del" onclick="tqSchema.sections.splice(${si},1);renderSchema(tqSchema)">&times;</button></div>${(sec.questions||[]).map((q,qi)=>`<div class="sch-q"><input value="${esc(q[0])}" onchange="tqSchema.sections[${si}].questions[${qi}][0]=this.value" style="display:none;"><input value="${esc(q[1])}" oninput="tqKeyGen(this,${si},${qi})" placeholder="Question text"><button class="btn-del" onclick="tqSchema.sections[${si}].questions.splice(${qi},1);renderSchema(tqSchema)">&times;</button></div>`).join('')}<button class="btn-sm" onclick="tqSchema.sections[${si}].questions.push(['','']);renderSchema(tqSchema)">+ Add</button></div>`).join('')
+    + '<button class="btn btn--primary" style="padding:0.3rem 1rem;font-size:0.8rem;margin-top:0.5rem;cursor:pointer;" onclick="tqSchema.sections.push({title:\'New Section\',questions:[[\'\',\'\']]});renderSchema(tqSchema)">+ Add Section</button>';
+}
+
+function tqKeyGen(input, si, qi) {
+  const label = input.value;
+  const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'q';
+  tqSchema.sections[si].questions[qi][0] = key;
 }
 
 async function tqSaveSchema() {
