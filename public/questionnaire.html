@@ -81,7 +81,7 @@ async function loadQ() {
     document.getElementById('tqLoading').style.display = 'none';
     document.getElementById('tqContent').style.display = 'block';
   } catch (e) {
-    document.getElementById('tqLoading').textContent = 'Failed to load. Please go back and try again.';
+    document.getElementById('tqLoading').textContent = 'Failed to load: ' + (e.message || 'unknown error');
   }
 }
 
