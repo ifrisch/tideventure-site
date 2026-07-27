@@ -125,6 +125,7 @@
     <div class="sidebar-logo"><a href="/"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="rgba(255,255,255,.15)"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,.92)"/></svg>Tide<em>Venture</em><span class="sub">Admin</span></a></div>
     <nav class="sidebar-nav">
       <a class="active" data-page="dashboard"><span class="icon">&#9632;</span><span>Dashboard</span></a>
+      <a data-page="clients"><span class="icon">&#128101;</span><span>Clients</span></a>
       <a data-page="prospects"><span class="icon">&#10133;</span><span>Prospects</span><span id="prospectBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
       <a data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
@@ -138,8 +139,13 @@
       <h1>Dashboard</h1>
       <p class="page-desc">Overview of your practice.</p>
       <div class="stats" id="statGrid"></div>
+    </div>
+
+    <div class="page" id="page-clients">
+      <h1>Clients</h1>
+      <p class="page-desc">All client accounts. Click a name to view details.</p>
       <div class="block">
-        <div class="block-hdr"><h3>Clients</h3><span id="clientCount"></span></div>
+        <div class="block-hdr"><h3>All Clients</h3><span id="clientCount"></span></div>
         <div id="clientList"><div class="empty">Loading…</div></div>
       </div>
     </div>
@@ -224,7 +230,7 @@ async function loadDashboard() {
     `;
     document.getElementById('clientCount').textContent = d.clients.length + ' clients';
     document.getElementById('clientList').innerHTML = `<table class="tbl"><thead><tr><th>Client</th><th>Status</th><th>Docs</th><th>Balance</th><th>Type</th></tr></thead><tbody>`
-      + d.clients.map(c => `<tr><td><div style="font-weight:600;color:#1e293b;">${esc(c.name)}</div><div style="font-size:0.72rem;color:#9ca3af;">${esc(c.email)}</div></td>
+      + d.clients.map(c => `<tr onclick="window.location.href='/admin-client?email=${encodeURIComponent(c.email)}'" style="cursor:pointer;"><td><div style="font-weight:600;color:#1a7fa0;">${esc(c.name)}</div><div style="font-size:0.72rem;color:#9ca3af;">${esc(c.email)}</div></td>
         <td><span class="tag ${c.status==='active'?'tag-green':c.status==='pending_engagement'?'tag-yellow':'tag-gray'}">${c.status==='active'?'Active':c.status==='pending_engagement'?'Pending':'Setup'}</span></td>
         <td style="color:#6b7280;">${c.documents}</td>
         <td style="font-weight:600;${c.balance>0?'color:#b91c1c;':'color:#059669;'}">${c.balance>0?'$'+c.balance.toFixed(2):'&#10003;'}</td>
