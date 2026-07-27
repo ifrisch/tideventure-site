@@ -495,7 +495,7 @@ async function openSig(id) {
   // Show document preview (fetch and display as text)
   const token = sessionStorage.getItem('tv_portal_token');
   try {
-    const res = await fetch('/api/documents/' + id + '?view=1&token=' + encodeURIComponent(token));
+    const res = await fetch('/api/signing-document/' + id + '?token=' + encodeURIComponent(token));
     const text = await res.text();
     document.getElementById('sigDocPreview').textContent = text.slice(0, 5000);
   } catch { document.getElementById('sigDocPreview').textContent = 'Unable to preview.'; }

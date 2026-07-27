@@ -399,6 +399,21 @@ export default {
     }
 
     // ── Document Signing ──
+    if (url.pathname.match(/^\/api\/signing-document\/[^\/]+$/) && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try {
+        const sigId = url.pathname.split('/').pop();
+        const obj = await env.tideventure_documents.get(`signing/${email}/${sigId}`);
+        if (!obj) return json(404, { error: 'Not found' });
+        const req = JSON.parse(await obj.text());
+        const doc = await env.tideventure_documents.get(req.documentKey);
+        if (!doc) return json(404, { error: 'Document not found' });
+        const buf = await doc.arrayBuffer();
+        const ext = (req.documentName || '').split('.').pop().toLowerCase();
+        const M = { pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png' };
+        return new Response(buf, { headers: { 'Content-Type': M[ext] || 'application/octet-stream', 'Content-Disposition': 'inline' } });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
     if (url.pathname === '/api/pending-signatures' && method === 'GET') {
       if (!email) return json(401, { error: 'Unauthorized' });
       try {
