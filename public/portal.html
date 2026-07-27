@@ -3,227 +3,225 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Client Portal — TideVenture CPA</title>
+  <title>Portal — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     * { box-sizing: border-box; }
-    body { background: #f5f7fa; font-family: 'Inter', system-ui, sans-serif; }
-    .portal-body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .portal-card { background: #fff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); padding: 2.5rem 2rem; width: 100%; max-width: 380px; }
-    .portal-card h1 { font-size: 1.25rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
-    .portal-card p { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.5rem; }
-    .portal-card .form-group { margin-bottom: 1rem; }
-    .portal-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
-    .portal-card .form-group input { width: 100%; padding: 0.65rem 0.8rem; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; color: #111; background: #fff; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-    .portal-card .form-group input:focus { border-color: #1a7fa0; box-shadow: 0 0 0 3px rgba(26,127,160,0.12); }
-    .portal-card .btn--primary { width: 100%; padding: 0.7rem !important; border-radius: 10px !important; font-size: 0.9rem !important; }
-    .portal-error { font-size: 0.78rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f5f7fa; color: #1e293b; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: #f5f7fa; }
+    .login-card { background: #fff; border-radius: 14px; padding: 2.5rem 2rem; width: 100%; max-width: 360px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .login-card h1 { font-family: 'Montserrat',sans-serif; font-size: 1.2rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
+    .login-card p { font-size: 0.82rem; color: #6b7280; margin: 0 0 1.5rem; }
+    .login-card .form-group { margin-bottom: 1rem; }
+    .login-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+    .login-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; outline: none; transition: border-color .2s; }
+    .login-card .form-group input:focus { border-color: #1a7fa0; }
+    .login-card .btn--primary { width: 100%; }
+    .login-error { font-size: 0.78rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
 
-    .dash { max-width: 1040px; margin: 2rem auto; padding: 0 1.5rem; display: none; }
-    .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
-    .dash-header__left h1 { font-size: 1.5rem; font-weight: 700; color: #0d3f5e; margin: 0; }
-    .dash-header__left p { font-size: 0.85rem; color: #6b7280; margin: 0.15rem 0 0; }
-    .dash-header__right { display: flex; align-items: center; gap: 0.75rem; }
-    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
-    .dash-card { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03); padding: 1.25rem 1.5rem; transition: box-shadow 0.2s; }
-    .dash-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04); }
-    .dash-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-    .dash-card__header h3 { font-size: 0.82rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; margin: 0; }
-    .dash-card ul { list-style: none; padding: 0; margin: 0; }
-    .dash-card ul li { font-size: 0.85rem; color: #374151; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
-    .dash-card ul li:last-child { border-bottom: none; }
-    .dash-card ul li .file-link { color: #1a7fa0; text-decoration: none; margin-left: auto; font-weight: 600; font-size: 0.8rem; transition: color 0.15s; }
-    .dash-card ul li .file-link:hover { color: #0d3f5e; text-decoration: underline; }
-    .dash-card--full { grid-column: 1 / -1; }
-    .dash-footer { text-align: center; font-size: 0.75rem; color: #9ca3af; padding: 2rem 0 1rem; border-top: 1px solid #e5e7eb; margin-top: 1rem; }
-    .dash-logout { font-size: 0.8rem; color: #6b7280; background: none; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-    .dash-logout:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
+    /* Sidebar layout */
+    .app { display: none; min-height: 100vh; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #0d3f5e; display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-logo { padding: 1.25rem 1.25rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .sidebar-logo a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-family: 'Montserrat',sans-serif; font-weight: 700; font-size: 1rem; }
+    .sidebar-logo a em { font-style: normal; color: #6bb4d0; }
+    .sidebar-logo .sub { font-size: 0.65rem; font-weight: 400; color: rgba(255,255,255,.4); display: block; }
+    .sidebar-nav { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1.25rem; color: rgba(255,255,255,.6); text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: all .15s; border-left: 3px solid transparent; }
+    .sidebar-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .sidebar-nav a.active { color: #fff; background: rgba(255,255,255,.08); border-left-color: #6bb4d0; }
+    .sidebar-nav a .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 0.75rem 1.25rem; border-top: 1px solid rgba(255,255,255,.08); }
+    .sidebar-footer button { background: none; border: none; color: rgba(255,255,255,.5); font-size: 0.78rem; cursor: pointer; padding: 0; font-family: inherit; display: flex; align-items: center; gap: 0.5rem; }
+    .sidebar-footer button:hover { color: #fca5a5; }
 
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .main { margin-left: 220px; flex: 1; padding: 2rem 2.5rem; min-height: 100vh; }
+    .main h1 { font-family: 'Montserrat',sans-serif; font-size: 1.3rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
+    .main .page-desc { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.5rem; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Dashboard grid */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .dash-wide { grid-column: 1 / -1; }
+    .block { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.25rem 1.5rem; }
+    .block-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .block-hdr h3 { font-family: 'Montserrat',sans-serif; font-size: 0.78rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
+    .block ul { list-style: none; padding: 0; margin: 0; }
+    .block ul li { font-size: 0.82rem; color: #374151; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
+    .block ul li:last-child { border-bottom: none; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .status-dot--green { background: #10b981; }
     .status-dot--yellow { background: #f59e0b; }
     .status-dot--gray { background: #d1d5db; }
-    .deadline-date { font-weight: 600; color: #0d3f5e; min-width: 5.5rem; display: inline-block; font-size: 0.82rem; }
-    .activity-item { font-size: 0.8rem; padding: 0.4rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
-    .activity-item:last-child { border-bottom: none; }
-    .activity-action { font-weight: 700; font-size: 0.68rem; min-width: 4.5rem; padding: 0.1rem 0.4rem; border-radius: 4px; }
-    .activity-action.UPLOAD { color: #059669; background: #ecfdf5; }
-    .activity-action.DOWNLOAD { color: #2563eb; background: #eff6ff; }
-    .activity-action.DELETE { color: #dc2626; background: #fef2f2; }
-    .activity-time { font-size: 0.7rem; color: #9ca3af; margin-left: auto; white-space: nowrap; }
 
-    .doc-upload-area { border: 2px dashed #e5e7eb; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 1rem; }
-    .doc-upload-area:hover, .doc-upload-area.dragover { border-color: #1a7fa0; background: #f0f9ff; }
-    .doc-upload-area p { font-size: 0.82rem; color: #6b7280; margin: 0.25rem 0 0; }
+    .deadline-item { background: #f0f9ff; border-radius: 8px; padding: 0.5rem 0.65rem; margin-bottom: 0.3rem; }
+    .deadline-item .date { font-weight: 700; color: #0d3f5e; font-size: 0.85rem; display: block; }
+    .deadline-item .label { font-size: 0.76rem; color: #374151; }
+
+    .activity-item { font-size: 0.78rem; padding: 0.35rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
+    .activity-item:last-child { border-bottom: none; }
+    .act-action { font-weight: 700; font-size: 0.66rem; min-width: 4.5rem; padding: 0.1rem 0.35rem; border-radius: 4px; }
+    .act-action.UPLOAD { color: #059669; background: #ecfdf5; }
+    .act-action.DOWNLOAD { color: #2563eb; background: #eff6ff; }
+    .act-action.DELETE { color: #dc2626; background: #fef2f2; }
+    .act-time { font-size: 0.7rem; color: #9ca3af; margin-left: auto; white-space: nowrap; }
+
+    .rev-bar { display: flex; align-items: flex-end; gap: 0.3rem; height: 90px; padding: 0.5rem 0; }
+    .rev-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 90px; justify-content: flex-end; }
+    .rev-col .amt { font-size: 0.64rem; font-weight: 600; color: #0d3f5e; margin-bottom: 0.15rem; }
+    .rev-col .bar { width: 100%; background: linear-gradient(180deg,#1a7fa0,#0d3f5e); border-radius: 4px 4px 0 0; min-height: 3px; }
+    .rev-col .month { font-size: 0.64rem; color: #6b7280; margin-top: 0.15rem; }
+
+    .plan-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.82rem; }
+    .plan-row:last-child { border-bottom: none; }
+    .plan-row .lbl { color: #6b7280; }
+    .plan-row .val { font-weight: 600; color: #1e293b; }
+
+    .doc-upload-area { border: 2px dashed #e5e7eb; border-radius: 10px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 0.75rem; }
+    .doc-upload-area:hover { border-color: #1a7fa0; background: #f0f9ff; }
+    .doc-upload-area p { font-size: 0.8rem; color: #6b7280; margin: 0.15rem 0 0; }
     .doc-upload-area input[type="file"] { display: none; }
-    .doc-upload-progress { display: none; font-size: 0.8rem; color: #6b7280; text-align: center; padding: 0.5rem; }
-    .doc-upload-progress.active { display: block; }
     .doc-list { list-style: none; padding: 0; margin: 0; }
-    .doc-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; color: #374151; }
-    .doc-list li:last-child { border-bottom: none; }
-    .doc-list li .doc-name { flex: 1; color: #111; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .doc-list li .doc-date { font-size: 0.75rem; color: #9ca3af; white-space: nowrap; }
-    .doc-list li .doc-dl { color: #1a7fa0; text-decoration: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: color 0.15s; }
-    .doc-list li .doc-dl:hover { color: #0d3f5e; }
+    .doc-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.82rem; }
+    .doc-item:last-child { border-bottom: none; }
+    .doc-item .name { flex: 1; color: #1e293b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-item .date { font-size: 0.74rem; color: #9ca3af; white-space: nowrap; }
+    .doc-item .dl { color: #1a7fa0; text-decoration: none; font-weight: 600; font-size: 0.78rem; cursor: pointer; }
+    .doc-item .dl:hover { text-decoration: underline; }
+    .doc-item .del { color: #dc2626; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
     .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.82rem; color: #9ca3af; }
-    .doc-error { text-align: center; padding: 0.5rem; font-size: 0.78rem; color: #dc2626; display: none; }
-    .doc-color-accent { color: #1a7fa0; }
-    @media (max-width:768px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .qbo-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 1rem; background: #1a7fa0; color: #fff; border-radius: 8px; font-size: 0.82rem; text-decoration: none; font-weight: 600; transition: background .15s; }
+    .qbo-btn:hover { background: #0d3f5e; }
+
+    .imp-banner { background: #fef3c7; color: #92400e; text-align: center; padding: 0.5rem; font-size: 0.82rem; font-weight: 600; border-bottom: 2px solid #f59e0b; margin-left: 220px; }
+    .imp-banner button { margin-left: 0.75rem; background: #92400e; color: #fff; border: none; border-radius: 4px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.76rem; }
+
+    .empty-state { text-align: center; padding: 2rem 0; font-size: 0.85rem; color: #9ca3af; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 56px; }
+      .sidebar-logo a span, .sidebar-logo .sub, .sidebar-nav a span { display: none; }
+      .sidebar-nav a { justify-content: center; padding: 0.6rem; }
+      .sidebar-footer button span { display: none; }
+      .sidebar-footer button { justify-content: center; width: 100%; }
+      .main { margin-left: 56px; padding: 1.5rem 1rem; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .imp-banner { margin-left: 56px; }
+    }
   </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="container nav__inner">
-    <a href="index.html" class="nav__logo" aria-label="TideVenture CPA — Home">
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="#0d3f5e"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/><path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
-      <span class="nav__logo-words"><span class="nav__logo-name">Tide<em>Venture</em></span><span class="nav__logo-sub">CPA</span></span>
-    </a>
-    <a href="index.html" class="btn--portal" style="margin-left:auto;">← Back to Site</a>
-  </div>
-</nav>
-
-<!-- Login -->
-<div class="portal-body" id="loginView">
-  <div class="portal-card">
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
     <h1>Client Portal</h1>
     <p>Sign in to access your documents.</p>
-    <div class="portal-error" id="loginError">Invalid email or password.</div>
-    <form id="loginForm" action="/api/login" method="POST">
+    <div class="login-error" id="loginError">Invalid email or password.</div>
+    <form id="loginForm">
       <div class="form-group">
         <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" name="email" required />
+        <input type="email" id="loginEmail" required />
       </div>
       <div class="form-group">
         <label for="loginPass">Password</label>
-        <input type="password" id="loginPass" name="password" required />
+        <input type="password" id="loginPass" required />
       </div>
       <button type="submit" class="btn btn--primary">Sign In</button>
     </form>
-    <div class="portal-error" id="loginError" style="margin-top:0.75rem;">Invalid email or password.</div>
   </div>
 </div>
 
-<!-- Dashboard -->
-<div class="dash" id="dashView">
-  <div class="dash-header">
-    <div class="dash-header__left">
+<div class="app" id="appView">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <a href="/"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="rgba(255,255,255,.15)"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,.92)"/></svg>Tide<em>Venture</em><span class="sub">Client Portal</span></a>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="active" data-page="dashboard"><span class="icon">&#9632;</span><span>Dashboard</span></a>
+      <a href="#" data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
+      <a href="#" data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
+      <a href="#" data-page="plan"><span class="icon">&#9733;</span><span>My Plan</span></a>
+      <a href="#" data-page="quickbooks"><span class="icon">&#36;</span><span>QuickBooks</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="logoutBtn">&#10149;<span> Sign Out</span></button>
+    </div>
+  </div>
+
+  <div id="impersonateBanner" class="imp-banner" style="display:none;">&#9888; Admin Viewing — <span id="impersonateEmail"></span>'s portal <button onclick="endImpersonation()">Exit</button></div>
+
+  <div class="main">
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
       <h1 id="dashGreeting">Welcome</h1>
-      <p>Client Portal · TideVenture CPA</p>
-    </div>
-    <div class="dash-header__right">
-      <button class="dash-logout" id="logoutBtn">Sign Out</button>
-    </div>
-  </div>
-
-  <div class="dash-grid">
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Tax Return Status</h3></div>
-      <ul id="taxStatusList">
-        <li style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</li>
-      </ul>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Monthly Revenue</h3></div>
-      <div id="revenueChart" style="padding:0.25rem 0;">
-        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
-      </div>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Upcoming Deadlines</h3></div>
-      <ul id="deadlineList">
-        <li style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</li>
-      </ul>
-      <div id="stateDeadlineEl" style="margin-top:0.5rem;"></div>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>My Plan</h3></div>
-      <div id="planSection" style="font-size:0.82rem;padding:0.25rem 0;">
-        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
-      </div>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Invoices &amp; Payments</h3></div>
-      <div id="qboSection">
-        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
-      </div>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Tax Questionnaire</h3></div>
-      <div id="taxQuestionnaireStatus" style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0;">
-        <div style="text-align:center;padding:0.5rem 0;">Loading…</div>
-      </div>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Quick Actions</h3></div>
-      <ul>
-        <li>QuickBooks Online <a href="https://qbo.intuit.com" target="_blank" class="file-link">Open QBO</a></li>
-      </ul>
-    </div>
-
-    <div class="dash-card">
-      <div class="dash-card__header"><h3>Recent Activity</h3></div>
-      <div id="activityList">
-        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
-      </div>
-    </div>
-
-    <div class="dash-card dash-card--full">
-      <div class="dash-card__header">
-        <h3>Documents</h3>
-        <span id="docCount" style="font-size:0.75rem;color:var(--text-muted);">0 files</span>
-      </div>
-      <div class="doc-upload-area" id="docUploadArea">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-bottom:0.25rem;"><path d="M10 14V6m0 0l-3 3m3-3l3 3" stroke="var(--brand-teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="16" height="7" rx="1.5" stroke="var(--brand-teal)" stroke-width="1.5"/></svg>
-        <p>Drop a file here or click to upload (PDF, JPEG, PNG — max 20MB)</p>
-        <input type="file" id="docFileInput" />
-      </div>
-      <div class="doc-upload-progress" id="docUploadProgress"><span>Uploading…</span></div>
-      <div class="doc-error" id="docError"></div>
-      <ul class="doc-list" id="docList"><li class="doc-empty" id="docEmpty">No documents yet. Upload your first file above.</li></ul>
-    </div>
-  </div>
-  <div id="impersonateBanner" style="display:none;background:#fef3c7;color:#92400e;text-align:center;padding:0.5rem;font-size:0.82rem;font-weight:600;border-bottom:2px solid #f59e0b;">
-    &#9888; Admin Viewing — You are viewing <span id="impersonateEmail" style="text-decoration:underline;"></span>'s portal
-    <button onclick="endImpersonation()" style="margin-left:0.75rem;background:#92400e;color:#fff;border:none;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.76rem;">Exit</button>
-  </div>
-  <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
-</div>
-
-<!-- Engagement Letter View -->
-<div class="dash" id="engagementView" style="display:none;">
-  <div style="max-width:700px;margin:2rem auto;">
-    <div class="dash-card" style="padding:2rem;">
-      <h2 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:700;color:var(--brand-dark);margin:0 0 0.75rem;">Engagement Letter</h2>
-      <div id="engagementText" style="font-size:0.82rem;color:var(--text);line-height:1.6;max-height:60vh;overflow-y:auto;margin-bottom:1.5rem;padding:1rem;background:var(--sand);border-radius:var(--radius-sm);">
-        <p>This letter confirms the terms of our engagement and clarifies the scope of tax and accounting services we will provide. We will prepare your federal and requested state income tax returns based on the information you provide to us.</p>
-        <p>You represent that all information you supply is accurate and complete to the best of your knowledge, and that you have disclosed all relevant facts affecting your returns. We will not independently verify the information you provide, though we may request additional clarification as needed.</p>
-        <p>The filing deadline is April 15. Please provide all information as early as possible, but no later than March 25.</p>
-        <p>We may communicate with you via email and our secure web portal. You consent to our use of these technologies during this engagement.</p>
-        <p>We may withdraw from this engagement if you fail to provide requested information in a timely manner, refuse to cooperate with our reasonable requests, or misrepresent any facts.</p>
-      </div>
-      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;">
-          <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.2rem;">Signature</label>
-          <input id="engSignature" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;outline:none;box-sizing:border-box;">
+      <p class="page-desc">Here's your financial snapshot.</p>
+      <div class="dash-grid">
+        <div class="block">
+          <div class="block-hdr"><h3>Tax Return Status</h3></div>
+          <ul id="taxStatusList"><li style="text-align:center;color:#9ca3af;padding:1rem 0;">Loading…</li></ul>
         </div>
-        <div style="flex:1;min-width:150px;">
-          <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.2rem;">Date</label>
-          <input id="engDate" type="date" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;outline:none;box-sizing:border-box;">
+        <div class="block">
+          <div class="block-hdr"><h3>Upcoming Deadlines</h3></div>
+          <ul id="deadlineList"><li style="text-align:center;color:#9ca3af;padding:1rem 0;">Loading…</li></ul>
+          <div id="stateDeadlineEl" style="margin-top:0.5rem;"></div>
+        </div>
+        <div class="block">
+          <div class="block-hdr"><h3>Monthly Revenue</h3></div>
+          <div id="revenueChart"><div style="text-align:center;color:#9ca3af;padding:1.5rem 0;font-size:0.82rem;">Loading…</div></div>
+        </div>
+        <div class="block">
+          <div class="block-hdr"><h3>Recent Activity</h3></div>
+          <div id="activityList"><div style="text-align:center;color:#9ca3af;padding:1rem 0;font-size:0.82rem;">Loading…</div></div>
         </div>
       </div>
-      <button class="btn btn--primary" id="engSubmitBtn" onclick="acceptEngagement()" style="margin-top:1rem;width:100%;">Accept &amp; Continue</button>
-      <div id="engError" style="font-size:0.78rem;color:#c00;display:none;margin-top:0.5rem;"></div>
+    </div>
+
+    <!-- Documents -->
+    <div class="page" id="page-documents">
+      <h1>Documents</h1>
+      <p class="page-desc">Upload, view, and download your files.</p>
+      <div class="block">
+        <div class="doc-upload-area" id="docUploadArea">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 14V6m0 0l-3 3m3-3l3 3" stroke="#1a7fa0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="16" height="7" rx="1.5" stroke="#1a7fa0" stroke-width="1.5"/></svg>
+          <p>Drop a file here or click to upload (PDF, JPEG, PNG — max 20MB)</p>
+          <input type="file" id="docFileInput" />
+        </div>
+        <div id="docUploadProgress" style="display:none;text-align:center;padding:0.5rem;font-size:0.8rem;color:#6b7280;">Uploading…</div>
+        <div id="docError" style="text-align:center;padding:0.5rem;font-size:0.78rem;color:#dc2626;display:none;"></div>
+        <ul class="doc-list" id="docList"><li class="doc-empty">No documents yet.</li></ul>
+      </div>
+    </div>
+
+    <!-- Questionnaire -->
+    <div class="page" id="page-questionnaire">
+      <h1>Tax Questionnaire</h1>
+      <p class="page-desc">Complete your annual tax questionnaire.</p>
+      <div class="block" id="taxQuestionnaireStatus">
+        <div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div>
+      </div>
+    </div>
+
+    <!-- My Plan -->
+    <div class="page" id="page-plan">
+      <h1>My Plan</h1>
+      <p class="page-desc">Your current services and pricing.</p>
+      <div class="block">
+        <div id="planSection"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- QuickBooks -->
+    <div class="page" id="page-quickbooks">
+      <h1>QuickBooks</h1>
+      <p class="page-desc">Connect your QuickBooks account and view invoices.</p>
+      <div class="block">
+        <div id="qboSection"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -232,7 +230,6 @@
 const authToken = sessionStorage.getItem('tv_portal_token');
 
 if (authToken) {
-  // Check if impersonating by decoding JWT payload
   try {
     const payload = JSON.parse(atob(authToken.split('.')[1]));
     if (payload.imp) {
@@ -240,19 +237,10 @@ if (authToken) {
       document.getElementById('impersonateEmail').textContent = payload.email;
     }
   } catch {}
-  // Already logged in — load dashboard
   fetch('/api/session', { headers: { 'Authorization': `Bearer ${authToken}` } })
     .then(r => r.json())
-    .then(data => {
-      if (data.email) {
-        showDashboard(data);
-      } else {
-        sessionStorage.removeItem('tv_portal_token');
-      }
-    })
+    .then(data => { if (data.email) { showDashboard(data); } else { sessionStorage.removeItem('tv_portal_token'); } })
     .catch(() => {});
-} else {
-  // Show login form with JS handler
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -262,837 +250,281 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const err = document.getElementById('loginError');
   err.style.display = 'none';
   try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     if (res.ok) {
       const data = await res.json();
       sessionStorage.setItem('tv_portal_token', data.token);
       showDashboard(data);
-    } else {
-      err.style.display = 'block';
-    }
-  } catch {
-    err.textContent = 'Network error.';
-    err.style.display = 'block';
-  }
+    } else { err.style.display = 'block'; }
+  } catch { err.textContent = 'Network error.'; err.style.display = 'block'; }
 });
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  sessionStorage.removeItem('tv_portal_token');
-  window.location.href = '/portal';
+document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tv_portal_token'); window.location.href = '/portal'; });
+function endImpersonation() { sessionStorage.removeItem('tv_portal_token'); window.location.href = '/admin'; }
+
+// Sidebar navigation
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + link.dataset.page).classList.add('active');
+  });
 });
-
-// ── Tax Questionnaire ──
-async function loadQuestionnaire() {
-  const el = document.getElementById('taxQuestionnaireStatus');
-  try {
-    const token = sessionStorage.getItem('tv_portal_token');
-    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    const label = data.saved ? 'View / Edit' : 'Start';
-    const status = data.saved ? '&#10003; 2025 Questionnaire completed' : '2025 Questionnaire not started';
-    const color = data.saved ? '#059669' : '#6b7280';
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-      <span style="color:${color};">${status}</span>
-      <a href="/questionnaire" class="btn btn--primary" style="padding:0.35rem 0.85rem;font-size:0.78rem;text-decoration:none;">${label}</a>
-    </div>`;
-  } catch {
-    el.innerHTML = '<div style="text-align:center;padding:0.5rem 0;font-size:0.82rem;color:var(--text-muted);">Unable to load.</div>';
-  }
-}
-
-function closeTq() {
-  document.getElementById('tqModal').style.display = 'none';
-}
-
-async function openQuestionnaire(year) {
-  document.getElementById('tqTitle').textContent = year + ' Tax Questionnaire';
-  document.getElementById('tqModal').style.display = 'block';
-  const token = sessionStorage.getItem('tv_portal_token');
-  const res = await fetch('/api/questionnaire/' + year, { headers: { 'Authorization': `Bearer ${token}` } });
-  const data = await res.json();
-  renderQuestionnaireForm(year, data.data || {});
-}
-
-async function saveQuestionnaire() {
-  const form = document.getElementById('tqFormData');
-  const inputs = form.querySelectorAll('input, select, textarea');
-  const data = {};
-  inputs.forEach(inp => { if (inp.name) data[inp.name] = inp.value; });
-  // Collect checkbox arrays
-  document.querySelectorAll('.tq-checkbox-group').forEach(group => {
-    const name = group.dataset.name;
-    data[name] = [];
-    group.querySelectorAll('input:checked').forEach(cb => data[name].push(cb.value));
-  });
-  // Collect dependents table
-  const deps = [];
-  document.querySelectorAll('.tq-dep-row').forEach(row => {
-    const dep = {};
-    row.querySelectorAll('input, select').forEach(inp => { if (inp.name) dep[inp.name] = inp.value; });
-    if (dep.dep_first) deps.push(dep);
-  });
-  data.dependents = deps;
-  document.getElementById('tqSaveBtn').disabled = true;
-  document.getElementById('tqSaveBtn').textContent = 'Saving…';
-  try {
-    const token = sessionStorage.getItem('tv_portal_token');
-    const res = await fetch('/api/questionnaire/2025', {
-      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      document.getElementById('tqSaveBtn').textContent = 'Saved!';
-      setTimeout(() => { closeTq(); loadQuestionnaire(); }, 1000);
-    } else throw new Error();
-  } catch {
-    document.getElementById('tqSaveBtn').textContent = 'Save Failed';
-    document.getElementById('tqSaveBtn').disabled = false;
-  }
-}
-
-function tqAddDep() {
-  const tbody = document.getElementById('tqDepBody');
-  const row = document.createElement('tr');
-  row.className = 'tq-dep-row';
-  row.innerHTML = `<td><input name="dep_first" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><input name="dep_last" style="width:80px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><input name="dep_dob" type="date" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><input name="dep_ssn" style="width:90px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><input name="dep_rel" style="width:50px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><input name="dep_months" style="width:30px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></td>
-    <td><select name="dep_code" style="width:45px;padding:0.2rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
-    <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button></td>`;
-  tbody.appendChild(row);
-}
-
-function tqSection(title, questions) {
-  return `<h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">${title}</h3>
-    <div style="display:grid;gap:0.4rem;margin-bottom:0.5rem;">${questions}</div>`;
-}
-
-function tqYN(name, label) {
-  const s = (n) => saved[n] || '';
-  return `<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;padding:0.25rem 0;">
-    <span style="flex:1;color:#374151;">${label}</span>
-    <label style="font-size:0.76rem;"><input type="radio" name="${name}" value="Yes" ${s(name)==='Yes'?'checked':''}> Yes</label>
-    <label style="font-size:0.76rem;"><input type="radio" name="${name}" value="No" ${s(name)==='No'?'checked':''}> No</label>
-  </div>`;
-}
-
-function renderQuestionnaireForm(year, saved) {
-  const s = (name) => saved[name] || '';
-  const sel = (name, val) => s(name) === val ? 'selected' : '';
-  const chk = (name, val) => (s(name)||'').includes(val) ? 'checked' : '';
-  const y = (name) => s(name)==='Y'?'checked':'';
-  const n = (name) => s(name)==='N'?'checked':'';
-
-  document.getElementById('tqForm').innerHTML = `<form id="tqFormData">
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:0 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Engagement Letter</h3>
-    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.5rem;line-height:1.5;">I/We have read and agree to the terms set forth in the engagement letter.</p>
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-      <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label>
-        <input name="signature" value="${esc(s('signature'))}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
-      <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label>
-        <input name="sig_date" type="date" value="${s('sig_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
-    </div>
-
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Personal Information</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
-      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Filing Status</label>
-        <select name="filing_status" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;">
-          <option value="">Select...</option><option value="1" ${sel('filing_status','1')}>Single</option>
-          <option value="2" ${sel('filing_status','2')}>Married Filing Joint</option>
-          <option value="3" ${sel('filing_status','3')}>Married Filing Separate</option>
-          <option value="4" ${sel('filing_status','4')}>Head of Household</option>
-          <option value="5" ${sel('filing_status','5')}>Qualifying Surviving Spouse</option>
-        </select></div>
-      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
-        <label style="font-size:0.78rem;"><input type="checkbox" name="nonresident_alien" value="Y" ${chk('nonresident_alien','Y')}> Nonresident alien</label></div>
-      <div><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">&nbsp;</label>
-        <label style="font-size:0.78rem;"><input type="checkbox" name="spouse_no_itin" value="Y" ${chk('spouse_no_itin','Y')}> Spouse no ITIN</label></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
-      <div style="background:#f9fafb;padding:0.6rem;border-radius:8px;">
-        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">Taxpayer</h4>
-        <div style="display:grid;gap:0.35rem;">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
-            <input name="tp_ssn" placeholder="SSN" value="${esc(s('tp_ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_first" placeholder="First name" value="${esc(s('tp_first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_last" placeholder="Last name" value="${esc(s('tp_last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
-            <input name="tp_occupation" placeholder="Occupation" value="${esc(s('tp_occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_dob" type="date" value="${s('tp_dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
-            <label><input type="checkbox" name="tp_dependent" value="Y" ${chk('tp_dependent','Y')}> Dependent of another</label>
-            <label><input type="checkbox" name="tp_blind" value="Y" ${chk('tp_blind','Y')}> Legally blind</label>
-          </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;flex-wrap:wrap;">
-            <span>Student (18-23):</span>
-            <label><input type="radio" name="tp_student" value="Y" ${y('tp_student')}> Y</label>
-            <label><input type="radio" name="tp_student" value="N" ${n('tp_student')}> N</label>
-            <span>DOD:</span>
-            <input name="tp_dod" type="date" value="${s('tp_dod')}" style="width:110px;padding:0.2rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
-            <input name="tp_phone" placeholder="Mobile phone" value="${esc(s('tp_phone'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="tp_email" placeholder="Email" value="${esc(s('tp_email'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-        </div>
-      </div>
-      <div style="background:#f9fafb;padding:0.6rem;border-radius:8px;">
-        <h4 style="font-size:0.82rem;font-weight:700;color:#0d3f5e;margin:0 0 0.4rem;">Spouse</h4>
-        <div style="display:grid;gap:0.35rem;">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
-            <input name="sp_ssn" placeholder="SSN" value="${esc(s('sp_ssn'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_first" placeholder="First name" value="${esc(s('sp_first'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_last" placeholder="Last name" value="${esc(s('sp_last'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-          <input name="sp_occupation" placeholder="Occupation" value="${esc(s('sp_occupation'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <input name="sp_dob" type="date" value="${s('sp_dob')}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.76rem;">
-            <label><input type="checkbox" name="sp_dependent" value="Y" ${chk('sp_dependent','Y')}> Dependent of another</label>
-            <label><input type="checkbox" name="sp_blind" value="Y" ${chk('sp_blind','Y')}> Legally blind</label>
-          </div>
-          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.76rem;flex-wrap:wrap;">
-            <span>Student (18-23):</span>
-            <label><input type="radio" name="sp_student" value="Y" ${y('sp_student')}> Y</label>
-            <label><input type="radio" name="sp_student" value="N" ${n('sp_student')}> N</label>
-            <span>DOD:</span>
-            <input name="sp_dod" type="date" value="${s('sp_dod')}" style="width:110px;padding:0.2rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Driver's License / State ID</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-        <div><span style="font-size:0.74rem;font-weight:600;">Taxpayer</span>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-            <input name="dl_number" placeholder="License #" value="${esc(s('dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="dl_state" placeholder="State" value="${esc(s('dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="dl_exp" placeholder="Exp" value="${esc(s('dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-        </div>
-        <div><span style="font-size:0.74rem;font-weight:600;">Spouse</span>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.2rem;">
-            <input name="sp_dl_number" placeholder="License #" value="${esc(s('sp_dl_number'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_dl_state" placeholder="State" value="${esc(s('sp_dl_state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-            <input name="sp_dl_exp" placeholder="Exp" value="${esc(s('sp_dl_exp'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Mailing Address</label>
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.3rem;">
-        <input name="address" placeholder="Street" value="${esc(s('address'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="apt" placeholder="Apt #" value="${esc(s('apt'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="in_care_of" placeholder="In care of" value="${esc(s('in_care_of'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 0.5fr;gap:0.3rem;margin-top:0.3rem;">
-        <input name="city" placeholder="City" value="${esc(s('city'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="state" placeholder="State" value="${esc(s('state'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-        <input name="zip" placeholder="ZIP" value="${esc(s('zip'))}" style="padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-      </div>
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Direct Deposit</label>
-      <input name="bank_routing" placeholder="Routing #" value="${esc(s('bank_routing'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;margin-right:0.3rem;">
-      <input name="bank_account" placeholder="Account #" value="${esc(s('bank_account'))}" style="width:150px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-    </div>
-
-    <div style="margin-bottom:0.75rem;">
-      <label style="font-size:0.78rem;margin-right:1rem;"><input type="radio" name="irs_auth" value="Y" ${y('irs_auth')}> Authorize IRS to discuss return</label>
-      <label style="font-size:0.78rem;"><input type="radio" name="irs_auth" value="N" ${n('irs_auth')}> Do not authorize</label>
-    </div>
-
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Dependents</h3>
-    <table style="width:100%;border-collapse:collapse;font-size:0.74rem;margin-bottom:0.3rem;">
-      <thead><tr style="background:#f9fafb;">
-        <th style="padding:0.2rem 0.25rem;">First</th><th style="padding:0.2rem 0.25rem;">Last</th><th style="padding:0.2rem 0.25rem;">DOB</th>
-        <th style="padding:0.2rem 0.25rem;">SSN</th><th style="padding:0.2rem 0.25rem;">Rel</th><th style="padding:0.2rem 0.25rem;">Mos</th>
-        <th style="padding:0.2rem 0.25rem;">Code</th><th style="padding:0.2rem 0.25rem;"></th>
-      </tr></thead>
-      <tbody id="tqDepBody">
-        ${(saved.dependents || []).map(d => `<tr class="tq-dep-row">
-          <td><input name="dep_first" value="${esc(d.dep_first||'')}" style="width:70px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><input name="dep_last" value="${esc(d.dep_last||'')}" style="width:70px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><input name="dep_dob" type="date" value="${d.dep_dob||''}" style="width:80px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><input name="dep_ssn" value="${esc(d.dep_ssn||'')}" style="width:80px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><input name="dep_rel" value="${esc(d.dep_rel||'')}" style="width:40px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><input name="dep_months" value="${esc(d.dep_months||'')}" style="width:25px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;"></td>
-          <td><select name="dep_code" style="width:35px;padding:0.15rem 0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.74rem;">
-            <option value="">-</option><option value="1" ${d.dep_code==='1'?'selected':''}>1</option>
-            <option value="2" ${d.dep_code==='2'?'selected':''}>2</option>
-            <option value="3" ${d.dep_code==='3'?'selected':''}>3</option>
-            <option value="4" ${d.dep_code==='4'?'selected':''}>4</option>
-          </select></td>
-          <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#c00;cursor:pointer;">&times;</button></td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-    <button type="button" onclick="tqAddDep()" style="font-size:0.74rem;color:#1a7fa0;background:none;border:1px dashed #d1d5db;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;margin-bottom:0.4rem;">+ Add Dependent</button>
-    <div style="font-size:0.68rem;color:#6b7280;line-height:1.3;">Codes: 1=Child lived with you, 2=Child not with you (divorce), 3=Other dependent, 4=Other dep not qualifying ODC</div>
-
-    ${tqSection('General Questions', [
-      tqYN('marital_change','Did your marital status change during the year?'),
-      tqYN('separated','Did you live separately from your spouse during the last 6 months?'),
-      tqYN('separate_decree','Do you have a separate decree and not living in same household?'),
-      tqYN('address_change','Did your address change from last year?'),
-      tqYN('claimed_dependent','Can you be claimed as a dependent by another taxpayer?'),
-      tqYN('has_tin','Do all family members have SSN/ITIN/ATIN?'),
-      tqYN('ip_pin','Did you receive an IP PIN or been a victim of identity theft?'),
-      tqYN('disaster_area','Did you reside or operate a business in a disaster area?'),
-      tqYN('dep_changes','Were there any changes in dependents from the prior year?'),
-      tqYN('child_unearned','Any child under 19 or student under 24 with unearned income over $2,600?'),
-      tqYN('dep_must_file','Do any dependents need to file a tax return?'),
-      tqYN('support_others','Did you provide over half the support for any other person(s)?'),
-      tqYN('childcare','Did you pay for child care while working/looking for work/student?'),
-      tqYN('other_lived_with','Did any other person live with you more than half the year?'),
-      tqYN('adoption','Did you pay any adoption expenses?'),
-      tqYN('divorce_decree','If divorced/separated with children, do you have a separation agreement?'),
-      tqYN('dep_ip_pin','Did any dependents receive an IP PIN or been identity theft victims?'),
-    ])}
-
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Electronic Filing</h3>
-    <div style="margin-bottom:0.5rem;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
-        <div><label style="font-size:0.74rem;font-weight:600;">Taxpayer PIN (5-digit)</label>
-          <input name="tp_pin" value="${esc(s('tp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
-        <div><label style="font-size:0.74rem;font-weight:600;">Spouse PIN (5-digit)</label>
-          <input name="sp_pin" value="${esc(s('sp_pin'))}" style="width:100px;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>
-      </div>
-      ${tqYN('paper_return','Do you want to file a paper return even if you qualify for e-file?')}
-      ${tqYN('email_notification','Do you want email notification when your e-file is accepted?')}
-      ${tqYN('pay_by_debit','If filing electronically, pay amount due by debiting your account?')}
-    </div>
-
-    ${tqSection('Income Information', [
-      tqYN('foreign_income','Did you have any foreign income or pay foreign taxes?'),
-      tqYN('prior_property_income','Did you receive income from property sold prior to this year?'),
-      tqYN('unemployment','Did you receive any unemployment benefits?'),
-      tqYN('disability','Did you receive any disability income?'),
-      tqYN('medicaid_waiver','Did you receive Medicaid waiver payments?'),
-      tqYN('tip_income','Did you receive tip income not reported to employer?'),
-      tqYN('life_insurance','Did any life insurance policies mature or were surrendered?'),
-      tqYN('hobby_income','Did you receive awards, prizes, hobby income, gambling winnings?'),
-      tqYN('nonemployee_comp','Did you receive nonemployee compensation?'),
-      tqYN('gig_1099','Did you receive Form 1099-K, 1099-MISC, 1099-NEC for gig work?'),
-      tqYN('crowdfunding_1099k','Did you receive Form 1099-K for crowdfunding?'),
-      tqYN('erroneous_1099k','Do you believe any Form 1099-K is in error?'),
-      tqYN('income_fluctuation','Do you expect large fluctuation in income/deductions/withholding next year?'),
-      tqYN('digital_assets','Did you have any sales/exchanges of digital assets?'),
-      tqYN('social_security','Did you receive any Social Security benefits?'),
-    ])}
-
-    ${tqSection('Purchases, Sales & Debt', [
-      tqYN('new_business','Did you start a new business or purchase rental property?'),
-      tqYN('business_interest','Did you have ownership interest in any business?'),
-      tqYN('sold_biz_assets','Did you sell/exchange/purchase any business assets?'),
-      tqYN('new_partnership','Did you acquire interest in a partnership or S corp?'),
-      tqYN('real_estate','Did you sell/exchange/purchase any real estate?'),
-      tqYN('principal_residence','Did you purchase or sell a principal residence?'),
-      tqYN('foreclosure','Did you foreclose or abandon a principal residence or property?'),
-      tqYN('stock','Did you acquire or dispose of any stock?'),
-      tqYN('home_equity','Did you take out a home equity loan?'),
-      tqYN('refinance','Did you refinance a principal residence or second home?'),
-      tqYN('sold_business','Did you sell an existing business, rental, or other property?'),
-      tqYN('bad_debt','Did you lend money that became totally uncollectable?'),
-      tqYN('debt_forgiven','Did you have any debts canceled or forgiven?'),
-      tqYN('clean_vehicle','Did you purchase a clean vehicle eligible for the credit?'),
-      tqYN('personal_property_1099k','Did you receive Form 1099-K for sale of personal property?'),
-      tqYN('us_vehicle','Did you make loan payments on a US-assembled vehicle (final assembly in US)?'),
-    ])}
-
-    ${tqSection('Retirement Information', [
-      tqYN('retirement_participant','Are you an active participant in a pension or retirement plan?'),
-      tqYN('ira_withdrawal','Did you make any IRA, Roth, 401(k) or other retirement withdrawals?'),
-      tqYN('disaster_repayment','If you received qualified disaster distributions, did you repay any?'),
-      tqYN('lump_sum','Did you receive any lump-sum pension/401(k) distributions?'),
-      tqYN('ira_contribution','Did you make contributions to IRA, Roth, 401(k) or other retirement plan?'),
-      tqYN('birth_adoption_dist','Did you receive qualified birth/adoption or emergency distributions?'),
-      tqYN('qcd','Did you make any qualified charitable distributions (QCD)?'),
-    ])}
-
-    ${tqSection('Education Information', [
-      tqYN('post_secondary','Did you, spouse, or dependents attend post-secondary school?'),
-      tqYN('educational_expenses','Did you have educational expenses for yourself, spouse, or dependent?'),
-      tqYN('scholarship','Did anyone in your family receive a scholarship?'),
-      tqYN('529_withdrawal','Did you make any 529 plan withdrawals?'),
-      tqYN('529_contribution','Did you make any 529 plan contributions?'),
-      tqYN('student_loan_interest','Did you pay any student loan interest?'),
-      tqYN('savings_bonds','Did you cash any Series EE or I savings bonds issued after 1989?'),
-      tqYN('fafsa_worksheet','Would you like a worksheet for FAFSA completion?'),
-    ])}
-
-    ${tqSection('Health Care Information', [
-      tqYN('health_coverage','Did you have qualifying health care coverage for your family?'),
-      tqYN('marketplace','Did you enroll in Marketplace coverage through healthcare.gov?'),
-      tqYN('shared_policy','Did you share a Marketplace policy with anyone not in your family?'),
-      tqYN('hsa_contribution','Did you make HSA or Archer MSA contributions?'),
-      tqYN('hsa_distribution','Did you receive HSA, Archer MSA, or Medicare Advantage MSA distributions?'),
-      tqYN('long_term_care_premiums','Did you pay long-term care premiums?'),
-      tqYN('able_contribution','Did you make ABLE account contributions?'),
-      tqYN('able_withdrawal','Did you receive ABLE account withdrawals?'),
-      tqYN('employer_health','If business owner, did you pay employee health insurance premiums?'),
-    ])}
-
-    ${tqSection('Itemized Deductions', [
-      tqYN('casualty_loss','Did you incur a casualty/theft loss or condemnation award?'),
-      tqYN('medical_expenses','Did you pay out-of-pocket medical expenses?'),
-      tqYN('cash_charity','Did you make any cash charitable contributions?'),
-      tqYN('noncash_charity','Did you make any noncash charitable contributions?'),
-      tqYN('vehicle_donation','Did you donate a vehicle or boat?'),
-      tqYN('real_estate_tax','Did you pay real estate taxes on primary/second home?'),
-      tqYN('mortgage_interest','Did you pay mortgage interest on an existing home loan?'),
-      tqYN('investment_interest','Did you incur investment interest expenses?'),
-      tqYN('major_purchases','Did you make any major purchases (cars, boats, etc.)?'),
-      tqYN('out_of_state_tax','Did you make out-of-state purchases where seller did not collect sales/use tax?'),
-    ])}
-
-    ${tqSection('Miscellaneous Information', [
-      tqYN('gifts','Did you make gifts of more than $18,000 to any individual?'),
-      tqYN('bartering','Did you engage in any bartering transactions?'),
-      tqYN('retired_or_job_change','Did you retire or change jobs this year?'),
-      tqYN('moving_armed_forces','Did you incur moving costs as a member of the Armed Forces?'),
-      tqYN('household_employee','Did you pay any individual as a household employee?'),
-      tqYN('energy_improvements','Did you make energy efficient home improvements?'),
-      tqYN('foreign_trust','Did you receive a distribution from or were you grantor of a foreign trust?'),
-      tqYN('foreign_account','Did you have financial interest/signature authority over a foreign account?'),
-      tqYN('foreign_financial_assets','Do you have foreign financial assets or interest in a foreign entity?'),
-      tqYN('boir_owner','Are you an owner or control 25% of a company registered before Jan 1, 2025?'),
-      tqYN('boir_changed','If required to file BOIR, has any previously reported information changed?'),
-      tqYN('irs_correspondence','Did you receive correspondence from the State or IRS?'),
-      tqYN('unfiled_years','Do you have prior years unfiled or with unpaid balances?'),
-      tqYN('presidential_fund','Do you want to designate $3 to the Presidential Election Campaign Fund?'),
-    ])}
-
-    ${tqSection('Estimated Taxes', [
-      tqYN('overpayment_refund','If overpaid in 2025, do you want refund or applied to 2026 estimated?'),
-      tqYN('income_change_2026','Do you expect considerable change in 2026 income?'),
-      tqYN('deduction_change_2026','Do you expect considerable change in 2026 deductions?'),
-      tqYN('withholding_change_2026','Do you expect considerable change in 2026 withholding?'),
-      tqYN('dependents_change_2026','Do you expect a change in dependents claimed for 2026?'),
-      tqYN('fed_estimated_payments','Did you make federal estimated tax payments for 2025?'),
-      tqYN('fed_prior_overpayment','Was any 2024 overpayment applied to 2025 estimated?'),
-      tqYN('state_estimated_payments','Did you make state estimated tax payments for 2025?'),
-      tqYN('state_prior_overpayment','Was any state 2024 overpayment applied to 2025 estimated?'),
-    ])}
-
-    ${tqSection('Traditional IRA', [
-      tqYN('employer_retirement_plan','Are you or spouse covered by an employer retirement plan?'),
-      tqYN('trad_ira_contribution','Did you make traditional IRA contributions for 2025?'),
-    ])}
-    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;padding:0.25rem 0;margin-bottom:0.75rem;">
-      <span style="flex:1;color:#374151;">Value of all traditional IRAs on 12/31/2025:</span>
-      <input name="trad_ira_value" value="${esc(s('trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;">
-    </div>
-
-    ${tqSection('Roth IRA', [
-      tqYN('roth_ira_contribution','Did you make Roth IRA contributions for 2025?'),
-      tqYN('roth_conversion','Did you make a 2025 Roth IRA conversion?'),
-      tqYN('roth_recharacterization','Did you make total Roth IRA contribution recharacterizations for 2025?'),
-    ])}
-
-    ${tqSection('Sales of Stocks & Securities', [
-      tqYN('worthless_securities','Did any securities become worthless during 2025?'),
-      tqYN('uncollectible_debts','Did any debts become uncollectible during 2025?'),
-      tqYN('commodity_sales','Did you have commodity sales, short sales, or straddles?'),
-      tqYN('noncash_exchange','Did you exchange securities/investments for something other than cash?'),
-      tqYN('virtual_assets','Did you receive, sell, exchange, or dispose of any virtual assets?'),
-    ])}
-
-    ${tqSection('Other Income', [
-      tqYN('state_refund','Did you receive state/local income tax refunds during 2025?'),
-      tqYN('alimony_received','Did you receive alimony during 2025?'),
-      tqYN('unemployment_comp','Did you receive unemployment compensation during 2025?'),
-      tqYN('other_income','Did you have other income (commissions, jury pay, director fees, etc.)?'),
-    ])}
-
-    ${tqSection('Social Security Benefits', [
-      tqYN('ssa_1099','Did you receive Form SSA-1099 during 2025?'),
-    ])}
-
-    ${tqSection('Other Adjustments', [
-      tqYN('alimony_paid','Did you pay alimony during 2025?'),
-      tqYN('educator_expenses','Did you have educator expenses (K-12 teacher, counselor, etc.)?'),
-      tqYN('other_adjustments','Did you have any other adjustments to income?'),
-    ])}
-
-    ${tqSection('Schedule A - Medical & Dental', [
-      tqYN('medical_expenses_itemized','Did you have medical/dental expenses (doctors, hospitals, prescriptions, etc.)?'),
-      tqYN('medical_insurance','Did you pay medical insurance premiums?'),
-      tqYN('long_term_care_premiums_itemized','Did you pay long-term care premiums?'),
-      tqYN('prescription_drugs','Did you have prescription medicine expenses?'),
-      tqYN('medical_mileage','Did you drive tax miles for medical (21¢/mile for 2025)?'),
-    ])}
-
-    ${tqSection('Schedule A - Tax Expenses', [
-      tqYN('state_local_income_tax','Did you pay state/local income taxes in 2025?'),
-      tqYN('state_local_2025_tax','Did you pay 2025 state/local income taxes in 2025?'),
-      tqYN('real_estate_taxes','Did you pay real estate taxes in 2025?'),
-      tqYN('personal_property_tax','Did you pay personal property taxes?'),
-      tqYN('other_taxes','Did you pay foreign taxes or state disability taxes?'),
-      tqYN('sales_tax_major','Did you pay sales tax on major purchases?'),
-      tqYN('sales_tax_actual','Did you pay sales tax on actual expenses?'),
-    ])}
-
-    ${tqSection('Interest Expenses', [
-      tqYN('mortgage_interest_1098','Did you pay home mortgage interest reported on Form 1098?'),
-      tqYN('mortgage_interest_individual','Did you pay other home mortgage interest to individuals?'),
-      tqYN('refinance_points','Did you refinance and pay points in 2025?'),
-      tqYN('investment_interest_expense','Did you have investment interest expense other than Schedule K-1?'),
-    ])}
-
-    ${tqSection('Charitable Contributions', [
-      tqYN('charity_cash','Did you make charitable contributions by cash or check?'),
-      tqYN('charity_mileage','Did you drive volunteer miles for charitable purposes?'),
-      tqYN('charity_noncash','Did you donate noncash items (clothing, household, etc.)?'),
-    ])}
-
-    ${tqSection('Miscellaneous Deductions', [
-      tqYN('other_expenses','Did you have other expenses not listed elsewhere?'),
-      tqYN('gambling_losses','Did you have gambling losses (only if you have gambling income)?'),
-    ])}
-
-    ${tqSection('Miscellaneous Itemized Deductions (State)', [
-      tqYN('unreimbursed_expenses','Did you have unreimbursed employee expenses (uniforms, dues, etc.)?'),
-      tqYN('union_dues','Did you pay union dues not on W-2?'),
-      tqYN('tax_prep_fees','Did you pay tax preparation fees?'),
-      tqYN('other_2pct_expenses','Did you have other expenses subject to 2% AGI limit?'),
-      tqYN('safe_deposit','Did you have safe deposit box rental?'),
-      tqYN('investment_expenses','Did you have investment expenses other than Schedule K-1/1099?'),
-    ])}
-
-    ${tqSection('Health Care Coverage', [
-      tqYN('self_employed_health','Did you have self-employed health insurance premiums?'),
-      tqYN('self_employed_ltc','Did you have self-employed long-term care premiums?'),
-    ])}
-
-    <h3 style="font-size:0.9rem;font-weight:700;color:#0d3f5e;margin:1rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">Signature</h3>
-    <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.5rem;">I certify that the information provided in this questionnaire is true, correct, and complete to the best of my knowledge.</p>
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-      <div style="flex:1;min-width:200px;"><input name="final_signature" value="${esc(s('final_signature'))}" placeholder="Signature" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
-      <div style="flex:1;min-width:150px;"><input name="final_date" type="date" value="${s('final_date') || new Date().toISOString().slice(0,10)}" style="width:100%;padding:0.35rem 0.5rem;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;"></div>
-    </div>
-
-    <div style="display:flex;gap:0.75rem;padding-top:0.75rem;border-top:1px solid #e5e7eb;">
-      <button type="button" onclick="saveQuestionnaire()" class="btn btn--primary" id="tqSaveBtn" style="padding:0.5rem 1.5rem;font-size:0.82rem;cursor:pointer;">Save Questionnaire</button>
-      <button type="button" onclick="closeTq()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Cancel</button>
-    </div>
-  </form>`;
-}
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-function endImpersonation() {
-  sessionStorage.removeItem('tv_portal_token');
-  window.location.href = '/admin';
-}
-
-function connectQbo() {
-  const token = sessionStorage.getItem('tv_portal_token');
-  if (!token) return;
-  window.location.href = '/api/qbo/auth?token=' + encodeURIComponent(token);
-}
 
 function showDashboard(data) {
   document.getElementById('loginView').style.display = 'none';
   if (data.status === 'pending_engagement') {
-    document.getElementById('dashView').style.display = 'none';
-    document.getElementById('engagementView').style.display = 'block';
-    renderEngagement(data);
+    showEngagement(data);
     return;
   }
-  document.getElementById('dashView').style.display = 'block';
-  document.getElementById('dashGreeting').textContent = `Welcome back, ${data.email.split('@')[0]}`;
+  document.getElementById('appView').style.display = 'flex';
+  document.getElementById('dashGreeting').textContent = 'Welcome back, ' + data.email.split('@')[0];
   initDocManager(data);
   loadDashboard();
+}
+
+function showEngagement(data) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('appView').style.display = 'flex';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+  const main = document.querySelector('.main');
+  main.innerHTML = `<div style="max-width:600px;margin:2rem auto;"><div class="block" style="padding:2rem;">
+    <h2 style="font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:700;color:#0d3f5e;margin:0 0 0.75rem;">Engagement Letter</h2>
+    <div style="font-size:0.82rem;color:#374151;line-height:1.6;max-height:50vh;overflow-y:auto;margin-bottom:1.5rem;padding:1rem;background:#f9fafb;border-radius:8px;">
+      <p>This letter confirms the terms of our engagement. We will prepare your federal and requested state income tax returns based on the information you provide to us.</p>
+      <p>You represent that all information you supply is accurate and complete to the best of your knowledge.</p>
+      <p>The filing deadline is April 15. Please provide all information no later than March 25.</p>
+      <p>We may communicate with you via email and our secure web portal.</p>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label><input id="engSignature" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.88rem;outline:none;box-sizing:border-box;"></div>
+      <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label><input id="engDate" type="date" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.88rem;outline:none;box-sizing:border-box;"></div>
+    </div>
+    <button class="btn btn--primary" id="engSubmitBtn" style="width:100%;padding:0.6rem !important;" onclick="acceptEngagement()">Accept &amp; Continue</button>
+    <div id="engError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.5rem;"></div>
+  </div></div>`;
+  document.getElementById('engDate').value = new Date().toISOString().slice(0, 10);
+}
+
+async function acceptEngagement() {
+  const sig = document.getElementById('engSignature').value.trim();
+  if (!sig) { document.getElementById('engError').textContent = 'Please enter your signature.'; document.getElementById('engError').style.display = 'block'; return; }
+  document.getElementById('engError').style.display = 'none';
+  document.getElementById('engSubmitBtn').disabled = true; document.getElementById('engSubmitBtn').textContent = 'Submitting…';
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    await fetch('/api/accept-engagement', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ signature: sig }) });
+    window.location.href = '/portal';
+  } catch { document.getElementById('engError').textContent = 'Failed.'; document.getElementById('engSubmitBtn').disabled = false; document.getElementById('engSubmitBtn').textContent = 'Accept & Continue'; }
 }
 
 async function loadDashboard() {
   const token = sessionStorage.getItem('tv_portal_token');
   try {
     const res = await fetch('/api/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
-    if (!res.ok) throw new Error();
     const data = await res.json();
     renderTaxStatuses(data.taxStatuses);
     renderDeadlines(data.deadlines);
     renderStateDeadline(data.stateDeadline, data.profile?.state);
     renderActivity(data.recentActivity);
     renderPlan(data.profile);
-    renderQbo(data.qbo);
     renderRevenue(data.qbo?.revenue);
-    loadQuestionnaire();
-  } catch (e) { console.error('Dashboard load failed:', e); }
+    renderQbo(data.qbo);
+    renderQuestionnaireStatus();
+  } catch {}
 }
 
 function renderTaxStatuses(statuses) {
   const el = document.getElementById('taxStatusList');
   el.innerHTML = '';
-  if (!statuses || !statuses.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No returns yet.</li>'; return; }
+  if (!statuses || !statuses.length) { el.innerHTML = '<li style="text-align:center;color:#9ca3af;font-size:0.82rem;">No returns yet.</li>'; return; }
   statuses.forEach(s => {
-    const dotClass = s.status === 'filed' ? 'green' : s.status === 'in_review' ? 'yellow' : 'gray';
+    const dot = s.status === 'filed' ? 'green' : s.status === 'in_review' ? 'yellow' : 'gray';
     const label = s.status === 'filed' ? 'Filed' : s.status === 'in_review' ? 'In Review' : 'Not Started';
     const li = document.createElement('li');
-    li.innerHTML = `<span class="status-dot status-dot--${dotClass}"></span> ${esc(s.label)}<span style="margin-left:auto;font-size:0.72rem;font-weight:600;color:var(--text-muted);">${label}</span>`;
+    li.innerHTML = `<span class="status-dot status-dot--${dot}"></span> ${esc(s.label)}<span style="margin-left:auto;font-size:0.72rem;font-weight:600;color:#6b7280;">${label}</span>`;
     el.appendChild(li);
   });
 }
 
 function renderDeadlines(deadlines) {
-  const el = document.getElementById('deadlineList');
-  el.innerHTML = '';
-  if (!deadlines || !deadlines.length) { el.innerHTML = '<li style="text-align:center;color:var(--text-muted);font-size:0.82rem;">No upcoming deadlines.</li>'; return; }
+  const el = document.getElementById('deadlineList'); el.innerHTML = '';
+  if (!deadlines || !deadlines.length) { el.innerHTML = '<li style="text-align:center;color:#9ca3af;font-size:0.82rem;">No upcoming deadlines.</li>'; return; }
   deadlines.forEach(d => {
-      const date = new Date(d.date + 'T00:00:00');
-      const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      const li = document.createElement('li');
-      li.style.cssText = 'background:#f0f9ff;border-radius:8px;margin-bottom:0.25rem;padding:0.6rem 0.65rem;border:none;';
-      li.innerHTML = `<span style="font-weight:700;color:#0d3f5e;font-size:0.9rem;min-width:auto;display:block;line-height:1.3;">${formatted}</span><span style="font-size:0.78rem;color:#374151;">${esc(d.label)}</span>`;
-      el.appendChild(li);
-    });
+    const date = new Date(d.date + 'T00:00:00');
+    const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const li = document.createElement('li'); li.style.cssText = 'padding:0;margin-bottom:0.25rem;background:none;border:none;';
+    li.innerHTML = `<div class="deadline-item"><span class="date">${formatted}</span><span class="label">${esc(d.label)}</span></div>`;
+    el.appendChild(li);
+  });
 }
 
-function renderStateDeadline(stateDeadlineArr, state) {
-  const el = document.getElementById('stateDeadlineEl');
-  if (!el) return;
+function renderStateDeadline(arr, state) {
+  const el = document.getElementById('stateDeadlineEl'); if (!el) return;
   if (!state) { el.style.display = 'none'; return; }
   el.style.display = '';
-  const sd = stateDeadlineArr && stateDeadlineArr.length ? stateDeadlineArr[0] : null;
-  if (!sd) {
-    el.innerHTML = `<div style="background:#fef3c7;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#92400e;">State info not available for: ${esc(state)}</div>`;
-  } else if (sd.noTax) {
-    el.innerHTML = `<div style="background:#f0fdf4;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;">${esc(sd.label)}</div>`;
-  } else {
-    const date = new Date(sd.date + 'T12:00:00');
-    const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.6rem 0.65rem;font-size:0.82rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.9rem;">${formatted}</span>${esc(sd.label)}</div>`;
-  }
+  const sd = arr && arr.length ? arr[0] : null;
+  if (!sd) { el.innerHTML = `<div style="background:#fef3c7;border-radius:8px;padding:0.5rem 0.65rem;font-size:0.8rem;color:#92400e;">Unavailable for ${esc(state)}</div>`; return; }
+  if (sd.noTax) { el.innerHTML = `<div style="background:#f0fdf4;border-radius:8px;padding:0.5rem 0.65rem;font-size:0.8rem;color:#374151;">${esc(sd.label)}</div>`; return; }
+  const date = new Date(sd.date + 'T12:00:00');
+  el.innerHTML = `<div style="background:#f0f9ff;border-radius:8px;padding:0.5rem 0.65rem;font-size:0.8rem;color:#374151;"><span style="font-weight:700;color:#0d3f5e;display:block;font-size:0.85rem;">${date.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</span>${esc(sd.label)}</div>`;
 }
 
-function renderEngagement(data) {
-  document.getElementById('engDate').value = new Date().toISOString().slice(0, 10);
-}
-async function acceptEngagement() {
-  const sig = document.getElementById('engSignature').value.trim();
-  if (!sig) { document.getElementById('engError').textContent = 'Please enter your signature.'; document.getElementById('engError').style.display = 'block'; return; }
-  document.getElementById('engError').style.display = 'none';
-  document.getElementById('engSubmitBtn').disabled = true;
-  document.getElementById('engSubmitBtn').textContent = 'Submitting…';
-  try {
-    const token = sessionStorage.getItem('tv_portal_token');
-    const res = await fetch('/api/accept-engagement', {
-      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signature: sig }),
-    });
-    if (!res.ok) throw Error();
-    // Relogin to get fresh token with active status
-    window.location.href = '/portal';
-  } catch { document.getElementById('engError').textContent = 'Failed to submit. Please try again.'; document.getElementById('engError').style.display = 'block'; document.getElementById('engSubmitBtn').disabled = false; document.getElementById('engSubmitBtn').textContent = 'Accept & Continue'; }
+function renderActivity(activities) {
+  const el = document.getElementById('activityList'); el.innerHTML = '';
+  if (!activities || !activities.length) { el.innerHTML = '<div style="padding:1rem 0;font-size:0.82rem;color:#9ca3af;">No recent activity.</div>'; return; }
+  activities.forEach(a => {
+    const div = document.createElement('div'); div.className = 'activity-item';
+    div.innerHTML = `<span class="act-action ${a.action}">${a.action}</span><span>${esc(a.detail)}</span><span class="act-time">${new Date(a.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`;
+    el.appendChild(div);
+  });
 }
 
 function renderPlan(profile) {
   const el = document.getElementById('planSection');
   if (!profile || (!profile.services?.length && !profile.monthlyPrice && !profile.yearlyPrice)) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Plan details not available.</div>';
-    return;
+    el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">Plan details not available.</div>'; return;
   }
-  const svcLabels = { tax:'Business Tax Return', quarterly:'Quarterly Planning', monthly:'Monthly Financial Review', bookkeeping:'Bookkeeping' };
-  el.innerHTML = '<div style="display:grid;gap:0.3rem;">'
-    + (profile.businessName ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Business</span><span style="font-weight:600;color:var(--ink);">${esc(profile.businessName)}</span></div>` : '')
-    + `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Services</span><span style="font-weight:600;color:var(--ink);">${(profile.services||[]).map(s => svcLabels[s] || s).join(', ') || '—'}</span></div>`
-    + (profile.monthlyPrice > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Monthly</span><span style="font-weight:600;color:var(--ink);">$${profile.monthlyPrice}</span></div>` : '')
-    + (profile.yearlyPrice > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span style="color:var(--text-muted);">Yearly</span><span style="font-weight:600;color:var(--ink);">$${profile.yearlyPrice}</span></div>` : '')
-    + '</div>';
+  const labels = { tax:'Business Tax Return', quarterly:'Quarterly Planning', monthly:'Monthly Financial Review', bookkeeping:'Bookkeeping' };
+  el.innerHTML = (profile.businessName ? `<div class="plan-row"><span class="lbl">Business</span><span class="val">${esc(profile.businessName)}</span></div>` : '')
+    + `<div class="plan-row"><span class="lbl">Services</span><span class="val">${(profile.services||[]).map(s => labels[s]||s).join(', ') || '—'}</span></div>`
+    + (profile.monthlyPrice > 0 ? `<div class="plan-row"><span class="lbl">Monthly</span><span class="val">$${profile.monthlyPrice}</span></div>` : '')
+    + (profile.yearlyPrice > 0 ? `<div class="plan-row"><span class="lbl">Yearly</span><span class="val">$${profile.yearlyPrice}</span></div>` : '');
 }
 
 function renderRevenue(revenue) {
   const el = document.getElementById('revenueChart');
-  if (!revenue || !revenue.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">No revenue data yet.</div>';
-    return;
-  }
+  if (!revenue || !revenue.length) { el.innerHTML = '<div style="padding:1.5rem 0;text-align:center;color:#9ca3af;font-size:0.82rem;">No revenue data yet.</div>'; return; }
   const max = Math.max(...revenue.map(r => r.amount));
-  const barMax = 80;
-  el.innerHTML = '<div style="display:flex;align-items:flex-end;gap:0.3rem;height:100px;padding:0.5rem 0;">'
-    + revenue.map(r => {
-      const h = max > 0 ? (r.amount / max) * barMax : 0;
-      const shortMonth = r.month.split(' ')[0].slice(0, 3);
-      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100px;justify-content:flex-end;">
-        <span style="font-size:0.65rem;font-weight:600;color:#0d3f5e;margin-bottom:0.15rem;">$${r.amount.toLocaleString('en-US', {minimumFractionDigits:0,maximumFractionDigits:0})}</span>
-        <div style="width:100%;height:${h}px;background:linear-gradient(180deg,#1a7fa0,#0d3f5e);border-radius:4px 4px 0 0;min-height:${r.amount > 0 ? 4 : 0}px;"></div>
-        <span style="font-size:0.65rem;color:#6b7280;margin-top:0.15rem;">${shortMonth}</span>
-      </div>`;
-    }).join('')
-    + '</div>';
+  el.innerHTML = '<div class="rev-bar">' + revenue.map(r => {
+    const h = max > 0 ? (r.amount / max) * 80 : 0;
+    const short = r.month.split(' ')[0].slice(0,3);
+    return `<div class="rev-col"><span class="amt">$${r.amount.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</span><div class="bar" style="height:${h}px;"></div><span class="month">${short}</span></div>`;
+  }).join('') + '</div>';
 }
 
 function renderQbo(qbo) {
   const el = document.getElementById('qboSection');
-  el.innerHTML = '';
   if (!qbo || !qbo.qboConnected) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:1rem 0;">
-        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.75rem;">Connect QuickBooks to see invoices and pay online.</p>
-        <button class="btn btn--primary" id="connectQboBtn" style="padding:0.5rem 1.25rem;font-size:0.82rem;cursor:pointer;">Connect QuickBooks</button>
-      </div>`;
-    document.getElementById('connectQboBtn').addEventListener('click', connectQbo);
+    el.innerHTML = `<div style="padding:2rem 0;text-align:center;"><p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">Connect QuickBooks to see invoices.</p><button class="qbo-btn" onclick="connectQbo()">Connect QuickBooks</button></div>`;
     return;
   }
-  if (qbo.error) {
-    el.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Unable to load invoices right now.</div>`;
-    return;
-  }
-  const invoices = qbo.invoices || [];
-  if (!invoices.length) {
-    el.innerHTML = '<div style="text-align:center;color:#059669;font-size:0.82rem;padding:1rem 0;">No outstanding invoices.</div>';
-    return;
-  }
-  const totalDue = invoices.reduce((s, i) => s + i.balance, 0);
-  el.innerHTML = `
-    <div style="background:#f0f9ff;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
-      <span style="font-size:0.72rem;color:#6b7280;">Total Outstanding</span>
-      <div style="font-size:1.2rem;font-weight:700;color:#0d3f5e;">$${totalDue.toFixed(2)}</div>
-    </div>
-    <ul style="list-style:none;padding:0;margin:0;">
-      ${invoices.map(i => `
-        <li style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
-          <span style="flex:1;">Invoice #${esc(i.docNumber)}</span>
-          <span style="color:#6b7280;font-size:0.78rem;">Due ${new Date(i.dueDate).toLocaleDateString()}</span>
-          <span style="font-weight:600;color:#dc2626;">$${i.balance.toFixed(2)}</span>
-        </li>
-      `).join('')}
-    </ul>
-    <a href="https://qbo.intuit.com" target="_blank" class="file-link" style="display:block;text-align:center;margin-top:0.75rem;">Pay in QuickBooks →</a>
-  `;
+  if (qbo.error) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">Unable to load invoices.</div>'; return; }
+  const invs = qbo.invoices || [];
+  if (!invs.length) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#059669;">No outstanding invoices. &#10003;</div>'; return; }
+  const total = invs.reduce((s,i) => s + i.balance, 0);
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;"><span style="font-size:0.78rem;color:#6b7280;">Total Outstanding</span><span style="font-size:1.2rem;font-weight:700;color:#0d3f5e;">$${total.toFixed(2)}</span></div>`
+    + invs.map(i => `<div class="plan-row"><span class="lbl">Invoice #${esc(i.docNumber)}</span><span class="val" style="color:#dc2626;">$${i.balance.toFixed(2)}</span></div>`).join('')
+    + `<div style="margin-top:0.75rem;text-align:center;"><a href="https://qbo.intuit.com" target="_blank" class="qbo-btn">Pay in QuickBooks</a></div>`;
 }
 
-function renderActivity(activities) {
-  const el = document.getElementById('activityList');
-  el.innerHTML = '';
-  if (!activities || !activities.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">No recent activity.</div>'; return; }
-  activities.forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'activity-item';
-    const time = new Date(a.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    div.innerHTML = `<span class="activity-action ${a.action}">${a.action}</span><span>${esc(a.detail)}</span><span class="activity-time">${time}</span>`;
-    el.appendChild(div);
-  });
+function connectQbo() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  if (token) window.location.href = '/api/qbo/auth?token=' + encodeURIComponent(token);
+}
+
+async function renderQuestionnaireStatus() {
+  const el = document.getElementById('taxQuestionnaireStatus');
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const label = data.saved ? 'View / Edit' : 'Start';
+    const status = data.saved ? '&#10003; Completed' : 'Not started';
+    const color = data.saved ? '#059669' : '#6b7280';
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;"><span style="color:${color};">${status}</span><a href="/questionnaire" class="qbo-btn" style="font-size:0.78rem;">${label}</a></div>`;
+  } catch { el.innerHTML = '<div style="padding:1rem 0;text-align:center;color:#9ca3af;">Unable to load.</div>'; }
 }
 
 // ── Document Manager ──
 function initDocManager(data) {
   const keyMaterial = data.keyMaterial;
   const isAdmin = data.role === 'admin';
-
   const token = sessionStorage.getItem('tv_portal_token');
-  function authFetch(url, opts = {}) {
-    opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` };
-    return fetch(url, opts);
-  }
-
-  function hexToBytes(h) { const b = new Uint8Array(h.length / 2); for (let i = 0; i < h.length; i += 2) b[i / 2] = parseInt(h.substr(i, 2), 16); return b; }
-  function bytesToHex(b) { return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
-
+  function authFetch(url, opts = {}) { opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` }; return fetch(url, opts); }
+  function hexToBytes(h) { const b = new Uint8Array(h.length/2); for(let i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b; }
   async function deriveKey(salt) {
     const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
   }
-
   async function encryptFile(file) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(bytesToHex(salt));
+    const key = await deriveKey(Array.from(salt).map(b=>b.toString(16).padStart(2,'0')).join(''));
     const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, await file.arrayBuffer());
     const out = new Uint8Array(salt.length + iv.length + enc.byteLength);
-    out.set(salt, 0); out.set(iv, salt.length); out.set(new Uint8Array(enc), salt.length + iv.length);
+    out.set(salt,0); out.set(iv,salt.length); out.set(new Uint8Array(enc), salt.length+iv.length);
     return new Blob([out], { type: 'application/octet-stream' });
   }
-
   async function decryptFile(blob) {
     const d = new Uint8Array(await blob.arrayBuffer());
-    const key = await deriveKey(bytesToHex(d.slice(0, 16)));
-    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16, 28) }, key, d.slice(28));
+    const key = await deriveKey(Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join(''));
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
   }
 
   const uploadArea = document.getElementById('docUploadArea');
   const fileInput = document.getElementById('docFileInput');
   const docList = document.getElementById('docList');
-  const docEmpty = document.getElementById('docEmpty');
   const docError = document.getElementById('docError');
   const docProgress = document.getElementById('docUploadProgress');
-  const docCount = document.getElementById('docCount');
 
   uploadArea.addEventListener('click', () => fileInput.click());
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-  uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); });
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('doc-upload-area-hover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('doc-upload-area-hover'));
+  uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('doc-upload-area-hover'); if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); });
   fileInput.addEventListener('change', () => { if (fileInput.files.length) uploadFile(fileInput.files[0]); });
 
   async function uploadFile(file) {
-    if (file.size > 20 * 1024 * 1024) { showError('File too large.'); return; }
-    docProgress.classList.add('active'); docError.style.display = 'none';
+    if (file.size > 20*1024*1024) { showError('File too large.'); return; }
+    docProgress.style.display = 'block'; docError.style.display = 'none';
     try {
       const encrypted = await encryptFile(file);
       const fd = new FormData();
       fd.append('file', encrypted, file.name + '.enc');
       const res = await authFetch('/api/documents/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw Error();
       fileInput.value = '';
       loadDocs();
-    } catch (e) { showError('Upload failed.'); } finally { docProgress.classList.remove('active'); }
+    } catch { showError('Upload failed.'); } finally { docProgress.style.display = 'none'; }
   }
 
   async function loadDocs() {
     try {
       const res = await authFetch('/api/documents');
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw Error();
       render((await res.json()).documents);
-    } catch (e) { showError('Could not load documents.'); }
+    } catch { showError('Could not load documents.'); }
   }
 
   function render(docs) {
-    docList.innerHTML = ''; docCount.textContent = `${docs.length} file${docs.length !== 1 ? 's' : ''}`;
-    if (!docs.length) { docList.appendChild(docEmpty); return; }
+    docList.innerHTML = ''; docError.style.display = 'none';
+    if (!docs.length) { docList.innerHTML = '<li class="doc-empty">No documents yet. Upload your first file above.</li>'; return; }
     docs.forEach(d => {
-      const li = document.createElement('li');
-      li.innerHTML = `<span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="doc-dl" style="margin-left:0.5rem;">Download</a><span style="color:var(--border);margin:0 0.25rem;">|</span><a class="doc-del" style="color:#c00;cursor:pointer;font-size:0.78rem;font-weight:600;">Delete</a>`;
-      li.querySelector('.doc-dl').addEventListener('click', async () => {
+      const li = document.createElement('li'); li.className = 'doc-item';
+      li.innerHTML = `<span class="name">${esc(d.name)}</span><span class="date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="dl">Download</a><span class="del">Delete</span>`;
+      li.querySelector('.dl').addEventListener('click', async () => {
         try {
           const res = await authFetch(`/api/documents/${d.id}`);
-          if (!res.ok) throw new Error();
+          if (!res.ok) throw Error();
           const blob = await res.blob();
-          let decrypted;
-          if (isAdmin) { decrypted = await blob.arrayBuffer(); } else { decrypted = await decryptFile(blob); }
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([decrypted])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
-        } catch (e) { showError('Download failed.'); }
+          let decrypted = isAdmin ? await blob.arrayBuffer() : await decryptFile(blob);
+          const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([decrypted])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
+        } catch { showError('Download failed.'); }
       });
-      li.querySelector('.doc-del').addEventListener('click', async () => {
+      li.querySelector('.del').addEventListener('click', async () => {
         if (!confirm(`Delete "${d.name}"?`)) return;
-        try {
-          const res = await authFetch(`/api/documents/${d.id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error();
-          loadDocs();
-        } catch (e) { showError('Delete failed.'); }
+        try { await authFetch(`/api/documents/${d.id}`, { method: 'DELETE' }); loadDocs(); } catch { showError('Delete failed.'); }
       });
       docList.appendChild(li);
     });
   }
 
   function showError(m) { docError.textContent = m; docError.style.display = 'block'; }
-
   loadDocs();
 }
 </script>
