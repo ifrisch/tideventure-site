@@ -746,7 +746,15 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
       return new Response(plaintext, { headers });
     } catch { /* serve raw */ }
   }
-  return new Response(rawBuf, { headers });
+  if (viewMode && !origName.endsWith('.enc')) {
+    // Show inline if decrypted or unencrypted
+    return new Response(rawBuf, { headers });
+  }
+  if (viewMode) {
+    // Cannot preview encrypted document
+    return new Response('This document is encrypted and cannot be previewed inline. Use Download instead.', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+  }
+  return new Response(rawBuf, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' } });
 }
 
 async function handleDeleteDocument(env, docId, email, admin) {
