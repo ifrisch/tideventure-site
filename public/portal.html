@@ -499,7 +499,23 @@ async function openSig(id) {
   document.getElementById('sigInput').value = '';
   document.getElementById('sigError').style.display = 'none';
   const token = sessionStorage.getItem('tv_portal_token');
-  document.getElementById('sigDocPreview').src = '/api/signing-document/' + id + '?token=' + encodeURIComponent(token);
+  const iframe = document.getElementById('sigDocPreview');
+  // Try signing endpoint first, fall back to document download with client decryption
+  try {
+    const res = await fetch('/api/signing-document/' + id + '?token=' + encodeURIComponent(token));
+    if (res.ok) { iframe.src = '/api/signing-document/' + id + '?token=' + encodeURIComponent(token); return; }
+  } catch {}
+  // Fallback: download and decrypt via portal's existing fetch
+  try {
+    const res = await authFetch('/api/documents/' + id);
+    if (!res.ok) throw Error();
+    const blob = await res.blob();
+    let decrypted;
+    if (window.__PAGE_DATA__?.role === 'admin') { decrypted = await blob.arrayBuffer(); }
+    else { decrypted = await decryptFile(blob); }
+    const url = URL.createObjectURL(new Blob([decrypted]));
+    iframe.src = url;
+  } catch { iframe.src = ''; }
 }
 
 function closeSigModal() {
@@ -544,20 +560,38 @@ async function renderQuestionnaireStatus() {
 }
 
 // ── Document Manager ──
+let _keyMaterial = null;
+let _isAdmin = false;
+async function _decryptFile(blob) {
+  if (_isAdmin) return blob.arrayBuffer();
+  const d = new Uint8Array(await blob.arrayBuffer());
+  const salt = Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const base = await crypto.subtle.importKey('raw', hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
+  // Try 100000 first, fall back to 600000 for older documents
+  try {
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
+  } catch {
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
+  }
+}
+
 function initDocManager(data) {
-  const keyMaterial = data.keyMaterial;
-  const isAdmin = data.role === 'admin';
+  _keyMaterial = data.keyMaterial;
+  _isAdmin = data.role === 'admin';
   const token = sessionStorage.getItem('tv_portal_token');
   function authFetch(url, opts = {}) { opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` }; return fetch(url, opts); }
   function hexToBytes(h) { const b = new Uint8Array(h.length/2); for(let i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b; }
-  async function deriveKey(salt) {
-    const base = await crypto.subtle.importKey('raw', hexToBytes(keyMaterial), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
+  async function deriveKey(salt, iters) {
+    const base = await crypto.subtle.importKey('raw', hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
+    try { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: iters || 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
+    catch { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
   }
   async function encryptFile(file) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(Array.from(salt).map(b=>b.toString(16).padStart(2,'0')).join(''));
+    const key = await deriveKey(Array.from(salt).map(b=>b.toString(16).padStart(2,'0')).join(''), 100000);
     const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, await file.arrayBuffer());
     const out = new Uint8Array(salt.length + iv.length + enc.byteLength);
     out.set(salt,0); out.set(iv,salt.length); out.set(new Uint8Array(enc), salt.length+iv.length);
@@ -565,8 +599,14 @@ function initDocManager(data) {
   }
   async function decryptFile(blob) {
     const d = new Uint8Array(await blob.arrayBuffer());
-    const key = await deriveKey(Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join(''));
-    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
+    const salt = Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    try {
+      const key = await deriveKey(salt, 100000);
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
+    } catch {
+      const key = await deriveKey(salt, 600000);
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
+    }
   }
 
   const uploadArea = document.getElementById('docUploadArea');
