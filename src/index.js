@@ -732,20 +732,18 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   if (!object) return json(404, { error: 'Document not found' });
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
+  const disposition = viewMode ? 'inline' : `attachment`;
+  const headers = { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' };
+  // Read body once, serve it whether decrypted or raw
+  const rawBuf = await object.arrayBuffer();
   // Try to decrypt admin downloads, fall back to raw
   if (admin) {
     try {
-      const plaintext = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader || email, await object.arrayBuffer());
-      const disposition = viewMode ? 'inline' : `attachment`;
-      return new Response(plaintext, {
-        headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
-      });
-    } catch { /* fall through to serve raw */ }
+      const plaintext = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader || email, rawBuf);
+      return new Response(plaintext, { headers });
+    } catch { /* serve raw */ }
   }
-  const disposition = viewMode ? 'inline' : `attachment`;
-  return new Response(object.body, {
-    headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
-  });
+  return new Response(rawBuf, { headers });
 }
 
 async function handleDeleteDocument(env, docId, email, admin) {
