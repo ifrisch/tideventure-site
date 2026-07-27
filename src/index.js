@@ -572,12 +572,13 @@ function getNextEstimatedPayment() {
 }
 
 async function handleDashboard(env, email) {
-  // Load client profile for state
+  // Load client profile
   let clientState = null;
+  let profileData = {};
   const profileKey = `profile/${email}`;
   const profileObj = await env.tideventure_documents.get(profileKey);
   if (profileObj) {
-    try { const p = JSON.parse(await profileObj.text()); clientState = p.state; } catch {}
+    try { profileData = JSON.parse(await profileObj.text()); clientState = profileData.state; } catch {}
   }
 
   // Recent activity from audit log
@@ -606,7 +607,7 @@ async function handleDashboard(env, email) {
     deadlines: getNextEstimatedPayment() ? [getNextEstimatedPayment()] : [],
     stateDeadline: stateDeadline ? [stateDeadline] : [],
     recentActivity: activities.slice(0, 10),
-    profile: { state: clientState, businessName: profile.businessName || '', services: profile.services || [], monthlyPrice: profile.monthlyPrice || 0, yearlyPrice: profile.yearlyPrice || 0 },
+    profile: { state: clientState, businessName: profileData.businessName || '', services: profileData.services || [], monthlyPrice: profileData.monthlyPrice || 0, yearlyPrice: profileData.yearlyPrice || 0 },
     qbo,
   });
 }
