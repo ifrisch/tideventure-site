@@ -732,8 +732,9 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   if (!object) return json(404, { error: 'Document not found' });
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
+  const contentType = viewMode ? (found.httpMetadata?.contentType || 'application/octet-stream') : 'application/octet-stream';
   const disposition = viewMode ? 'inline' : `attachment`;
-  const headers = { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' };
+  const headers = { 'Content-Type': contentType, 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' };
   // Read body once, serve it whether decrypted or raw
   const rawBuf = await object.arrayBuffer();
   // Try to decrypt admin downloads, fall back to raw
