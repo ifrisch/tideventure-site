@@ -251,15 +251,27 @@ export default {
       try {
         const body = await request.json();
         if (!body.email) return json(400, { error: 'Email required' });
-        const key = `user/${body.email.toLowerCase()}`;
-        const obj = await env.tideventure_documents.get(key);
+        const lowerEmail = body.email.toLowerCase();
+        // Save to user profile
+        const userKey = `user/${lowerEmail}`;
+        const obj = await env.tideventure_documents.get(userKey);
         let user = obj ? JSON.parse(await obj.text()) : {};
         if (body.services) user.services = body.services;
         if (body.monthlyPrice !== undefined) user.monthlyPrice = body.monthlyPrice;
         if (body.yearlyPrice !== undefined) user.yearlyPrice = body.yearlyPrice;
         if (body.customerType) user.customerType = body.customerType;
         if (body.businessName) user.businessName = body.businessName;
-        await env.tideventure_documents.put(key, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        await env.tideventure_documents.put(userKey, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
+        // Also save to profile for consistency
+        const profileKey = `profile/${lowerEmail}`;
+        const profObj = await env.tideventure_documents.get(profileKey);
+        let profile = profObj ? JSON.parse(await profObj.text()) : {};
+        if (body.customerType) profile.customerType = body.customerType;
+        if (body.businessName) profile.businessName = body.businessName;
+        if (body.services) profile.services = body.services;
+        if (body.monthlyPrice !== undefined) profile.monthlyPrice = body.monthlyPrice;
+        if (body.yearlyPrice !== undefined) profile.yearlyPrice = body.yearlyPrice;
+        await env.tideventure_documents.put(profileKey, JSON.stringify(profile), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -772,6 +784,7 @@ async function handleAdminDashboard(env) {
       services: profile.services || [],
       monthlyPrice: profile.monthlyPrice || 0,
       yearlyPrice: profile.yearlyPrice || 0,
+      businessName: profile.businessName || email.split('@')[0],
       questionnaire: qStatus,
       documents: docCount,
       balance,
