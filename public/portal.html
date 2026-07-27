@@ -224,18 +224,25 @@
       <div class="block">
         <div id="sigList"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
       </div>
-      <div id="sigSignView" style="display:none;" class="block">
-        <h2 id="sigDocName" style="font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:700;color:#0d3f5e;margin:0 0 1rem;"></h2>
-        <div id="sigDocPreview" style="background:#f9fafb;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:0.82rem;color:#374151;max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;"></div>
-        <div style="border-top:1px solid #e5e7eb;padding-top:1rem;">
-          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:0.3rem;">Type your full name to sign</label>
-          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-            <input id="sigInput" style="flex:1;min-width:200px;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;font-family:'Montserrat',sans-serif;">
-            <button class="btn btn--primary" id="sigSignBtn" onclick="submitSignature()" style="padding:0.5rem 1.25rem;">Sign Document</button>
+      <!-- Signature Modal -->
+      <div id="sigModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);padding:1rem;">
+        <div style="max-width:800px;margin:1rem auto;background:#fff;border-radius:12px;display:flex;flex-direction:column;max-height:90vh;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;">
+            <h2 id="sigDocName" style="font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:700;color:#0d3f5e;margin:0;"></h2>
+            <button onclick="closeSigModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b7280;">&times;</button>
           </div>
-          <div id="sigError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.5rem;"></div>
+          <div style="flex:1;overflow:hidden;background:#f3f4f6;">
+            <iframe id="sigDocPreview" style="width:100%;height:100%;border:none;" sandbox="allow-scripts"></iframe>
+          </div>
+          <div style="padding:1rem 1.25rem;border-top:1px solid #e5e7eb;background:#f9fafb;">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:0.85rem;font-weight:600;color:#374151;">Type your full name to sign:</span>
+              <input id="sigInput" style="flex:1;min-width:180px;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;font-family:'Montserrat',sans-serif;">
+              <button class="btn btn--primary" id="sigSignBtn" onclick="submitSignature()" style="padding:0.5rem 1rem;white-space:nowrap;">Sign Document</button>
+            </div>
+            <div id="sigError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.4rem;"></div>
+          </div>
         </div>
-        <button class="btn--back" onclick="backToSigList()" style="margin-top:1rem;">&#8592; Back to list</button>
       </div>
     </div>
 
@@ -488,22 +495,16 @@ async function openSig(id) {
   sigCurrentId = id;
   const doc = sigDocs.find(d => d.id === id);
   document.getElementById('sigDocName').textContent = doc?.name || 'Document';
-  document.getElementById('sigList').style.display = 'none';
-  document.getElementById('sigSignView').style.display = 'block';
+  document.getElementById('sigModal').style.display = 'block';
   document.getElementById('sigInput').value = '';
   document.getElementById('sigError').style.display = 'none';
-  // Show document preview (fetch and display as text)
   const token = sessionStorage.getItem('tv_portal_token');
-  try {
-    const res = await fetch('/api/signing-document/' + id + '?token=' + encodeURIComponent(token));
-    const text = await res.text();
-    document.getElementById('sigDocPreview').textContent = text.slice(0, 5000);
-  } catch { document.getElementById('sigDocPreview').textContent = 'Unable to preview.'; }
+  document.getElementById('sigDocPreview').src = '/api/signing-document/' + id + '?token=' + encodeURIComponent(token);
 }
 
-function backToSigList() {
-  document.getElementById('sigSignView').style.display = 'none';
-  document.getElementById('sigList').style.display = 'block';
+function closeSigModal() {
+  document.getElementById('sigModal').style.display = 'none';
+  document.getElementById('sigDocPreview').src = '';
 }
 
 async function submitSignature() {
@@ -518,7 +519,7 @@ async function submitSignature() {
       body: JSON.stringify({ id: sigCurrentId, signature: sig }),
     });
     if (!res.ok) throw Error();
-    backToSigList();
+    closeSigModal();
     loadSignatures();
   } catch { document.getElementById('sigError').textContent = 'Failed to sign. Please try again.'; document.getElementById('sigError').style.display = 'block'; }
   document.getElementById('sigSignBtn').disabled = false; document.getElementById('sigSignBtn').textContent = 'Sign Document';
