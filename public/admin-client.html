@@ -55,14 +55,9 @@
   <div class="card" id="planEditor" style="display:none;">
     <h2>Client Plan</h2>
     <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;" id="planEditorSubtitle">Configure services and pricing.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-      <div>
-        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Business name</label>
-        <input id="editBizName" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Customer type <span id="customerTypeDisplay" style="font-weight:400;font-size:0.78rem;color:var(--brand-teal);"></span></label>
-      </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Business name</label>
+      <input id="editBizName" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
     </div>
     <div style="margin-bottom:1rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Services</label>
@@ -234,22 +229,7 @@ async function setState() {
 
 const prospectId = new URLSearchParams(window.location.search).get('prospect');
 
-function getCustomerTypeFromServices() {
-  const bk = document.getElementById('svcBookkeeping').checked;
-  const tax = document.getElementById('svcTax').checked;
-  if (bk && tax) return 'both';
-  if (bk) return 'bookkeeping';
-  return 'tax';
-}
 
-function updateCustomerTypeDisplay() {
-  const type = getCustomerTypeFromServices();
-  const labels = { tax: 'Tax Only', bookkeeping: 'Bookkeeping', both: 'Tax & Bookkeeping' };
-  document.getElementById('customerTypeDisplay').textContent = '→ ' + (labels[type] || type);
-}
-['svcTax','svcQuarterly','svcMonthly','svcBookkeeping'].forEach(id => {
-  document.getElementById(id)?.addEventListener('change', updateCustomerTypeDisplay);
-});
 
 // Populate state selector
 const STATES = 'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',');
@@ -279,7 +259,6 @@ async function saveClientProfile() {
         email,
         businessName: document.getElementById('editBizName').value,
         services: getServices(),
-        customerType: getCustomerTypeFromServices(),
         monthlyPrice: parseFloat(document.getElementById('editMonthly').value) || 0,
         yearlyPrice: parseFloat(document.getElementById('editYearly').value) || 0,
       }),
@@ -334,7 +313,6 @@ function loadEditorData(clientData) {
     document.getElementById('otherServiceInput').value = others.join(', ');
     document.getElementById('otherServiceInput').style.display = 'inline-block';
   }
-  updateCustomerTypeDisplay();
 }
 
 (async () => {

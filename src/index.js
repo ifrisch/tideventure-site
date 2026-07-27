@@ -232,8 +232,9 @@ export default {
         if (!obj) return json(404, { error: 'Prospect not found' });
         const prospect = JSON.parse(await obj.text());
         const userEmail = prospect.email;
-        // Create user with pending status and no password (they'll set it)
-        const user = { email: userEmail, role: 'client', businessName: body.businessName || prospect.name || userEmail.split('@')[0], state: body.state || '', customerType: body.customerType || 'tax', services: body.services || (prospect.services || []), monthlyPrice: body.monthlyPrice || 0, yearlyPrice: body.yearlyPrice || 0, status: 'pending_setup', createdAt: new Date().toISOString() };
+        const svcs = body.services || (prospect.services || []);
+        const derivedType = body.customerType || (svcs.includes('bookkeeping') && svcs.includes('tax') ? 'both' : svcs.includes('bookkeeping') ? 'bookkeeping' : 'tax');
+        const user = { email: userEmail, role: 'client', businessName: body.businessName || prospect.name || userEmail.split('@')[0], state: body.state || '', customerType: derivedType, services: svcs, monthlyPrice: body.monthlyPrice || 0, yearlyPrice: body.yearlyPrice || 0, status: 'pending_setup', createdAt: new Date().toISOString() };
         await env.tideventure_documents.put(`user/${userEmail}`, JSON.stringify(user), { httpMetadata: { contentType: 'application/json' } });
         // Generate setup token
         const setupToken = crypto.randomUUID();
