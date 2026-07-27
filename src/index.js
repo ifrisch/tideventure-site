@@ -497,7 +497,15 @@ export default {
       if (!email) return json(401, { error: 'Unauthorized' });
       const docId = docMatch[1];
       if (method === 'GET') {
-        try { return await handleDownloadDocument(env, docId, email, isAdmin(email), url.searchParams.has('view')); } catch (e) { return json(500, { error: e.message }); }
+        // Allow token in query param for viewing from new tabs
+        let docEmail = email;
+        if (!docEmail && url.searchParams.get('token')) {
+          try {
+            const { payload } = await jwtVerify(url.searchParams.get('token'), new TextEncoder().encode(env.DOC_ENC_KEY));
+            if (payload.email) { docEmail = payload.email; }
+          } catch {}
+        }
+        try { return await handleDownloadDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.has('view')); } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'DELETE') {
         try { return await handleDeleteDocument(env, docId, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }

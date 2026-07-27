@@ -269,7 +269,8 @@ async function loadDocs() {
     const el=document.getElementById('adminDocList');
     if(!docs.length){el.innerHTML='<div class="empty">No documents.</div>';return;}
     el.innerHTML='<div class="doc-row" style="font-weight:600;color:#6b7280;text-transform:uppercase;font-size:0.72rem;background:#f9fafb;"><span>Client</span><span>File</span><span>Date</span><span></span></div>'
-      + docs.slice(0,30).map(d => `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.name)}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;">Download</a></div>`).join('');
+      const docToken = sessionStorage.getItem('tv_admin_token');
+      + docs.slice(0,30).map(d => `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.name)}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docToken}" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;">Download</a></div>`).join('');
   } catch {}
 }
 
