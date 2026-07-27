@@ -410,7 +410,7 @@ export default {
         const obj = await env.tideventure_documents.get(`signing/${sigEmail}/${sigId}`);
         if (!obj) return json(404, { error: 'Not found' });
         const req = JSON.parse(await obj.text());
-        const doc = await env.tideventure_documents.get(req.documentKey);
+        const doc = await env.tideventure_documents.get(req.documentKey.startsWith('signing-copy/') ? req.documentKey : req.documentKey);
         if (!doc) return json(404, { error: 'Document not found' });
         const buf = await doc.arrayBuffer();
         const ext = (req.documentName || '').split('.').pop().toLowerCase();
@@ -473,12 +473,19 @@ export default {
         // Find the document
         const listResult = await env.tideventure_documents.list();
         let docKey = null;
+        let docMeta = null;
         for (const obj of listResult.objects) {
-          if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; break; }
+          if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; docMeta = obj; break; }
         }
         if (!docKey) return json(404, { error: 'Document not found' });
+        // Copy the document content for signing (unencrypted copy)
+        const origDoc = await env.tideventure_documents.get(docKey);
+        if (!origDoc) return json(404, { error: 'Document not found' });
+        const docBuf = await origDoc.arrayBuffer();
         const signingId = crypto.randomUUID();
-        const signingReq = { documentKey: docKey, documentName: body.documentName, sentAt: new Date().toISOString(), status: 'pending', sentBy: email };
+        const copyKey = `signing-copy/${targetEmail}/${signingId}`;
+        await env.tideventure_documents.put(copyKey, docBuf, { httpMetadata: { contentType: docMeta.httpMetadata?.contentType || 'application/octet-stream' } });
+        const signingReq = { documentKey: copyKey, documentName: body.documentName, sentAt: new Date().toISOString(), status: 'pending', sentBy: email };
         await env.tideventure_documents.put(`signing/${targetEmail}/${signingId}`, JSON.stringify(signingReq), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, signingId });
       } catch (e) { return json(500, { error: e.message }); }
