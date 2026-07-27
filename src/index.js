@@ -214,7 +214,21 @@ export default {
           }
         }
         results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        return json(200, { prospects: results });
+        return json(200, { prospects: results, newCount: results.filter(p => !p.viewed).length });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    if (url.pathname === '/api/admin/prospects/viewed' && method === 'POST' && isAdmin(email)) {
+      try {
+        const list = await env.tideventure_documents.list();
+        for (const obj of list.objects) {
+          if (obj.key.startsWith('prospect/')) {
+            try {
+              const p = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
+              if (!p.viewed) { p.viewed = true; await env.tideventure_documents.put(obj.key, JSON.stringify(p), { httpMetadata: { contentType: 'application/json' } }); }
+            } catch {}
+          }
+        }
+        return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
     if (url.pathname === '/api/admin/prospects/delete' && method === 'POST' && isAdmin(email)) {
@@ -819,13 +833,20 @@ async function handleAdminDashboard(env) {
 
   // Count prospects
   let prospectCount = 0;
+  let newProspectCount = 0;
   const prospectList = await env.tideventure_documents.list();
   for (const obj of prospectList.objects) {
-    if (obj.key.startsWith('prospect/')) prospectCount++;
+    if (obj.key.startsWith('prospect/')) {
+      prospectCount++;
+      try {
+        const p = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
+        if (!p.viewed) newProspectCount++;
+      } catch {}
+    }
   }
 
   return json(200, {
-    stats: { total, completed, inProgress, notStarted, totalAR, totalDocs, prospects: prospectCount },
+    stats: { total, completed, inProgress, notStarted, totalAR, totalDocs, prospects: prospectCount, newProspects: newProspectCount },
     clients,
   });
 }

@@ -125,7 +125,7 @@
     <div class="sidebar-logo"><a href="/"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="rgba(255,255,255,.15)"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,.92)"/></svg>Tide<em>Venture</em><span class="sub">Admin</span></a></div>
     <nav class="sidebar-nav">
       <a class="active" data-page="dashboard"><span class="icon">&#9632;</span><span>Dashboard</span></a>
-      <a data-page="prospects"><span class="icon">&#10133;</span><span>Prospects</span></a>
+      <a data-page="prospects"><span class="icon">&#10133;</span><span>Prospects</span><span id="prospectBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
       <a data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
       <a data-page="audit"><span class="icon">&#128214;</span><span>Audit Log</span></a>
@@ -208,6 +208,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     link.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+link.dataset.page).classList.add('active');
+    if (link.dataset.page === 'prospects') markProspectsViewed();
   });
 });
 
@@ -233,11 +234,16 @@ async function loadDashboard() {
   try {
     const res=await fetch('/api/admin/dashboard',{headers:{'Authorization':`Bearer ${token}`}});
     const d=await res.json();
+    // Prospect badge
+    const badge = document.getElementById('prospectBadge');
+    if (d.stats.newProspects > 0) { badge.style.display = 'inline'; badge.textContent = d.stats.newProspects; }
+    else badge.style.display = 'none';
+
     document.getElementById('statGrid').innerHTML = `
       <div class="stat"><div class="stat-num">${d.stats.total}</div><div class="stat-label">Clients</div></div>
       <div class="stat"><div class="stat-num">${d.stats.completed}</div><div class="stat-label">Questionnaires Done</div></div>
       <div class="stat ${d.stats.notStarted>0?'alert':''}"><div class="stat-num">${d.stats.notStarted}</div><div class="stat-label">Not Started</div></div>
-      <div class="stat"><div class="stat-num">${d.stats.prospects||0}</div><div class="stat-label">Prospects</div></div>
+      <div class="stat ${(d.stats.newProspects||0)>0?'alert':''}"><div class="stat-num">${d.stats.prospects||0}</div><div class="stat-label">Prospects</div></div>
       <div class="stat ${d.stats.totalAR>0?'alert':''}"><div class="stat-num">$${d.stats.totalAR.toFixed(0)}</div><div class="stat-label">A/R</div></div>
     `;
     document.getElementById('clientCount').textContent = d.clients.length + ' clients';
@@ -248,6 +254,14 @@ async function loadDashboard() {
         <td style="font-weight:600;${c.balance>0?'color:#b91c1c;':'color:#059669;'}">${c.balance>0?'$'+c.balance.toFixed(2):'&#10003;'}</td>
         <td><span class="tag ${c.customerType==='both'?'tag-yellow':c.customerType==='bookkeeping'?'tag-green':'tag-gray'}">${c.customerType||'—'}</span></td></tr>`).join('') + `</tbody></table>`;
   } catch { document.getElementById('clientList').innerHTML='<div class="empty">Failed.</div>'; }
+}
+
+async function markProspectsViewed() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/prospects/viewed', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    document.getElementById('prospectBadge').style.display = 'none';
+  } catch {}
 }
 
 async function loadProspects() {
