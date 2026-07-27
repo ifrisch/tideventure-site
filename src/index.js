@@ -400,10 +400,14 @@ export default {
 
     // ── Document Signing ──
     if (url.pathname.match(/^\/api\/signing-document\/[^\/]+$/) && method === 'GET') {
-      if (!email) return json(401, { error: 'Unauthorized' });
+      let sigEmail = email;
+      if (!sigEmail && url.searchParams.get('token')) {
+        try { const { payload } = await jwtVerify(url.searchParams.get('token'), new TextEncoder().encode(env.DOC_ENC_KEY)); if (payload.email) sigEmail = payload.email; } catch {}
+      }
+      if (!sigEmail) return json(401, { error: 'Unauthorized' });
       try {
         const sigId = url.pathname.split('/').pop();
-        const obj = await env.tideventure_documents.get(`signing/${email}/${sigId}`);
+        const obj = await env.tideventure_documents.get(`signing/${sigEmail}/${sigId}`);
         if (!obj) return json(404, { error: 'Not found' });
         const req = JSON.parse(await obj.text());
         const doc = await env.tideventure_documents.get(req.documentKey);
