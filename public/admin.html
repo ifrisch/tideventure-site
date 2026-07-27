@@ -129,7 +129,6 @@
       <a data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
       <a data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
       <a data-page="audit"><span class="icon">&#128214;</span><span>Audit Log</span></a>
-      <a data-page="clients"><span class="icon">&#128101;</span><span>Client States</span></a>
     </nav>
     <div class="sidebar-footer"><button id="logoutBtn">&#10149;<span> Sign Out</span></button></div>
   </div>
@@ -169,18 +168,7 @@
       <div class="block"><div class="block-hdr"><h3>Events</h3></div><div id="adminAuditList"><div class="empty">Loading…</div></div></div>
     </div>
 
-    <div class="page" id="page-clients">
-      <h1>Client States</h1>
-      <p class="page-desc">Set client state for estimated payment deadlines.</p>
-      <div class="block">
-        <div class="state-bar">
-          <input type="email" id="stateClientEmail" value="isaac@tideventure.com" />
-          <select id="stateSelect"><option value="">— Select state —</option></select>
-          <button class="btn btn--primary" onclick="setClientState()">Save</button>
-          <span id="stateStatus"></span>
-        </div>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -213,21 +201,9 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
 });
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadProspects(); loadDocs(); loadAudit(); setupStateSelector(); loadTQSchema(); }
+function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); }
 
-function setupStateSelector() {
-  const s=document.getElementById('stateSelect'); if(!s) return;
-  'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',').forEach(st=>{const o=document.createElement('option');o.value=st;o.textContent=st;s.appendChild(o);});
-}
-async function setClientState() {
-  const email=document.getElementById('stateClientEmail').value, state=document.getElementById('stateSelect').value, status=document.getElementById('stateStatus');
-  if(!state){status.textContent='Select state.';return;}
-  try {
-    const token=sessionStorage.getItem('tv_admin_token');
-    await fetch('/api/profile',{method:'PUT',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({email,state})});
-    status.textContent='Saved';status.style.color='#059669';
-  } catch { status.textContent='Failed.';status.style.color='#dc2626'; }
-}
+
 
 async function loadDashboard() {
   const token=sessionStorage.getItem('tv_admin_token');

@@ -197,7 +197,7 @@ export default {
         const body = await request.json();
         if (!body.email) return json(400, { error: 'Email required' });
         const id = crypto.randomUUID();
-        const prospect = { id, email: body.email.toLowerCase(), name: body.name || '', phone: body.phone || '', entityType: body.entityType || '', services: body.services || [], revenue: body.revenue || '', notes: body.notes || '', source: body.source || 'pricing', createdAt: new Date().toISOString(), status: 'new' };
+        const prospect = { id, email: body.email.toLowerCase(), name: body.name || '', phone: body.phone || '', city: body.city || '', state: body.state || '', entityType: body.entityType || '', services: body.services || [], revenue: body.revenue || '', notes: body.notes || '', source: body.source || 'pricing', createdAt: new Date().toISOString(), status: 'new' };
         await env.tideventure_documents.put(`prospect/${id}`, JSON.stringify(prospect), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, id });
       } catch (e) { return json(500, { error: e.message }); }

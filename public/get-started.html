@@ -89,6 +89,18 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" list="cityList" placeholder="Start typing your city" autocomplete="off" />
+          <datalist id="cityList"></datalist>
+        </div>
+        <div class="form-group">
+          <label for="state">State</label>
+          <select id="state"><option value="">— Select —</option></select>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="message">Anything else? <span class="optional">(optional)</span></label>
         <textarea id="message" rows="3" placeholder="Questions, specific needs, timing — whatever you'd like me to know."></textarea>
@@ -163,13 +175,25 @@ if (entityType || services.length) {
   document.getElementById('pricingSummary').style.display = 'none';
 }
 
-document.getElementById('prospectForm').addEventListener('submit', async (e) => {
+  // Populate state dropdown
+  const STATES = 'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',');
+  const stateSel = document.getElementById('state');
+  STATES.forEach(st => { const o = document.createElement('option'); o.value = st; o.textContent = st; stateSel.appendChild(o); });
+
+  // Populate city datalist
+  const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','Austin','Jacksonville','Fort Worth','Columbus','Charlotte','Indianapolis','San Francisco','Seattle','Denver','Nashville','Oklahoma City','El Paso','Washington','Boston','Las Vegas','Portland','Memphis','Louisville','Baltimore','Milwaukee','Albuquerque','Tucson','Fresno','Sacramento','Mesa','Kansas City','Atlanta','Omaha','Colorado Springs','Raleigh','Long Beach','Virginia Beach','Miami','Oakland','Minneapolis','Tampa','Tulsa','Arlington','New Orleans','Cleveland','Bakersfield','Anaheim','Tampa','Aurora','Honolulu','Santa Ana','Riverside','Corpus Christi','Lexington','Henderson','Stockton','Saint Paul','Cincinnati','St. Louis','Pittsburgh','Greensboro','Lincoln','Orlando','Plano','Anchorage','Newark','Durham','Chandler','Fort Wayne','Reno','St. Petersburg','Lubbock','Scottsdale','Glendale','Gilbert','Madison','Winston-Salem','Norfolk','Boise','Baton Rouge','Spokane','Richmond','Fremont','Des Moines','Shreveport','Chattanooga','Modesto','Tacoma','Fontana','Santa Clarita','Oxnard','Huntsville','Little Rock','Augusta','Akron','Columbus','Birmingham','Grand Rapids','Salt Lake City','Knoxville','Huntsville','Springfield','Grand Prairie','Overland Park','Tallahassee','Mobile','Port St. Lucie','Worcester','Brownsville','Newport News','Santa Rosa','Cape Coral','Providence','Fort Lauderdale','Chattanooga','Rancho Cucamonga','Oceanside','Garden Grove','Vancouver','Sioux Falls','Peoria','Ontario','Elk Grove','Jackson','Lancaster','Salem','Palmdale','Murfreesboro','Corona','Clearwater','Springfield','Pasadena','Pomona','Roseville','Hayward','Joliet','Paterson','Killeen','Alexandria','Macon','Hampton','Eugene','Topeka','Naperville','Victorville','Warren','Columbia','Elizabeth','Lansing','Syracuse','Lakewood','Hollywood','Torrance','Thousand Oaks','Bellevue','Livonia','Bridgeport','New Bedford','Carson','San Mateo','Downey','Burbank','Boca Raton','West Palm Beach','Santa Monica','Tempe','Jersey City','Hialeah','Fort Collins','Yonkers','Charleston','Huntington','Carrollton','Tuscaloosa','Citrus Heights','Gary','Waco','New Haven','Sterling Heights','Denton','Surprise','El Monte','Billings','San Jose','Boulder','Ann Arbor','Berkeley','Cambridge','Evanston','Palo Alto','Irvine','Frisco','Sandy Springs','Sugar Land','Edison','Woodbridge','Troy','Santa Barbara','San Luis Obispo','Flagstaff','Bend','Missoula','Lafayette','Greenville','Columbia','Wilmington','Dover','Cranston','Manchester','Portsmouth','Burlington','Cheyenne','Fargo','Bismarck','Rapid City','Sioux City','Council Bluffs','Waterloo','Cedar Rapids','Davenport','Appleton','Green Bay','Kenosha','Racine','Waukesha','Brookfield','Flint','Dearborn','Farmington Hills','Southfield','Wyoming','Kentwood','Kalamazoo','Battle Creek','Saginaw','Taylor','St. Clair Shores','Royal Oak','Novi','Portage','Rochester','Troy','Warren','Midland','Bay City','Muskegon','Jackson','Benton Harbor','Niles','Holland','Muskegon','Grand Haven','Traverse City','Petoskey','Cadillac','Alpena','Marquette','Sault Ste. Marie','Escanaba','Menominee','Iron Mountain','Houghton','Hancock','Calumet','Laurium','Copper Harbor','Eagle Harbor','Eagle River','Gaylord','Ludington','Manistee','Frankfort','Elberta','Beulah','Benzonia','Thompsonville','Honor','Glen Arbor','Empire','Suttons Bay','Northport','Omena','Leland','Lake Leelanau','Cedar','Maple City','Kingsley','Traverse City','Williamsburg','Acme','Elk Rapids','Kewadin','Central Lake','Bellaire','Alden','Mancelona','East Jordan','Boyne City','Charlevoix','Petoskey','Alanson','Conway','Cross Village','Good Hart','Harbor Springs','Levering','Mackinaw City','St. Ignace','Mackinac Island','St. Ignace','Moran','Brevort','Naubinway','Engadine','Epoufette','Gulliver','Manistique','Thompson','Rapid River','Gladstone','Escanaba','K. I. Sawyer','Gwinn','Harvey','Marquette','Negaunee','Ishpeming','Republic','Champion','Michigamme','Crystal Falls','Alpha','Iron River','Mineral Hills','Gibbs City','Amasa','Stambaugh','Iron River','Gaastra','Ontonagon','White Pine','Bergland','Ewen','')];
+  const cityList = document.getElementById('cityList');
+  CITIES.forEach(c => { const o = document.createElement('option'); o.value = c; cityList.appendChild(o); });
+
+  document.getElementById('prospectForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const firstName = document.getElementById('firstName').value.trim();
   const lastName = document.getElementById('lastName').value.trim();
   const businessName = document.getElementById('businessName').value.trim();
   const email = document.getElementById('email').value.trim();
   const phone = document.getElementById('phone').value.trim();
+  const city = document.getElementById('city').value.trim();
+  const state = document.getElementById('state').value;
   const message = document.getElementById('message').value.trim();
 
   if (!firstName || !lastName || !email) return;
@@ -186,6 +210,8 @@ document.getElementById('prospectForm').addEventListener('submit', async (e) => 
         name: firstName + ' ' + lastName,
         phone: phone || '',
         businessName,
+        city,
+        state,
         entityType,
         services,
         revenue,
