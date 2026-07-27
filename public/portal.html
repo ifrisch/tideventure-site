@@ -457,6 +457,7 @@ function renderQbo(qbo) {
 
 let sigDocs = [];
 let sigCurrentId = null;
+let sigCurrentSigId = null;
 
 async function loadSignatures() {
   const token = sessionStorage.getItem('tv_portal_token');
@@ -493,7 +494,8 @@ function renderSigList() {
 
 async function openSig(id) {
   sigCurrentId = id;
-  const doc = sigDocs.find(d => d.id === id);
+  const doc = sigDocs.find(d => d.id === id || d.sigId === id);
+  sigCurrentSigId = doc?.sigId || id;
   document.getElementById('sigDocName').textContent = doc?.name || 'Document';
   document.getElementById('sigModal').style.display = 'block';
   document.getElementById('sigInput').value = '';
@@ -526,7 +528,7 @@ async function submitSignature() {
     const token = sessionStorage.getItem('tv_portal_token');
     const res = await fetch('/api/sign-document', {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: sigCurrentId, signature: sig }),
+      body: JSON.stringify({ sigId: sigCurrentSigId, id: sigCurrentId, signature: sig }),
     });
     if (!res.ok) throw Error();
     closeSigModal();

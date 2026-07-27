@@ -426,7 +426,8 @@ export default {
         for (const obj of list.objects) {
           if (obj.key.startsWith(`signing/${email}/`)) {
             const data = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
-            results.push({ id: obj.key.split('/').pop(), name: data.documentName, sentAt: data.sentAt, status: data.status });
+            const docId = data.documentKey?.split('/').pop() || obj.key.split('/').pop();
+            results.push({ id: docId, sigId: obj.key.split('/').pop(), name: data.documentName, sentAt: data.sentAt, status: data.status });
           }
         }
         results.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
@@ -437,7 +438,8 @@ export default {
       if (!email) return json(401, { error: 'Unauthorized' });
       try {
         const body = await request.json();
-        const signingKey = `signing/${email}/${body.id}`;
+        const sigId = body.sigId || body.id;
+        const signingKey = `signing/${email}/${sigId}`;
         const obj = await env.tideventure_documents.get(signingKey);
         if (!obj) return json(404, { error: 'Signing request not found' });
         const signingReq = JSON.parse(await obj.text());
