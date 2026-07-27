@@ -247,6 +247,23 @@ export default {
         return json(200, { ok: true, email: userEmail, setupToken, setupUrl: `https://tideventurecpa.com/setup-account?token=${setupToken}` });
       } catch (e) { return json(500, { error: e.message }); }
     }
+    // Admin: impersonate a client
+    if (url.pathname === '/api/admin/impersonate' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        if (!body.email) return json(400, { error: 'Email required' });
+        const lowerEmail = body.email.toLowerCase();
+        const obj = await env.tideventure_documents.get(`user/${lowerEmail}`);
+        if (!obj) return json(404, { error: 'User not found' });
+        const user = JSON.parse(await obj.text());
+        const token = await new SignJWT({ email: lowerEmail, role: 'client', status: user.status || 'active', imp: true })
+          .setProtectedHeader({ alg: 'HS256' })
+          .setExpirationTime('1h')
+          .sign(new TextEncoder().encode(env.DOC_ENC_KEY));
+        return json(200, { token, email: lowerEmail });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     // Admin: update client services/pricing
     if (url.pathname === '/api/admin/client-settings' && method === 'PUT' && isAdmin(email)) {
       try {

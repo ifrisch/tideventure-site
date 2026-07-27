@@ -186,6 +186,10 @@
       <ul class="doc-list" id="docList"><li class="doc-empty" id="docEmpty">No documents yet. Upload your first file above.</li></ul>
     </div>
   </div>
+  <div id="impersonateBanner" style="display:none;background:#fef3c7;color:#92400e;text-align:center;padding:0.5rem;font-size:0.82rem;font-weight:600;border-bottom:2px solid #f59e0b;">
+    &#9888; Admin Viewing — You are viewing <span id="impersonateEmail" style="text-decoration:underline;"></span>'s portal
+    <button onclick="endImpersonation()" style="margin-left:0.75rem;background:#92400e;color:#fff;border:none;border-radius:4px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.76rem;">Exit</button>
+  </div>
   <div class="dash-footer">TideVenture CPA &mdash; Secure Client Portal</div>
 </div>
 
@@ -221,6 +225,14 @@
 const authToken = sessionStorage.getItem('tv_portal_token');
 
 if (authToken) {
+  // Check if impersonating by decoding JWT payload
+  try {
+    const payload = JSON.parse(atob(authToken.split('.')[1]));
+    if (payload.imp) {
+      document.getElementById('impersonateBanner').style.display = 'block';
+      document.getElementById('impersonateEmail').textContent = payload.email;
+    }
+  } catch {}
   // Already logged in — load dashboard
   fetch('/api/session', { headers: { 'Authorization': `Bearer ${authToken}` } })
     .then(r => r.json())
@@ -775,6 +787,11 @@ function renderQuestionnaireForm(year, saved) {
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function endImpersonation() {
+  sessionStorage.removeItem('tv_portal_token');
+  window.location.href = '/admin';
+}
 
 function connectQbo() {
   const token = sessionStorage.getItem('tv_portal_token');

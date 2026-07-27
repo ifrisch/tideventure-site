@@ -83,6 +83,7 @@
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
       <button class="btn btn--primary" id="saveProfileBtn" onclick="saveClientProfile()" style="padding:0.5rem 1.25rem;">Save Profile</button>
       <button class="btn btn--primary" id="generateLinkBtn" onclick="generateSetupLink()" style="padding:0.5rem 1.25rem;display:none;">Generate Welcome Link</button>
+      <button class="btn--back" onclick="impersonateClient()" style="padding:0.5rem 1.25rem;">View as Client</button>
       <button class="btn--back" onclick="window.location.href='/admin'" style="padding:0.5rem 1.25rem;">Back to Dashboard</button>
     </div>
     <div id="setupResult" style="margin-top:1rem;display:none;padding:1rem;background:#f0fdf4;border-radius:var(--radius-sm);font-size:0.82rem;">
@@ -245,6 +246,21 @@ function getServices() {
   const otherVal = document.getElementById('otherServiceInput').value.trim();
   if (document.getElementById('svcOther').checked && otherVal) s.push(otherVal);
   return s;
+}
+
+async function impersonateClient() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const email = getEmail();
+  try {
+    const res = await fetch('/api/admin/impersonate', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) { alert('Failed to impersonate.'); return; }
+    const data = await res.json();
+    sessionStorage.setItem('tv_portal_token', data.token);
+    window.open('/portal', '_blank');
+  } catch { alert('Error.'); }
 }
 
 async function saveClientProfile() {
