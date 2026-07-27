@@ -185,7 +185,7 @@ async function loadClient(email) {
     const el = document.getElementById('docsList');
     if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
     else {
-      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}" class="doc-dl">Download</a></div>`).join('');
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}" class="doc-dl">Download</a></div>`).join('');
     }
   } catch {}
 

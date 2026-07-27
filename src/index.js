@@ -497,7 +497,7 @@ export default {
       if (!email) return json(401, { error: 'Unauthorized' });
       const docId = docMatch[1];
       if (method === 'GET') {
-        try { return await handleDownloadDocument(env, docId, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }
+        try { return await handleDownloadDocument(env, docId, email, isAdmin(email), url.searchParams.has('view')); } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'DELETE') {
         try { return await handleDeleteDocument(env, docId, email, isAdmin(email)); } catch (e) { return json(500, { error: e.message }); }
@@ -709,7 +709,7 @@ async function handleUploadDocument(request, env, email) {
   return json(201, { id, key, name: file.name });
 }
 
-async function handleDownloadDocument(env, docId, email, admin) {
+async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   let found = null;
   const result = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
   for (const obj of result.objects) {
@@ -728,13 +728,15 @@ async function handleDownloadDocument(env, docId, email, admin) {
   if (admin) {
     try {
       const plaintext = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader || email, await object.arrayBuffer());
+      const disposition = viewMode ? 'inline' : `attachment`;
       return new Response(plaintext, {
-        headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
+        headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
       });
     } catch { /* fall through to serve raw */ }
   }
+  const disposition = viewMode ? 'inline' : `attachment`;
   return new Response(object.body, {
-    headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
+    headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' },
   });
 }
 
