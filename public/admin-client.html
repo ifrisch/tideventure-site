@@ -51,51 +51,52 @@
 
   <div id="loading" style="text-align:center;padding:3rem;font-size:0.9rem;color:var(--text-muted);">Loading…</div>
 
-  <!-- Prospect setup (shown when converting a new prospect) -->
-  <div class="card" id="setupView" style="display:none;">
-    <h2>Set Up New Client</h2>
-    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;">Configure services and pricing, then generate a welcome link for the client.</p>
-    <div id="prospectInfo" style="background:var(--brand-pale);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;"></div>
+  <!-- Client Plan Editor (shown for both prospects and existing clients) -->
+  <div class="card" id="planEditor" style="display:none;">
+    <h2>Client Plan</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;" id="planEditorSubtitle">Configure services and pricing.</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
       <div>
         <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Business name</label>
-        <input id="setupBusinessName" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+        <input id="editBizName" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
       </div>
       <div>
-        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Customer type</label>
-        <select id="setupCustomerType" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:var(--white);"><option value="tax">Tax Only</option><option value="bookkeeping">Bookkeeping</option><option value="both">Both</option></select>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Customer type <span id="customerTypeDisplay" style="font-weight:400;font-size:0.78rem;color:var(--brand-teal);"></span></label>
       </div>
     </div>
     <div style="margin-bottom:1rem;">
       <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Services</label>
-      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-        <label style="font-size:0.82rem;"><input type="checkbox" id="svcTax" checked> Business Tax Return</label>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcTax"> Business Tax Return</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcQuarterly"> Quarterly Planning</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcMonthly"> Monthly Financial Review</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcBookkeeping"> Bookkeeping</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcOther" onchange="document.getElementById('otherServiceInput').style.display=this.checked?'inline-block':'none'"> Other</label>
       </div>
+      <input id="otherServiceInput" placeholder="Describe other service" style="display:none;width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
       <div>
         <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Monthly price ($)</label>
-        <input type="number" id="setupMonthly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+        <input type="number" id="editMonthly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
       </div>
       <div>
         <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Yearly price ($)</label>
-        <input type="number" id="setupYearly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+        <input type="number" id="editYearly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
       </div>
     </div>
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-      <button class="btn btn--primary" id="generateLinkBtn" onclick="generateSetupLink()" style="padding:0.5rem 1.25rem;">Generate Welcome Link</button>
-      <button class="btn--back" onclick="window.location.href='/admin'" style="padding:0.5rem 1.25rem;">Cancel</button>
+      <button class="btn btn--primary" id="saveProfileBtn" onclick="saveClientProfile()" style="padding:0.5rem 1.25rem;">Save Profile</button>
+      <button class="btn btn--primary" id="generateLinkBtn" onclick="generateSetupLink()" style="padding:0.5rem 1.25rem;display:none;">Generate Welcome Link</button>
+      <button class="btn--back" onclick="window.location.href='/admin'" style="padding:0.5rem 1.25rem;">Back to Dashboard</button>
     </div>
     <div id="setupResult" style="margin-top:1rem;display:none;padding:1rem;background:#f0fdf4;border-radius:var(--radius-sm);font-size:0.82rem;">
       <strong style="color:#059669;">&#10003; Client created!</strong>
       <p style="margin:0.5rem 0 0.25rem;color:var(--ink);">Send this link to the client to set up their account:</p>
       <input id="setupLinkOutput" readonly style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--white);margin-bottom:0.5rem;box-sizing:border-box;">
       <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="navigator.clipboard.writeText(document.getElementById('setupLinkOutput').value).then(()=>this.textContent='Copied!')">Copy Link</button>
-      <a href="/admin" class="btn--back" style="margin-left:0.5rem;padding:0.3rem 0.8rem;font-size:0.78rem;">Back to Dashboard</a>
     </div>
+    <div id="saveResult" style="margin-top:0.5rem;font-size:0.82rem;color:#059669;display:none;">&#10003; Profile saved</div>
   </div>
 
   <!-- Existing client view -->
@@ -231,23 +232,71 @@ async function setState() {
   } catch {}
 }
 
-const setupMonthlyDefault = 0;
 const prospectId = new URLSearchParams(window.location.search).get('prospect');
+
+function getCustomerTypeFromServices() {
+  const bk = document.getElementById('svcBookkeeping').checked;
+  const tax = document.getElementById('svcTax').checked;
+  if (bk && tax) return 'both';
+  if (bk) return 'bookkeeping';
+  return 'tax';
+}
+
+function updateCustomerTypeDisplay() {
+  const type = getCustomerTypeFromServices();
+  const labels = { tax: 'Tax Only', bookkeeping: 'Bookkeeping', both: 'Tax & Bookkeeping' };
+  document.getElementById('customerTypeDisplay').textContent = '→ ' + (labels[type] || type);
+}
+['svcTax','svcQuarterly','svcMonthly','svcBookkeeping'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', updateCustomerTypeDisplay);
+});
 
 // Populate state selector
 const STATES = 'AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'.split(',');
 const sel = document.getElementById('stateSelect');
 STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 
+function getServices() {
+  const s = [];
+  if (document.getElementById('svcTax').checked) s.push('tax');
+  if (document.getElementById('svcQuarterly').checked) s.push('quarterly');
+  if (document.getElementById('svcMonthly').checked) s.push('monthly');
+  if (document.getElementById('svcBookkeeping').checked) s.push('bookkeeping');
+  const otherVal = document.getElementById('otherServiceInput').value.trim();
+  if (document.getElementById('svcOther').checked && otherVal) s.push(otherVal);
+  return s;
+}
+
+async function saveClientProfile() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const email = getEmail();
+  const btn = document.getElementById('saveProfileBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/admin/client-settings', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        businessName: document.getElementById('editBizName').value,
+        services: getServices(),
+        customerType: getCustomerTypeFromServices(),
+        monthlyPrice: parseFloat(document.getElementById('editMonthly').value) || 0,
+        yearlyPrice: parseFloat(document.getElementById('editYearly').value) || 0,
+      }),
+    });
+    if (res.ok) {
+      document.getElementById('saveResult').style.display = 'block';
+      setTimeout(() => document.getElementById('saveResult').style.display = 'none', 3000);
+    } else throw Error();
+  } catch { alert('Save failed.'); }
+  btn.disabled = false; btn.textContent = 'Save Profile';
+}
+
 async function generateSetupLink() {
   const btn = document.getElementById('generateLinkBtn');
   btn.disabled = true; btn.textContent = 'Creating…';
   const token = sessionStorage.getItem('tv_admin_token');
-  const services = [];
-  if (document.getElementById('svcTax').checked) services.push('tax');
-  if (document.getElementById('svcQuarterly').checked) services.push('quarterly');
-  if (document.getElementById('svcMonthly').checked) services.push('monthly');
-  if (document.getElementById('svcBookkeeping').checked) services.push('bookkeeping');
+  const services = getServices();
   try {
     const res = await fetch('/api/admin/prospects/convert', {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -270,20 +319,34 @@ async function generateSetupLink() {
   } catch { alert('Failed to create client.'); btn.disabled = false; btn.textContent = 'Generate Welcome Link'; }
 }
 
+function loadEditorData(clientData) {
+  document.getElementById('editBizName').value = clientData.name || clientData.email.split('@')[0];
+  document.getElementById('editMonthly').value = clientData.monthlyPrice || 0;
+  document.getElementById('editYearly').value = clientData.yearlyPrice || 0;
+  const svcs = clientData.services || [];
+  document.getElementById('svcTax').checked = svcs.includes('tax');
+  document.getElementById('svcQuarterly').checked = svcs.includes('quarterly');
+  document.getElementById('svcMonthly').checked = svcs.includes('monthly');
+  document.getElementById('svcBookkeeping').checked = svcs.includes('bookkeeping');
+  const others = svcs.filter(s => !['tax','quarterly','monthly','bookkeeping'].includes(s));
+  if (others.length) {
+    document.getElementById('svcOther').checked = true;
+    document.getElementById('otherServiceInput').value = others.join(', ');
+    document.getElementById('otherServiceInput').style.display = 'inline-block';
+  }
+  updateCustomerTypeDisplay();
+}
+
 (async () => {
   const token = sessionStorage.getItem('tv_admin_token');
   const email = getEmail();
+  if (!email) { document.getElementById('loading').textContent = 'No client email specified.'; return; }
 
-  // Prospect flow
-  if (prospectId && email) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('setupView').style.display = 'block';
-    document.getElementById('prospectInfo').innerHTML = `<div style="font-weight:600;">${esc(email)}</div><div style="font-size:0.78rem;color:var(--text-muted);">New prospect — configure their plan below.</div>`;
-    document.getElementById('setupBusinessName').value = email.split('@')[0];
-    return;
-  }
+  // Show the plan editor for all clients
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('planEditor').style.display = 'block';
 
-  // Existing client flow
+  // Load client list for navigation
   try {
     const res = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
@@ -292,13 +355,24 @@ async function generateSetupLink() {
       const o = document.createElement('option');
       o.value = c.email;
       o.textContent = c.name + ' (' + c.email + ')';
-      if (c.email === email) o.selected = true;
+      if (c.email === email) { o.selected = true; loadEditorData(c); }
       nav.appendChild(o);
     });
     nav.onchange = () => { if (nav.value) window.location.href = '/admin-client?email=' + encodeURIComponent(nav.value); };
   } catch {}
 
-  loadClient(email);
+  // If prospect, show welcome link button; else show existing client data
+  if (prospectId) {
+    document.getElementById('generateLinkBtn').style.display = 'inline-block';
+    document.getElementById('planEditorSubtitle').textContent = 'New prospect — configure their plan then generate a welcome link.';
+    document.getElementById('editBizName').value = email.split('@')[0];
+    document.getElementById('svcTax').checked = true;
+    updateCustomerTypeDisplay();
+  } else {
+    document.getElementById('generateLinkBtn').style.display = 'none';
+    document.getElementById('planEditorSubtitle').textContent = 'Edit plan details and click Save Profile.';
+    loadClient(email); // Load the detail view too
+  }
 })();
 </script>
 </body>
