@@ -732,7 +732,9 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   if (!object) return json(404, { error: 'Document not found' });
   await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
-  const contentType = viewMode ? (found.httpMetadata?.contentType || 'application/octet-stream') : 'application/octet-stream';
+  const EXT_MAP = { 'pdf':'application/pdf','jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png','gif':'image/gif','webp':'image/webp','mp4':'video/mp4','doc':'application/msword','docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','xls':'application/vnd.ms-excel','xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','txt':'text/plain','csv':'text/csv' };
+  const fileExt = origName.split('.').pop().toLowerCase();
+  const contentType = viewMode ? (EXT_MAP[fileExt] || 'application/octet-stream') : 'application/octet-stream';
   const disposition = viewMode ? 'inline' : `attachment`;
   const headers = { 'Content-Type': contentType, 'Content-Disposition': `${disposition}; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' };
   // Read body once, serve it whether decrypted or raw
