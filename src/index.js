@@ -398,6 +398,73 @@ export default {
       } catch (e) { return json(500, { error: e.message }); }
     }
 
+    // ── Document Signing ──
+    if (url.pathname === '/api/pending-signatures' && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try {
+        const results = [];
+        const list = await env.tideventure_documents.list();
+        for (const obj of list.objects) {
+          if (obj.key.startsWith(`signing/${email}/`)) {
+            const data = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
+            results.push({ id: obj.key.split('/').pop(), name: data.documentName, sentAt: data.sentAt, status: data.status });
+          }
+        }
+        results.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+        return json(200, { documents: results });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    if (url.pathname === '/api/sign-document' && method === 'POST') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try {
+        const body = await request.json();
+        const signingKey = `signing/${email}/${body.id}`;
+        const obj = await env.tideventure_documents.get(signingKey);
+        if (!obj) return json(404, { error: 'Signing request not found' });
+        const signingReq = JSON.parse(await obj.text());
+        if (signingReq.status !== 'pending') return json(400, { error: 'Already signed' });
+        if (!body.signature) return json(400, { error: 'Signature required' });
+        // Mark as signed
+        signingReq.status = 'signed';
+        signingReq.signature = body.signature;
+        signingReq.signedAt = new Date().toISOString();
+        await env.tideventure_documents.put(signingKey, JSON.stringify(signingReq), { httpMetadata: { contentType: 'application/json' } });
+        // Copy the original document with "_signed" suffix
+        const origDocKey = signingReq.documentKey;
+        const origDoc = await env.tideventure_documents.get(origDocKey);
+        if (origDoc) {
+          const origName = signingReq.documentName.replace(/\.enc$/, '');
+          const signedKey = `${email}/${crypto.randomUUID()}`;
+          const origBuf = await origDoc.arrayBuffer();
+          const signedContent = new TextEncoder().encode(`\n\n---\nSigned by: ${body.signature}\nDate: ${signingReq.signedAt}\nIP: ${request.headers.get('cf-connecting-ip') || 'unknown'}\n---`);
+          const combined = new Uint8Array(origBuf.byteLength + signedContent.byteLength);
+          combined.set(new Uint8Array(origBuf), 0);
+          combined.set(new Uint8Array(signedContent), origBuf.byteLength);
+          await env.tideventure_documents.put(signedKey, combined, { httpMetadata: { contentType: 'application/octet-stream' }, customMetadata: { originalName: origName.replace(/\.pdf$/i, '_signed.pdf'), uploadedBy: email, uploadedAt: new Date().toISOString() } });
+        }
+        return json(200, { ok: true });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+    // Admin: send document for signing
+    if (url.pathname === '/api/admin/signing-request' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        if (!body.email || !body.documentId || !body.documentName) return json(400, { error: 'Missing fields' });
+        const targetEmail = body.email.toLowerCase();
+        // Find the document
+        const listResult = await env.tideventure_documents.list();
+        let docKey = null;
+        for (const obj of listResult.objects) {
+          if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; break; }
+        }
+        if (!docKey) return json(404, { error: 'Document not found' });
+        const signingId = crypto.randomUUID();
+        const signingReq = { documentKey: docKey, documentName: body.documentName, sentAt: new Date().toISOString(), status: 'pending', sentBy: email };
+        await env.tideventure_documents.put(`signing/${targetEmail}/${signingId}`, JSON.stringify(signingReq), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true, signingId });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     // ── Admin Dashboard ──
     if (url.pathname === '/api/admin/dashboard' && method === 'GET' && isAdmin(email)) {
       try { return await handleAdminDashboard(env); } catch (e) { return json(500, { error: e.message }); }

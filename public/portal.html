@@ -147,6 +147,7 @@
       <a href="#" data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
       <a href="#" data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
       <a href="#" data-page="plan"><span class="icon">&#9733;</span><span>My Plan</span></a>
+      <a href="#" data-page="signatures"><span class="icon">&#9997;</span><span>Signatures</span><span id="sigBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a href="#" data-page="quickbooks"><span class="icon">&#36;</span><span>QuickBooks</span></a>
     </nav>
     <div class="sidebar-footer">
@@ -213,6 +214,28 @@
       <p class="page-desc">Your current services and pricing.</p>
       <div class="block">
         <div id="planSection"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="page" id="page-signatures">
+      <h1>Documents to Sign</h1>
+      <p class="page-desc">Review and sign documents sent by your accountant.</p>
+      <div class="block">
+        <div id="sigList"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
+      </div>
+      <div id="sigSignView" style="display:none;" class="block">
+        <h2 id="sigDocName" style="font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:700;color:#0d3f5e;margin:0 0 1rem;"></h2>
+        <div id="sigDocPreview" style="background:#f9fafb;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:0.82rem;color:#374151;max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;"></div>
+        <div style="border-top:1px solid #e5e7eb;padding-top:1rem;">
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:0.3rem;">Type your full name to sign</label>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <input id="sigInput" style="flex:1;min-width:200px;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;font-family:'Montserrat',sans-serif;">
+            <button class="btn btn--primary" id="sigSignBtn" onclick="submitSignature()" style="padding:0.5rem 1.25rem;">Sign Document</button>
+          </div>
+          <div id="sigError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.5rem;"></div>
+        </div>
+        <button class="btn--back" onclick="backToSigList()" style="margin-top:1rem;">&#8592; Back to list</button>
       </div>
     </div>
 
@@ -337,6 +360,7 @@ async function loadDashboard() {
     renderRevenue(data.qbo?.revenue);
     renderQbo(data.qbo);
     renderQuestionnaireStatus();
+    loadSignatures();
   } catch {}
 }
 
@@ -422,6 +446,82 @@ function renderQbo(qbo) {
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;"><span style="font-size:0.78rem;color:#6b7280;">Total Outstanding</span><span style="font-size:1.2rem;font-weight:700;color:#0d3f5e;">$${total.toFixed(2)}</span></div>`
     + invs.map(i => `<div class="plan-row"><span class="lbl">Invoice #${esc(i.docNumber)}</span><span class="val" style="color:#dc2626;">$${i.balance.toFixed(2)}</span></div>`).join('')
     + `<div style="margin-top:0.75rem;text-align:center;"><a href="https://qbo.intuit.com" target="_blank" class="qbo-btn">Pay in QuickBooks</a></div>`;
+}
+
+let sigDocs = [];
+let sigCurrentId = null;
+
+async function loadSignatures() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  try {
+    const res = await fetch('/api/pending-signatures', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    sigDocs = data.documents || [];
+    const pending = sigDocs.filter(d => d.status === 'pending');
+    const badge = document.getElementById('sigBadge');
+    if (pending.length > 0) { badge.style.display = 'inline'; badge.textContent = pending.length; }
+    else badge.style.display = 'none';
+    renderSigList();
+  } catch {}
+}
+
+function renderSigList() {
+  const el = document.getElementById('sigList');
+  const pending = sigDocs.filter(d => d.status === 'pending');
+  const signed = sigDocs.filter(d => d.status === 'signed');
+  if (!sigDocs.length) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">No documents to sign.</div>'; return; }
+  el.innerHTML = (pending.length ? `<h3 style="font-size:0.82rem;font-weight:600;color:#374151;margin:0 0 0.5rem;">Awaiting your signature</h3>`
+    + pending.map(d => `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid #f3f4f6;">
+      <span style="flex:1;font-weight:600;color:#1e293b;">${esc(d.name)}</span>
+      <span style="font-size:0.74rem;color:#9ca3af;">${new Date(d.sentAt).toLocaleDateString()}</span>
+      <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="openSig('${d.id}')">Sign</button>
+    </div>`).join('') : '')
+    + (signed.length ? `<h3 style="font-size:0.82rem;font-weight:600;color:#374151;margin:0.75rem 0 0.5rem;">Signed</h3>`
+      + signed.map(d => `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.45rem 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
+        <span style="flex:1;color:#6b7280;">${esc(d.name)}</span>
+        <span style="font-size:0.72rem;color:#059669;">&#10003; Signed</span>
+        <span style="font-size:0.72rem;color:#9ca3af;">${new Date(d.sentAt).toLocaleDateString()}</span>
+      </div>`).join('') : '');
+}
+
+async function openSig(id) {
+  sigCurrentId = id;
+  const doc = sigDocs.find(d => d.id === id);
+  document.getElementById('sigDocName').textContent = doc?.name || 'Document';
+  document.getElementById('sigList').style.display = 'none';
+  document.getElementById('sigSignView').style.display = 'block';
+  document.getElementById('sigInput').value = '';
+  document.getElementById('sigError').style.display = 'none';
+  // Show document preview (fetch and display as text)
+  const token = sessionStorage.getItem('tv_portal_token');
+  try {
+    const res = await fetch('/api/documents/' + id + '?view=1&token=' + encodeURIComponent(token));
+    const text = await res.text();
+    document.getElementById('sigDocPreview').textContent = text.slice(0, 5000);
+  } catch { document.getElementById('sigDocPreview').textContent = 'Unable to preview.'; }
+}
+
+function backToSigList() {
+  document.getElementById('sigSignView').style.display = 'none';
+  document.getElementById('sigList').style.display = 'block';
+}
+
+async function submitSignature() {
+  const sig = document.getElementById('sigInput').value.trim();
+  if (!sig) { document.getElementById('sigError').textContent = 'Please type your full name.'; document.getElementById('sigError').style.display = 'block'; return; }
+  document.getElementById('sigError').style.display = 'none';
+  document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Signing…';
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/sign-document', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sigCurrentId, signature: sig }),
+    });
+    if (!res.ok) throw Error();
+    backToSigList();
+    loadSignatures();
+  } catch { document.getElementById('sigError').textContent = 'Failed to sign. Please try again.'; document.getElementById('sigError').style.display = 'block'; }
+  document.getElementById('sigSignBtn').disabled = false; document.getElementById('sigSignBtn').textContent = 'Sign Document';
 }
 
 function connectQbo() {

@@ -186,7 +186,7 @@ async function loadClient(email) {
     if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
     else {
       const docTok = sessionStorage.getItem('tv_admin_token');
-      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl">Download</a></div>`).join('');
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#1a7fa0;" onclick="sendToSign('${esc(d.id)}','${esc(d.name)}')">Sign</button></div>`).join('');
     }
   } catch {}
 
@@ -261,6 +261,21 @@ async function impersonateClient() {
     const data = await res.json();
     sessionStorage.setItem('tv_portal_token', data.token);
     window.open('/portal', '_blank');
+  } catch { alert('Error.'); }
+}
+
+async function sendToSign(docId, docName) {
+  const email = getEmail();
+  if (!email) return;
+  if (!confirm(`Send "${docName}" to ${email} for signing?`)) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/signing-request', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, documentId: docId, documentName: docName }),
+    });
+    if (res.ok) alert('Sent for signing!');
+    else alert('Failed.');
   } catch { alert('Error.'); }
 }
 
