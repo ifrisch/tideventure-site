@@ -208,12 +208,14 @@ function renderQ(saved, schema) {
     ${YN(saved,'pay_by_debit','Pay amount due by debiting account?')}
     </div>
 
-    ${schema && schema.sections ? schema.sections.map(s => `
-    <div class="tq-section"><h3>${esc(s.title)}</h3>
-      ${s.questions.map(q => YN(saved, q[0], q[1])).join('')}
-      ${s.title === 'Traditional IRA' ? `<div class="tq-row"><span class="q">Value of all traditional IRAs on 12/31/2025:</span>
-        <input name="trad_ira_value" value="${esc(s(saved,'trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>` : ''}
-    </div>`).join('') : ''}
+    ${schema && schema.sections ? schema.sections.map(sec => {
+      const ss = (n) => saved[n] || '';
+      return `<div class="tq-section"><h3>${esc(sec.title)}</h3>
+      ${sec.questions.map(q => YN(saved, q[0], q[1])).join('')}
+      ${sec.title === 'Traditional IRA' ? `<div class="tq-row"><span class="q">Value of all traditional IRAs on 12/31/2025:</span>
+        <input name="trad_ira_value" value="${esc(ss('trad_ira_value'))}" placeholder="$" style="width:120px;padding:0.25rem 0.35rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.76rem;"></div>` : ''}
+    </div>`;
+    }).join('') : ''}
 
     <div class="tq-section"><h3>Signature</h3>
     <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.75rem;">I certify that the information provided is true, correct, and complete to the best of my knowledge.</p>
