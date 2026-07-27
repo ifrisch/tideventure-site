@@ -144,6 +144,13 @@
     </div>
 
     <div class="dash-card">
+      <div class="dash-card__header"><h3>My Plan</h3></div>
+      <div id="planSection" style="font-size:0.82rem;padding:0.25rem 0;">
+        <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="dash-card">
       <div class="dash-card__header"><h3>Invoices &amp; Payments</h3></div>
       <div id="qboSection">
         <div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Loading…</div>
@@ -823,6 +830,7 @@ async function loadDashboard() {
     renderDeadlines(data.deadlines);
     renderStateDeadline(data.stateDeadline, data.profile?.state);
     renderActivity(data.recentActivity);
+    renderPlan(data.profile);
     renderQbo(data.qbo);
     renderRevenue(data.qbo?.revenue);
     loadQuestionnaire();
@@ -892,6 +900,21 @@ async function acceptEngagement() {
     // Relogin to get fresh token with active status
     window.location.href = '/portal';
   } catch { document.getElementById('engError').textContent = 'Failed to submit. Please try again.'; document.getElementById('engError').style.display = 'block'; document.getElementById('engSubmitBtn').disabled = false; document.getElementById('engSubmitBtn').textContent = 'Accept & Continue'; }
+}
+
+function renderPlan(profile) {
+  const el = document.getElementById('planSection');
+  if (!profile || (!profile.services?.length && !profile.monthlyPrice && !profile.yearlyPrice)) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.82rem;padding:1rem 0;">Plan details not available.</div>';
+    return;
+  }
+  const svcLabels = { tax:'Business Tax Return', quarterly:'Quarterly Planning', monthly:'Monthly Financial Review', bookkeeping:'Bookkeeping' };
+  el.innerHTML = '<div style="display:grid;gap:0.3rem;">'
+    + (profile.businessName ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Business</span><span style="font-weight:600;color:var(--ink);">${esc(profile.businessName)}</span></div>` : '')
+    + `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Services</span><span style="font-weight:600;color:var(--ink);">${(profile.services||[]).map(s => svcLabels[s] || s).join(', ') || '—'}</span></div>`
+    + (profile.monthlyPrice > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--sand);"><span style="color:var(--text-muted);">Monthly</span><span style="font-weight:600;color:var(--ink);">$${profile.monthlyPrice}</span></div>` : '')
+    + (profile.yearlyPrice > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span style="color:var(--text-muted);">Yearly</span><span style="font-weight:600;color:var(--ink);">$${profile.yearlyPrice}</span></div>` : '')
+    + '</div>';
 }
 
 function renderRevenue(revenue) {

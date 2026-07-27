@@ -606,7 +606,7 @@ async function handleDashboard(env, email) {
     deadlines: getNextEstimatedPayment() ? [getNextEstimatedPayment()] : [],
     stateDeadline: stateDeadline ? [stateDeadline] : [],
     recentActivity: activities.slice(0, 10),
-    profile: { state: clientState },
+    profile: { state: clientState, businessName: profile.businessName || '', services: profile.services || [], monthlyPrice: profile.monthlyPrice || 0, yearlyPrice: profile.yearlyPrice || 0 },
     qbo,
   });
 }
