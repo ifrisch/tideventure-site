@@ -543,8 +543,9 @@ async function logAudit(env, action, email, detail) {
 async function handleListDocuments(env, email, admin) {
   const objects = [];
   const result = await env.tideventure_documents.list({ include: ['customMetadata', 'httpMetadata'] });
+  const SKIP_PREFIXES = ['audit/', 'qbo/', 'profile/', 'user/', 'setup/', 'questionnaire/', 'ratelimit/', 'prospect/'];
   for (const obj of result.objects) {
-    if (obj.key.startsWith('audit/')) continue;
+    if (SKIP_PREFIXES.some(p => obj.key.startsWith(p))) continue;
     if (admin || obj.customMetadata?.uploadedBy === email) {
       objects.push({
         id: obj.key.split('/').pop(),
