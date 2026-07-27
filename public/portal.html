@@ -500,20 +500,14 @@ async function openSig(id) {
   document.getElementById('sigError').style.display = 'none';
   const token = sessionStorage.getItem('tv_portal_token');
   const iframe = document.getElementById('sigDocPreview');
-  // Try signing endpoint first, fall back to document download with client decryption
   try {
-    const res = await fetch('/api/signing-document/' + id + '?token=' + encodeURIComponent(token));
-    if (res.ok) { iframe.src = '/api/signing-document/' + id + '?token=' + encodeURIComponent(token); return; }
-  } catch {}
-  // Fallback: download and decrypt via portal's existing fetch
-  try {
-    const res = await authFetch('/api/documents/' + id);
+    const res = await fetch('/api/documents/' + id, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) throw Error();
     const blob = await res.blob();
     let decrypted;
-    if (window.__PAGE_DATA__?.role === 'admin') { decrypted = await blob.arrayBuffer(); }
-    else { decrypted = await decryptFile(blob); }
-    const url = URL.createObjectURL(new Blob([decrypted]));
+    if (_isAdmin) { decrypted = await blob.arrayBuffer(); }
+    else { decrypted = await _decryptFile(blob); }
+    const url = URL.createObjectURL(new Blob([decrypted], { type: 'application/pdf' }));
     iframe.src = url;
   } catch { iframe.src = ''; }
 }
