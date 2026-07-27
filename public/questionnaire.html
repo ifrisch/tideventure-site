@@ -58,21 +58,29 @@ const PAGE_DATA = window.__PAGE_DATA__;
 const TOKEN = sessionStorage.getItem('tv_portal_token') || (PAGE_DATA && 'token');
 const EMAIL = PAGE_DATA?.email;
 
+const CURRENT_YEAR = 2025;
+const PREV_YEAR = CURRENT_YEAR - 1;
+
+let tqPrevData = {};
+
 async function loadQ() {
   const token = sessionStorage.getItem('tv_portal_token');
   if (!token) { window.location.href = '/portal'; return; }
   try {
-    const [resp, schemaResp] = await Promise.all([
-      fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } }),
-      fetch('/api/questionnaire/schema/2025'),
+    const [resp, prevResp, schemaResp] = await Promise.all([
+      fetch(`/api/questionnaire/${CURRENT_YEAR}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch(`/api/questionnaire/${PREV_YEAR}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch(`/api/questionnaire/schema/${CURRENT_YEAR}`),
     ]);
     if (resp.status === 401) { window.location.href = '/portal'; return; }
     const data = await resp.json();
+    const prevData = prevResp.ok ? (await prevResp.json()).data || {} : {};
     const schema = await schemaResp.json();
+    tqPrevData = prevData;
     renderQ(data.data || {}, schema);
     document.getElementById('tqLoading').style.display = 'none';
     document.getElementById('tqContent').style.display = 'block';
-  } catch {
+  } catch (e) {
     document.getElementById('tqLoading').textContent = 'Failed to load. Please go back and try again.';
   }
 }
@@ -85,7 +93,9 @@ const n = (saved, name) => s(saved,name)==='N'?'checked':'';
 
 function YN(saved, name, label) {
   const c = saved[name + '_note'] || '';
-  return `<div class="tq-row"><span class="q">${label}</span>
+  const prevVal = tqPrevData[name];
+  const prev = prevVal ? ` <span style="font-size:0.7rem;color:#9ca3af;font-weight:400;">(2024: ${prevVal})</span>` : '';
+  return `<div class="tq-row"><span class="q">${label}${prev}</span>
     <label><input type="radio" name="${name}" value="Yes" ${y(saved,name)}> Yes</label>
     <label><input type="radio" name="${name}" value="No" ${n(saved,name)}> No</label>
     <input name="${name}_note" value="${esc(c)}" placeholder="Notes" style="flex:1;min-width:80px;margin-left:0.3rem;padding:0.15rem 0.3rem;border:1px solid #e5e7eb;border-radius:4px;font-size:0.72rem;box-sizing:border-box;"></div>`;
