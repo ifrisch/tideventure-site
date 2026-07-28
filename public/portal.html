@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f5f7fa; color: #1e293b; }
@@ -529,17 +530,58 @@ async function submitSignature() {
   const sig = document.getElementById('sigInput').value.trim();
   if (!sig) { document.getElementById('sigError').textContent = 'Please type your full name.'; document.getElementById('sigError').style.display = 'block'; return; }
   document.getElementById('sigError').style.display = 'none';
-  document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Signing…';
+  document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Preparing…';
+  const token = sessionStorage.getItem('tv_portal_token');
   try {
-    const token = sessionStorage.getItem('tv_portal_token');
-    const res = await fetch('/api/sign-document', {
+    // Fetch and decrypt the document
+    const doc = sigDocs.find(d => d.id === sigCurrentId || d.sigId === sigCurrentId);
+    const res = await fetch('/api/documents/' + sigCurrentId, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw Error();
+    const blob = await res.blob();
+    let pdfBytes;
+    if (_isAdmin) { pdfBytes = await blob.arrayBuffer(); }
+    else { pdfBytes = await _decryptFile(blob); }
+
+    // Embed signature directly into the PDF using pdf-lib
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const pages = pdfDoc.getPages();
+    const lastPage = pages[pages.length - 1];
+    const { width, height } = lastPage.getSize();
+
+    // Add signature text to the bottom of the last page
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    lastPage.drawText('Signed by: ' + sig, { x: 50, y: 80, size: 11, font, color: rgb(0, 0.25, 0.5) });
+    lastPage.drawText('Date: ' + dateStr, { x: 50, y: 60, size: 10, font, color: rgb(0.3, 0.3, 0.3) });
+    lastPage.drawText('Electronically signed via TideVenture CPA Portal', { x: 50, y: 40, size: 8, font, color: rgb(0.6, 0.6, 0.6) });
+
+    const signedPdf = await pdfDoc.save();
+    const signedBlob = new Blob([signedPdf], { type: 'application/pdf' });
+
+    // Upload the signed PDF
+    const fd = new FormData();
+    const origName = (doc?.name || 'document').replace(/\.pdf$/i, '') + '_signed.pdf';
+    fd.append('file', signedBlob, origName);
+    const uploadRes = await fetch('/api/documents/upload', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}` },
+      body: fd,
+    });
+    if (!uploadRes.ok) throw Error();
+
+    // Mark as signed
+    const signRes = await fetch('/api/sign-document', {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ sigId: sigCurrentSigId, id: sigCurrentId, signature: sig }),
     });
-    if (!res.ok) throw Error();
+    if (!signRes.ok) throw Error();
+
     closeSigModal();
     loadSignatures();
-  } catch { document.getElementById('sigError').textContent = 'Failed to sign. Please try again.'; document.getElementById('sigError').style.display = 'block'; }
+  } catch (e) {
+    document.getElementById('sigError').textContent = 'Failed to sign: ' + (e.message || 'unknown error');
+    document.getElementById('sigError').style.display = 'block';
+  }
   document.getElementById('sigSignBtn').disabled = false; document.getElementById('sigSignBtn').textContent = 'Sign Document';
 }
 
