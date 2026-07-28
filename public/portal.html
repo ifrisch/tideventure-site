@@ -504,14 +504,20 @@ async function openSig(id) {
   const iframe = document.getElementById('sigDocPreview');
   try {
     const res = await fetch('/api/documents/' + id, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (!res.ok) throw Error();
+    if (!res.ok) throw Error('API returned ' + res.status);
     const blob = await res.blob();
     let decrypted;
     if (_isAdmin) { decrypted = await blob.arrayBuffer(); }
-    else { decrypted = await _decryptFile(blob); }
+    else {
+      if (!_keyMaterial) throw Error('No key material');
+      decrypted = await _decryptFile(blob);
+    }
     const url = URL.createObjectURL(new Blob([decrypted], { type: 'application/pdf' }));
     iframe.src = url;
-  } catch { iframe.src = ''; }
+  } catch (e) {
+    console.error('Sign view error:', e);
+    document.getElementById('sigDocPreview').srcdoc = '<p style="padding:2rem;color:#666;">Error loading document: ' + e.message + '</p>';
+  }
 }
 
 function closeSigModal() {
