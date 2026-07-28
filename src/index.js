@@ -483,6 +483,55 @@ export default {
       } catch (e) { return json(500, { error: e.message }); }
     }
 
+    // Admin: upload a raw PDF and send to PandaDoc (no encryption)
+    if (url.pathname === '/api/admin/pandadoc-upload' && method === 'POST' && isAdmin(email)) {
+      try {
+        const formData = await request.formData();
+        const file = formData.get('file');
+        const targetEmail = (formData.get('email') || '').toLowerCase();
+        if (!file || !targetEmail) return json(400, { error: 'File and email required' });
+        const docName = file.name || 'document.pdf';
+        // Upload to PandaDoc with multipart
+        const boundary = '----PD' + Math.random().toString(36).slice(2);
+        const enc = new TextEncoder();
+        const meta = JSON.stringify({ name: docName, recipients: [{ email: targetEmail, role: 'Client', signing_order: 1 }], parse_form_fields: false });
+        const fileBuf = await file.arrayBuffer();
+        const parts = [
+          enc.encode('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + docName.replace(/"/g,'') + '"\r\nContent-Type: application/pdf\r\n\r\n'),
+          new Uint8Array(fileBuf),
+          enc.encode('\r\n--' + boundary + '\r\nContent-Disposition: form-data; name="data"\r\nContent-Type: application/json\r\n\r\n' + meta + '\r\n'),
+          enc.encode('--' + boundary + '--\r\n'),
+        ];
+        const total = parts.reduce((s,p) => s + p.byteLength, 0);
+        const combined = new Uint8Array(total);
+        let offset = 0;
+        for (const p of parts) { combined.set(p, offset); offset += p.byteLength; }
+        const pdRes = await fetch('https://api.pandadoc.com/public/v1/documents', {
+          method: 'POST', headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'multipart/form-data; boundary=' + boundary },
+          body: combined.buffer,
+        });
+        if (!pdRes.ok) { const err = await pdRes.text(); return json(502, { error: 'PandaDoc upload failed: ' + err.slice(0, 200) }); }
+        const pdDoc = await pdRes.json();
+        const pdId = pdDoc.id;
+        // Poll for processing
+        for (let i = 0; i < 20; i++) {
+          const sr = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}`, { headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}` } });
+          if (sr.ok) { const sd = await sr.json(); if (sd.status !== 'document.uploaded') break; }
+          await new Promise(r => setTimeout(r, 500));
+        }
+        // Send
+        const sendR = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
+          method: 'POST', headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ silent: true }),
+        });
+        if (!sendR.ok) { const err = await sendR.text(); return json(502, { error: 'PandaDoc send failed: ' + err.slice(0, 200) }); }
+        const sendData = await sendR.json();
+        const sharedLink = (sendData.recipients || [{}])[0]?.shared_link || '';
+        await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: docName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email, embedUrl: sharedLink }), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true, link: sharedLink });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/admin/pandadoc-send' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
