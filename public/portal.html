@@ -236,9 +236,14 @@
             <iframe id="sigDocPreview" style="width:100%;height:100%;border:none;"></iframe>
           </div>
           <div style="padding:1rem 1.25rem;border-top:1px solid #e5e7eb;background:#f9fafb;">
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-              <span style="font-size:0.85rem;font-weight:600;color:#374151;">Type your full name to sign:</span>
-              <input id="sigInput" style="flex:1;min-width:180px;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;font-family:'Montserrat',sans-serif;">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.5rem;">
+              <span style="font-size:0.85rem;font-weight:600;color:#374151;">Draw your signature below, then click Sign:</span>
+            </div>
+            <div style="background:#fff;border:2px dashed #d1d5db;border-radius:8px;padding:0.25rem;margin-bottom:0.5rem;text-align:center;">
+              <canvas id="sigPad" width="400" height="100" style="width:100%;height:80px;cursor:crosshair;touch-action:none;"></canvas>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="btn--back" onclick="clearSigPad()" style="padding:0.4rem 0.8rem;font-size:0.78rem;">Clear</button>
               <button class="btn btn--primary" id="sigSignBtn" onclick="submitSignature()" style="padding:0.5rem 1rem;white-space:nowrap;">Sign Document</button>
             </div>
             <div id="sigError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.4rem;"></div>
@@ -459,6 +464,8 @@ function renderQbo(qbo) {
 let sigDocs = [];
 let sigCurrentId = null;
 let sigCurrentSigId = null;
+let sigPadCtx = null;
+let sigIsDrawing = false;
 
 async function loadSignatures() {
   const token = sessionStorage.getItem('tv_portal_token');
@@ -499,7 +506,6 @@ async function openSig(id) {
   sigCurrentSigId = doc?.sigId || id;
   document.getElementById('sigDocName').textContent = doc?.name || 'Document';
   document.getElementById('sigModal').style.display = 'block';
-  document.getElementById('sigInput').value = '';
   document.getElementById('sigError').style.display = 'none';
   const token = sessionStorage.getItem('tv_portal_token');
   const iframe = document.getElementById('sigDocPreview');
@@ -519,6 +525,40 @@ async function openSig(id) {
     console.error('Sign view error:', e);
     document.getElementById('sigDocPreview').srcdoc = '<p style="padding:2rem;color:#666;">Error loading document: ' + e.message + '</p>';
   }
+  // Initialize signature pad
+  const canvas = document.getElementById('sigPad');
+  sigPadCtx = canvas.getContext('2d');
+  sigPadCtx.strokeStyle = '#0d3f5e';
+  sigPadCtx.lineWidth = 2;
+  sigPadCtx.lineCap = 'round';
+  clearSigPad();
+  // Draw guide text
+  sigPadCtx.fillStyle = '#d1d5db';
+  sigPadCtx.font = '16px "Montserrat", sans-serif';
+  sigPadCtx.textAlign = 'center';
+  sigPadCtx.fillText('Sign here', canvas.width/2, canvas.height/2 + 5);
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+  }
+  function startDraw(e) { e.preventDefault(); sigIsDrawing = true; const p = getPos(e); sigPadCtx.beginPath(); sigPadCtx.moveTo(p.x, p.y); }
+  function draw(e) { e.preventDefault(); if (!sigIsDrawing) return; const p = getPos(e); sigPadCtx.lineTo(p.x, p.y); sigPadCtx.stroke(); }
+  function endDraw(e) { e.preventDefault(); sigIsDrawing = false; }
+  canvas.onmousedown = startDraw; canvas.onmousemove = draw; canvas.onmouseup = endDraw; canvas.onmouseleave = endDraw;
+  canvas.ontouchstart = startDraw; canvas.ontouchmove = draw; canvas.ontouchend = endDraw;
+}
+
+function clearSigPad() {
+  if (!sigPadCtx) return;
+  sigPadCtx.clearRect(0, 0, 400, 100);
+  sigPadCtx.fillStyle = '#d1d5db';
+  sigPadCtx.font = '16px "Montserrat", sans-serif';
+  sigPadCtx.textAlign = 'center';
+  sigPadCtx.fillText('Sign here', 200, 55);
 }
 
 function closeSigModal() {
@@ -527,13 +567,14 @@ function closeSigModal() {
 }
 
 async function submitSignature() {
-  const sig = document.getElementById('sigInput').value.trim();
-  if (!sig) { document.getElementById('sigError').textContent = 'Please type your full name.'; document.getElementById('sigError').style.display = 'block'; return; }
+  // Check if signature pad has been drawn on
+  const imageData = sigPadCtx.getImageData(0, 0, 400, 100).data;
+  const hasDrawing = imageData.some(v => v !== 0);
+  if (!hasDrawing) { document.getElementById('sigError').textContent = 'Please draw your signature above.'; document.getElementById('sigError').style.display = 'block'; return; }
   document.getElementById('sigError').style.display = 'none';
   document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Preparing…';
   const token = sessionStorage.getItem('tv_portal_token');
   try {
-    // Fetch and decrypt the document
     const doc = sigDocs.find(d => d.id === sigCurrentId || d.sigId === sigCurrentId);
     const res = await fetch('/api/documents/' + sigCurrentId, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) throw Error();
@@ -542,19 +583,28 @@ async function submitSignature() {
     if (_isAdmin) { pdfBytes = await blob.arrayBuffer(); }
     else { pdfBytes = await _decryptFile(blob); }
 
-    // Embed signature directly into the PDF using pdf-lib
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    // Convert drawn signature to PNG image
+    const sigCanvas = document.getElementById('sigPad');
+    const sigDataUrl = sigCanvas.toDataURL('image/png');
+    const sigImageBytes = await fetch(sigDataUrl).then(r => r.arrayBuffer());
+
+    // Embed signature image onto the last page of the PDF
+    const { PDFDocument, rgb } = PDFLib;
     const pdfDoc = await PDFDocument.load(pdfBytes);
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const sigImage = await pdfDoc.embedPng(sigImageBytes);
     const pages = pdfDoc.getPages();
     const lastPage = pages[pages.length - 1];
-    const { width, height } = lastPage.getSize();
+    const { width } = lastPage.getSize();
 
-    // Add signature text to the bottom of the last page
+    // Place signature at bottom-center of last page
+    const imgW = 180;
+    const imgH = 45;
+    lastPage.drawImage(sigImage, { x: width/2 - imgW/2, y: 50, width: imgW, height: imgH });
+
+    // Add signed date text
+    const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    lastPage.drawText('Signed by: ' + sig, { x: 50, y: 80, size: 11, font, color: rgb(0, 0.25, 0.5) });
-    lastPage.drawText('Date: ' + dateStr, { x: 50, y: 60, size: 10, font, color: rgb(0.3, 0.3, 0.3) });
-    lastPage.drawText('Electronically signed via TideVenture CPA Portal', { x: 50, y: 40, size: 8, font, color: rgb(0.6, 0.6, 0.6) });
+    lastPage.drawText('Signed: ' + dateStr, { x: width/2 - 50, y: 30, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
 
     const signedPdf = await pdfDoc.save();
     const signedBlob = new Blob([signedPdf], { type: 'application/pdf' });
@@ -572,14 +622,14 @@ async function submitSignature() {
     // Mark as signed
     const signRes = await fetch('/api/sign-document', {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sigId: sigCurrentSigId, id: sigCurrentId, signature: sig }),
+      body: JSON.stringify({ sigId: sigCurrentSigId, id: sigCurrentId, signature: 'drawn' }),
     });
     if (!signRes.ok) throw Error();
 
     closeSigModal();
     loadSignatures();
   } catch (e) {
-    document.getElementById('sigError').textContent = 'Failed to sign: ' + (e.message || 'unknown error');
+    document.getElementById('sigError').textContent = 'Failed: ' + (e.message || 'unknown');
     document.getElementById('sigError').style.display = 'block';
   }
   document.getElementById('sigSignBtn').disabled = false; document.getElementById('sigSignBtn').textContent = 'Sign Document';
