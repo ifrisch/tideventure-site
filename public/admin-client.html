@@ -186,7 +186,7 @@ async function loadClient(email) {
     if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
     else {
       const docTok = sessionStorage.getItem('tv_admin_token');
-      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#1a7fa0;" onclick="sendToSign('${esc(d.id)}','${esc(d.name)}')">Sign</button></div>`).join('');
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#1a7fa0;margin-right:0.3rem;" onclick="sendToSign('${esc(d.id)}','${esc(d.name)}')">Sign</button><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#059669;" onclick="sendPandaDoc('${esc(d.id)}','${esc(d.name)}')">PandaDoc</button></div>`).join('');
     }
   } catch {}
 
@@ -262,6 +262,24 @@ async function impersonateClient() {
     sessionStorage.setItem('tv_portal_token', data.token);
     window.open('/portal', '_blank');
   } catch { alert('Error.'); }
+}
+
+async function sendPandaDoc(docId, docName) {
+  const email = getEmail();
+  if (!email) return;
+  if (!confirm(`Send "${docName}" to ${email} via PandaDoc for e-signature?`)) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = event.target; btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('/api/admin/pandadoc-send', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, documentId: docId, documentName: docName }),
+    });
+    const data = await res.json();
+    if (res.ok) alert('Sent via PandaDoc! The client will receive an email to sign.');
+    else alert('Error: ' + (data.error || 'Unknown'));
+  } catch { alert('Failed.'); }
+  btn.disabled = false; btn.textContent = 'PandaDoc';
 }
 
 async function sendToSign(docId, docName) {

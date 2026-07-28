@@ -467,6 +467,61 @@ export default {
       } catch (e) { return json(500, { error: e.message }); }
     }
     // Admin: send document for signing
+    // ── PandaDoc Signing ──
+    if (url.pathname === '/api/admin/pandadoc-send' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        if (!body.email || !body.documentId || !body.documentName) return json(400, { error: 'Missing fields' });
+        if (!env.PANDADOC_API_KEY) return json(400, { error: 'PandaDoc not configured' });
+        const targetEmail = body.email.toLowerCase();
+        // Find the document in R2
+        const listResult = await env.tideventure_documents.list();
+        let docKey = null;
+        for (const obj of listResult.objects) {
+          if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; break; }
+        }
+        if (!docKey) return json(404, { error: 'Document not found' });
+        const r2Doc = await env.tideventure_documents.get(docKey);
+        if (!r2Doc) return json(404, { error: 'Document not found' });
+        const docBuf = await r2Doc.arrayBuffer();
+        // Try to decrypt if admin uploaded
+        const uploader = docKey.split('/')[0];
+        let pdfData;
+        try { pdfData = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader, docBuf); }
+        catch { pdfData = docBuf; }
+
+        // Upload to PandaDoc
+        const formData = new FormData();
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        formData.append('file', blob, body.documentName);
+        formData.append('name', body.documentName);
+        const createRes = await fetch('https://api.pandadoc.com/public/v1/documents', {
+          method: 'POST',
+          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}` },
+          body: formData,
+        });
+        if (!createRes.ok) { const err = await createRes.text(); return json(502, { error: 'PandaDoc upload failed: ' + err.slice(0, 200) }); }
+        const pdDoc = await createRes.json();
+        const pdId = pdDoc.id;
+        // Add signature field
+        const fieldRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/session`, {
+          method: 'POST',
+          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipients: [{ email: targetEmail, role: 'Client' }], fields: { name: 'signature_field', type: 'signature', page: 0, x: 200, y: 100, width: 200, height: 50 } }),
+        });
+        // Send document for signing
+        const sendRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
+          method: 'POST',
+          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Please sign this document via TideVenture CPA.', silent: false }),
+        });
+        if (!sendRes.ok) { const err = await sendRes.text(); return json(502, { error: 'PandaDoc send failed: ' + err.slice(0, 200) }); }
+        // Store the PandaDoc document ID
+        await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: body.documentName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email }), { httpMetadata: { contentType: 'application/json' } });
+        return json(200, { ok: true, pandadocId: pdId });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/admin/signing-request' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
