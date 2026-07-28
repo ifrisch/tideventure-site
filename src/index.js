@@ -490,32 +490,40 @@ export default {
         try { pdfData = await decryptWithWorkerKey(env.DOC_ENC_KEY, uploader, docBuf); }
         catch { pdfData = docBuf; }
 
-        // Upload to PandaDoc
-        const formData = new FormData();
-        const blob = new Blob([pdfData], { type: 'application/pdf' });
-        formData.append('file', blob, body.documentName);
-        formData.append('name', body.documentName);
+        // Upload to PandaDoc with recipients
+        const pdBody = JSON.stringify({
+          name: body.documentName,
+          recipients: [{ email: targetEmail, role: 'Client', signing_order: 1 }],
+          parse_form_fields: false,
+        });
+        const boundary = '----BOUNDARY' + Math.random().toString(36).slice(2);
+        const enc = new TextEncoder();
+        const parts = [
+          enc.encode('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + body.documentName.replace(/"/g, '') + '"\r\nContent-Type: application/pdf\r\n\r\n'),
+          new Uint8Array(pdfData),
+          enc.encode('\r\n'),
+          enc.encode('--' + boundary + '\r\nContent-Disposition: form-data; name="data"\r\nContent-Type: application/json\r\n\r\n' + pdBody + '\r\n'),
+          enc.encode('--' + boundary + '--\r\n'),
+        ];
+        const totalLen = parts.reduce((s, p) => s + p.byteLength, 0);
+        const combined = new Uint8Array(totalLen);
+        let offset = 0;
+        for (const p of parts) { combined.set(p, offset); offset += p.byteLength; }
         const createRes = await fetch('https://api.pandadoc.com/public/v1/documents', {
           method: 'POST',
-          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}` },
-          body: formData,
+          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'multipart/form-data; boundary=' + boundary },
+          body: combined.buffer,
         });
-        if (!createRes.ok) { const err = await createRes.text(); return json(502, { error: 'PandaDoc upload failed: ' + err.slice(0, 200) }); }
+        if (!createRes.ok) { const err = await createRes.text(); return json(502, { error: 'PandaDoc upload failed: ' + err.slice(0, 300) }); }
         const pdDoc = await createRes.json();
         const pdId = pdDoc.id;
-        // Add signature field
-        const fieldRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/session`, {
-          method: 'POST',
-          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipients: [{ email: targetEmail, role: 'Client' }], fields: { name: 'signature_field', type: 'signature', page: 0, x: 200, y: 100, width: 200, height: 50 } }),
-        });
         // Send document for signing
         const sendRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
           method: 'POST',
           headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: 'Please sign this document via TideVenture CPA.', silent: false }),
         });
-        if (!sendRes.ok) { const err = await sendRes.text(); return json(502, { error: 'PandaDoc send failed: ' + err.slice(0, 200) }); }
+        if (!sendRes.ok) { const err = await sendRes.text(); return json(502, { error: 'PandaDoc send failed: ' + err.slice(0, 300) }); }
         // Store the PandaDoc document ID
         await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: body.documentName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email }), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, pandadocId: pdId });
