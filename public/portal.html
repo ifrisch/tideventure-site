@@ -564,17 +564,18 @@ async function renderQuestionnaireStatus() {
 // ── Document Manager ──
 let _keyMaterial = null;
 let _isAdmin = false;
+function _hexToBytes(h) { const b = new Uint8Array(h.length/2); for(let i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b; }
 async function _decryptFile(blob) {
   if (_isAdmin) return blob.arrayBuffer();
   const d = new Uint8Array(await blob.arrayBuffer());
   const salt = Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  const base = await crypto.subtle.importKey('raw', hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
+  const base = await crypto.subtle.importKey('raw', _hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
   // Try 100000 first, fall back to 600000 for older documents
   try {
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
   } catch {
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
   }
 }
@@ -584,11 +585,10 @@ function initDocManager(data) {
   _isAdmin = data.role === 'admin';
   const token = sessionStorage.getItem('tv_portal_token');
   function authFetch(url, opts = {}) { opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` }; return fetch(url, opts); }
-  function hexToBytes(h) { const b = new Uint8Array(h.length/2); for(let i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b; }
   async function deriveKey(salt, iters) {
-    const base = await crypto.subtle.importKey('raw', hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
-    try { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: iters || 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
-    catch { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
+    const base = await crypto.subtle.importKey('raw', _hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
+    try { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: iters || 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
+    catch { return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']); }
   }
   async function encryptFile(file) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
