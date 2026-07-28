@@ -517,6 +517,17 @@ export default {
         if (!createRes.ok) { const err = await createRes.text(); return json(502, { error: 'PandaDoc upload failed: ' + err.slice(0, 300) }); }
         const pdDoc = await createRes.json();
         const pdId = pdDoc.id;
+        // Wait for document to be processed (poll up to 10s)
+        for (let i = 0; i < 20; i++) {
+          const statusRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}`, {
+            headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}` },
+          });
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.status === 'document.draft') break;
+          }
+          await new Promise(r => setTimeout(r, 500));
+        }
         // Send document for signing
         const sendRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
           method: 'POST',
