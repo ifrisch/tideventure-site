@@ -594,46 +594,36 @@ function closeSigModal() {
 }
 
 async function submitSignature() {
-  if (!sigHasDrawn) { document.getElementById('sigError').textContent = 'Please click the signature box and draw your signature.'; document.getElementById('sigError').style.display = 'block'; return; }
+  if (!sigHasDrawn) { document.getElementById('sigError').textContent = 'Please click the yellow box and draw your signature.'; document.getElementById('sigError').style.display = 'block'; return; }
   document.getElementById('sigError').style.display = 'none';
   document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Signing…';
   const token = sessionStorage.getItem('tv_portal_token');
   try {
     const doc = sigDocs.find(d => d.id === sigCurrentId || d.sigId === sigCurrentId);
 
-    // Get signature image from the field canvas
+    // Get drawn signature as PNG
     const fieldCanvas = document.getElementById('sigFieldCanvas');
     const sigDataUrl = fieldCanvas.toDataURL('image/png');
     const sigImageBytes = await fetch(sigDataUrl).then(r => r.arrayBuffer());
 
-    // Calculate position on the PDF
-    const mainCanvas = document.getElementById('sigPdfCanvas');
-    const sigField = document.getElementById('sigField');
-    const fieldRect = sigField.getBoundingClientRect();
-    const canvasRect = mainCanvas.getBoundingClientRect();
-    const scaleX = mainCanvas.width / canvasRect.width;
-    const scaleY = mainCanvas.height / canvasRect.height;
-    const pdfX = (fieldRect.left - canvasRect.left) * scaleX;
-    const pdfY = mainCanvas.height - (fieldRect.top - canvasRect.top) * scaleY - 62 * scaleY;
-
-    // Embed signature onto the PDF
-    const { PDFDocument } = PDFLib;
+    // Load PDF and embed signature at bottom-center of every page
+    const { PDFDocument, rgb } = PDFLib;
     const pdfDoc = await PDFDocument.load(sigPdfBytes.slice(0));
     const sigImage = await pdfDoc.embedPng(sigImageBytes);
     const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { width, height } = firstPage.getSize();
 
-    const imgW = (252 * scaleX) * (width / mainCanvas.width);
-    const imgH = (62 * scaleY) * (height / mainCanvas.height);
-    const imgX = pdfX * (width / mainCanvas.width);
-    const imgY = pdfY * (height / mainCanvas.height);
-
-    firstPage.drawImage(sigImage, { x: imgX, y: imgY, width: imgW, height: imgH });
+    for (const page of pages) {
+      const { width } = page.getSize();
+      const imgW = 150;
+      const imgH = 37;
+      const imgX = width / 2 - imgW / 2;
+      const imgY = 40;
+      page.drawImage(sigImage, { x: imgX, y: imgY, width: imgW, height: imgH });
+    }
 
     const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    firstPage.drawText('Signed ' + dateStr, { x: imgX, y: imgY - 12, size: 8, font, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+    pages[0].drawText('Electronically signed on ' + dateStr, { x: 50, y: 20, size: 8, font, color: rgb(0.5, 0.5, 0.5) });
 
     const signedPdf = await pdfDoc.save();
     const signedBlob = new Blob([signedPdf], { type: 'application/pdf' });
