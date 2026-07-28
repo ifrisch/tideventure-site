@@ -468,6 +468,21 @@ export default {
     }
     // Admin: send document for signing
     // ── PandaDoc Signing ──
+    if (url.pathname === '/api/pandadoc-documents' && method === 'GET') {
+      if (!email) return json(401, { error: 'Unauthorized' });
+      try {
+        const results = [];
+        const list = await env.tideventure_documents.list();
+        for (const obj of list.objects) {
+          if (obj.key.startsWith(`pandadoc/${email}/`)) {
+            const data = JSON.parse(await (await env.tideventure_documents.get(obj.key)).text());
+            results.push({ id: obj.key.split('/')[2], name: data.documentName, sentAt: data.sentAt, status: data.status, embedUrl: data.embedUrl || '' });
+          }
+        }
+        return json(200, { documents: results });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/admin/pandadoc-send' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
@@ -528,15 +543,16 @@ export default {
           }
           await new Promise(r => setTimeout(r, 500));
         }
-        // Send document for signing
-        const sendRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
+        // Create embedded signing session
+        const embedRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/session`, {
           method: 'POST',
           headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'Please sign this document via TideVenture CPA.', silent: false }),
+          body: JSON.stringify({ recipient: targetEmail, lifetime: 86400 }),
         });
-        if (!sendRes.ok) { const err = await sendRes.text(); return json(502, { error: 'PandaDoc send failed: ' + err.slice(0, 300) }); }
+        let embedUrl = '';
+        if (embedRes.ok) { const embedData = await embedRes.json(); embedUrl = embedData.link || embedData.id || ''; }
         // Store the PandaDoc document ID
-        await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: body.documentName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email }), { httpMetadata: { contentType: 'application/json' } });
+        await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: body.documentName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email, embedUrl }), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, pandadocId: pdId });
       } catch (e) { return json(500, { error: e.message }); }
     }

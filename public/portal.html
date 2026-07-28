@@ -476,10 +476,14 @@ let sigPdfDoc = null;
 async function loadSignatures() {
   const token = sessionStorage.getItem('tv_portal_token');
   try {
-    const res = await fetch('/api/pending-signatures', { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    sigDocs = data.documents || [];
-    const pending = sigDocs.filter(d => d.status === 'pending');
+    const [sigRes, pdRes] = await Promise.all([
+      fetch('/api/pending-signatures', { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch('/api/pandadoc-documents', { headers: { 'Authorization': `Bearer ${token}` } }),
+    ]);
+    const sigData = await sigRes.json();
+    const pdData = pdRes.ok ? await pdRes.json() : { documents: [] };
+    sigDocs = (sigData.documents || []).concat(pdData.documents.map(d => ({ ...d, id: d.id, isPandaDoc: true })));
+    const pending = sigDocs.filter(d => d.status === 'pending' || d.status === 'sent');
     const badge = document.getElementById('sigBadge');
     if (pending.length > 0) { badge.style.display = 'inline'; badge.textContent = pending.length; }
     else badge.style.display = 'none';
@@ -509,6 +513,12 @@ function renderSigList() {
 async function openSig(id) {
   sigCurrentId = id;
   const doc = sigDocs.find(d => d.id === id || d.sigId === id);
+  // PandaDoc signing - open in new tab
+  if (doc?.isPandaDoc && doc.embedUrl) {
+    window.open(doc.embedUrl, '_blank');
+    return;
+  }
+  // Regular in-browser signing
   sigCurrentSigId = doc?.sigId || id;
   sigHasDrawn = false;
   sigPdfBytes = null;
