@@ -480,6 +480,7 @@ export default {
           if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; docMeta = obj; break; }
         }
         if (!docKey) return json(404, { error: 'Document not found' });
+        const origDocId = docKey.split('/').pop();
         // Copy the document content for signing (try to decrypt if encrypted)
         const origDoc = await env.tideventure_documents.get(docKey);
         if (!origDoc) return json(404, { error: 'Document not found' });
@@ -493,7 +494,7 @@ export default {
         const ext = (body.documentName || '').split('.').pop().toLowerCase();
         const M = { pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
         await env.tideventure_documents.put(copyKey, docBuf, { httpMetadata: { contentType: M[ext] || 'application/octet-stream' } });
-        const signingReq = { documentKey: copyKey, documentName: body.documentName, sentAt: new Date().toISOString(), status: 'pending', sentBy: email };
+        const signingReq = { documentKey: docKey, documentName: body.documentName, sentAt: new Date().toISOString(), status: 'pending', sentBy: email };
         await env.tideventure_documents.put(`signing/${targetEmail}/${signingId}`, JSON.stringify(signingReq), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, signingId });
       } catch (e) { return json(500, { error: e.message }); }
