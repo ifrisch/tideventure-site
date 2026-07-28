@@ -543,6 +543,14 @@ export default {
           }
           await new Promise(r => setTimeout(r, 500));
         }
+        // Send document
+        await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/send`, {
+          method: 'POST',
+          headers: { 'Authorization': `API-Key ${env.PANDADOC_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ silent: true }),
+        });
+        // Wait for send to process
+        await new Promise(r => setTimeout(r, 1000));
         // Create embedded signing session
         const embedRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${pdId}/session`, {
           method: 'POST',
@@ -550,7 +558,7 @@ export default {
           body: JSON.stringify({ recipient: targetEmail, lifetime: 86400 }),
         });
         let embedUrl = '';
-        if (embedRes.ok) { const embedData = await embedRes.json(); embedUrl = embedData.link || embedData.id || ''; }
+        if (embedRes.ok) { const embedData = await embedRes.json(); embedUrl = embedData.link || ''; }
         // Store the PandaDoc document ID
         await env.tideventure_documents.put(`pandadoc/${targetEmail}/${pdId}`, JSON.stringify({ documentName: body.documentName, sentAt: new Date().toISOString(), status: 'sent', sentBy: email, embedUrl }), { httpMetadata: { contentType: 'application/json' } });
         return json(200, { ok: true, pandadocId: pdId });
