@@ -115,12 +115,7 @@
     </div>
 
     <div class="card">
-      <div style="margin-bottom:0.75rem;">
-        <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="uploadPandaDoc()">Upload &amp; Send for PandaDoc Signing</button>
-        <input type="file" id="pdFileInput" accept=".pdf" style="display:none;" onchange="doPandaDocUpload(this)" />
-        <span id="pdStatus" style="font-size:0.76rem;color:var(--text-muted);margin-left:0.5rem;"></span>
-      </div>
-      <h3>Documents</h3>
+<h3>Documents</h3>
       <div id="docsList"><div class="empty">Loading…</div></div>
     </div>
 
@@ -191,7 +186,7 @@ async function loadClient(email) {
     if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
     else {
       const docTok = sessionStorage.getItem('tv_admin_token');
-      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#1a7fa0;margin-right:0.3rem;" onclick="sendToSign('${esc(d.id)}','${esc(d.name)}')">Sign</button><button class="doc-dl" style="background:none;border:none;cursor:pointer;color:#059669;" onclick="sendPandaDoc('${esc(d.id)}','${esc(d.name)}')">PandaDoc</button></div>`).join('');
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a></div>`).join('');
     }
   } catch {}
 
@@ -287,31 +282,7 @@ async function sendPandaDoc(docId, docName) {
   btn.disabled = false; btn.textContent = 'PandaDoc';
 }
 
-async function uploadPandaDoc() {
-  document.getElementById('pdFileInput').click();
-}
-async function doPandaDocUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const email = getEmail();
-  if (!email) return;
-  const status = document.getElementById('pdStatus');
-  status.textContent = 'Uploading to PandaDoc…';
-  const token = sessionStorage.getItem('tv_admin_token');
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('email', email);
-  try {
-    const res = await fetch('/api/admin/pandadoc-upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
-    const data = await res.json();
-    if (res.ok) {
-      status.textContent = 'Sent! Opening…';
-      if (data.link) window.open(data.link, '_blank');
-      loadClient(email);
-    } else { status.textContent = 'Error: ' + (data.error || 'Failed'); }
-  } catch { status.textContent = 'Upload failed.'; }
-  input.value = '';
-}
+
 
 async function sendToSign(docId, docName) {
   const email = getEmail();

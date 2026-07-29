@@ -7,8 +7,6 @@
   <meta name="robots" content="noindex, nofollow" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f5f7fa; color: #1e293b; }
@@ -149,7 +147,6 @@
       <a href="#" data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
       <a href="#" data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
       <a href="#" data-page="plan"><span class="icon">&#9733;</span><span>My Plan</span></a>
-      <a href="#" data-page="signatures"><span class="icon">&#9997;</span><span>Signatures</span><span id="sigBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a href="#" data-page="quickbooks"><span class="icon">&#36;</span><span>QuickBooks</span></a>
     </nav>
     <div class="sidebar-footer">
@@ -216,42 +213,6 @@
       <p class="page-desc">Your current services and pricing.</p>
       <div class="block">
         <div id="planSection"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
-      </div>
-    </div>
-
-    <!-- Signatures -->
-    <div class="page" id="page-signatures">
-      <h1>Documents to Sign</h1>
-      <p class="page-desc">Review and sign documents sent by your accountant.</p>
-      <div class="block">
-        <div id="sigList"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
-      </div>
-      <!-- Signature Modal -->
-      <div id="sigModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);padding:1rem;">
-        <div style="max-width:900px;margin:1rem auto;background:#fff;border-radius:12px;display:flex;flex-direction:column;max-height:90vh;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.25rem;border-bottom:1px solid #e5e7eb;">
-            <h2 id="sigDocName" style="font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:700;color:#0d3f5e;margin:0;"></h2>
-            <div style="display:flex;gap:0.5rem;align-items:center;">
-              <span id="sigStatus" style="font-size:0.78rem;color:#6b7280;"></span>
-              <button class="btn btn--primary" id="sigSignBtn" onclick="submitSignature()" style="padding:0.35rem 1rem;font-size:0.82rem;white-space:nowrap;">Sign</button>
-              <button onclick="closeSigModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b7280;padding:0 0.3rem;">&times;</button>
-            </div>
-          </div>
-          <div style="flex:1;overflow:auto;background:#e5e7eb;position:relative;display:flex;justify-content:center;padding:1rem;">
-            <div style="position:relative;box-shadow:0 2px 20px rgba(0,0,0,0.15);background:#fff;">
-              <canvas id="sigPdfCanvas" style="display:block;max-width:100%;"></canvas>
-              <!-- Signature field overlay -->
-              <div id="sigField" style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:260px;height:70px;border:2px dashed #f59e0b;border-radius:8px;background:rgba(255,247,237,0.85);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;" onclick="activateSigField()">
-                <span id="sigFieldLabel" style="font-size:0.8rem;color:#92400e;font-weight:600;text-align:center;">Click to sign here<br><span style="font-size:0.7rem;font-weight:400;">Draw your signature</span></span>
-                <canvas id="sigFieldCanvas" style="position:absolute;inset:4px;width:252px;height:62px;border-radius:6px;display:none;cursor:crosshair;touch-action:none;"></canvas>
-              </div>
-            </div>
-          </div>
-          <div style="padding:0.5rem 1.25rem;border-top:1px solid #e5e7eb;background:#f9fafb;display:flex;gap:0.5rem;align-items:center;">
-            <button class="btn--back" onclick="clearSigField()" style="padding:0.3rem 0.7rem;font-size:0.76rem;">Clear</button>
-            <span id="sigError" style="font-size:0.76rem;color:#dc2626;display:none;"></span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -376,7 +337,6 @@ async function loadDashboard() {
     renderRevenue(data.qbo?.revenue);
     renderQbo(data.qbo);
     renderQuestionnaireStatus();
-    loadSignatures();
   } catch {}
 }
 
@@ -464,195 +424,9 @@ function renderQbo(qbo) {
     + `<div style="margin-top:0.75rem;text-align:center;"><a href="https://qbo.intuit.com" target="_blank" class="qbo-btn">Pay in QuickBooks</a></div>`;
 }
 
-let sigDocs = [];
-let sigCurrentId = null;
-let sigCurrentSigId = null;
-let sigFieldCtx = null;
-let sigFieldActive = false;
-let sigHasDrawn = false;
-let sigPdfBytes = null;
-let sigPdfDoc = null;
 
-async function loadSignatures() {
-  const token = sessionStorage.getItem('tv_portal_token');
-  try {
-    const [sigRes, pdRes] = await Promise.all([
-      fetch('/api/pending-signatures', { headers: { 'Authorization': `Bearer ${token}` } }),
-      fetch('/api/pandadoc-documents', { headers: { 'Authorization': `Bearer ${token}` } }),
-    ]);
-    const sigData = await sigRes.json();
-    const pdData = pdRes.ok ? await pdRes.json() : { documents: [] };
-    sigDocs = (sigData.documents || []).concat(pdData.documents.map(d => ({ ...d, id: d.id, isPandaDoc: true })));
-    const pending = sigDocs.filter(d => d.status === 'pending' || d.status === 'sent');
-    const badge = document.getElementById('sigBadge');
-    if (pending.length > 0) { badge.style.display = 'inline'; badge.textContent = pending.length; }
-    else badge.style.display = 'none';
-    renderSigList();
-  } catch {}
-}
 
-function renderSigList() {
-  const el = document.getElementById('sigList');
-  const pending = sigDocs.filter(d => d.status === 'pending' || d.status === 'sent');
-  const signed = sigDocs.filter(d => d.status === 'signed');
-  if (!sigDocs.length) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">No documents to sign.</div>'; return; }
-  el.innerHTML = (pending.length ? `<h3 style="font-size:0.82rem;font-weight:600;color:#374151;margin:0 0 0.5rem;">Awaiting your signature</h3>`
-    + pending.map(d => `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid #f3f4f6;">
-      <span style="flex:1;font-weight:600;color:#1e293b;">${esc(d.name)}</span>
-      <span style="font-size:0.74rem;color:#9ca3af;">${new Date(d.sentAt).toLocaleDateString()}</span>
-      <span style="font-size:0.7rem;color:#059669;">${d.isPandaDoc ? 'PandaDoc' : ''}</span>
-      <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="openSig('${d.id}')">Sign</button>
-    </div>`).join('') : '')
-    + (signed.length ? `<h3 style="font-size:0.82rem;font-weight:600;color:#374151;margin:0.75rem 0 0.5rem;">Signed</h3>`
-      + signed.map(d => `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.45rem 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
-        <span style="flex:1;color:#6b7280;">${esc(d.name)}</span>
-        <span style="font-size:0.72rem;color:#059669;">&#10003; Signed</span>
-        <span style="font-size:0.72rem;color:#9ca3af;">${new Date(d.sentAt).toLocaleDateString()}</span>
-      </div>`).join('') : '');
-}
 
-async function openSig(id) {
-  sigCurrentId = id;
-  const doc = sigDocs.find(d => d.id === id || d.sigId === id);
-  // PandaDoc signing - open in new tab
-  if (doc?.isPandaDoc && doc.embedUrl) {
-    window.open(doc.embedUrl, '_blank');
-    return;
-  }
-  // Regular in-browser signing
-  sigCurrentSigId = doc?.sigId || id;
-  sigHasDrawn = false;
-  sigPdfBytes = null;
-  sigPdfDoc = null;
-  document.getElementById('sigDocName').textContent = doc?.name || 'Document';
-  document.getElementById('sigModal').style.display = 'block';
-  document.getElementById('sigError').style.display = 'none';
-  document.getElementById('sigStatus').textContent = 'Loading…';
-  document.getElementById('sigSignBtn').disabled = true;
-  const token = sessionStorage.getItem('tv_portal_token');
-  const mainCanvas = document.getElementById('sigPdfCanvas');
-  const sigField = document.getElementById('sigField');
-  const sigFieldCanvas = document.getElementById('sigFieldCanvas');
-  sigField.style.display = 'flex';
-  document.getElementById('sigFieldLabel').style.display = 'block';
-  sigFieldCanvas.style.display = 'none';
-  sigFieldActive = false;
-
-  try {
-    const res = await fetch('/api/documents/' + id, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (!res.ok) throw Error('API returned ' + res.status);
-    const blob = await res.blob();
-    if (_isAdmin) { sigPdfBytes = await blob.arrayBuffer(); }
-    else { sigPdfBytes = await _decryptFile(blob); }
-
-    // Render PDF first page on canvas using pdf.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const loadingTask = pdfjsLib.getDocument({ data: sigPdfBytes.slice(0) });
-    sigPdfDoc = await loadingTask.promise;
-    const page = await sigPdfDoc.getPage(1);
-    const viewport = page.getViewport({ scale: 1.5 });
-    mainCanvas.width = viewport.width;
-    mainCanvas.height = viewport.height;
-    const ctx = mainCanvas.getContext('2d');
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    document.getElementById('sigStatus').textContent = '1 of ' + sigPdfDoc.numPages + ' pages';
-    document.getElementById('sigSignBtn').disabled = false;
-  } catch (e) {
-    document.getElementById('sigStatus').textContent = 'Error: ' + (e.message || 'unknown');
-  }
-}
-
-function activateSigField() {
-  if (sigFieldActive) return;
-  sigFieldActive = true;
-  sigHasDrawn = false;
-  const sigField = document.getElementById('sigField');
-  const canvas = document.getElementById('sigFieldCanvas');
-  document.getElementById('sigFieldLabel').style.display = 'none';
-  canvas.style.display = 'block';
-  
-  sigFieldCtx = canvas.getContext('2d');
-  canvas.width = 252; canvas.height = 62;
-  sigFieldCtx.strokeStyle = '#0d3f5e';
-  sigFieldCtx.lineWidth = 2;
-  sigFieldCtx.lineCap = 'round';
-
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const t = e.touches ? e.touches[0] : e;
-    return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
-  }
-  function startDraw(e) { e.preventDefault(); sigHasDrawn = true; const p = getPos(e); sigFieldCtx.beginPath(); sigFieldCtx.moveTo(p.x, p.y); }
-  function draw(e) { e.preventDefault(); if (!sigHasDrawn) return; const p = getPos(e); sigFieldCtx.lineTo(p.x, p.y); sigFieldCtx.stroke(); }
-  function endDraw(e) { e.preventDefault(); }
-  canvas.onmousedown = startDraw; canvas.onmousemove = draw; canvas.onmouseup = endDraw; canvas.onmouseleave = endDraw;
-  canvas.ontouchstart = startDraw; canvas.ontouchmove = draw; canvas.ontouchend = endDraw;
-}
-
-function clearSigField() {
-  const canvas = document.getElementById('sigFieldCanvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 252, 62);
-  sigHasDrawn = false;
-}
-
-function closeSigModal() {
-  document.getElementById('sigModal').style.display = 'none';
-  document.getElementById('sigDocPreview').src = '';
-}
-
-async function submitSignature() {
-  if (!sigHasDrawn) { document.getElementById('sigError').textContent = 'Please click the yellow box and draw your signature.'; document.getElementById('sigError').style.display = 'block'; return; }
-  document.getElementById('sigError').style.display = 'none';
-  document.getElementById('sigSignBtn').disabled = true; document.getElementById('sigSignBtn').textContent = 'Signing…';
-  const token = sessionStorage.getItem('tv_portal_token');
-  try {
-    const doc = sigDocs.find(d => d.id === sigCurrentId || d.sigId === sigCurrentId);
-
-    // Get drawn signature as PNG
-    const fieldCanvas = document.getElementById('sigFieldCanvas');
-    const sigDataUrl = fieldCanvas.toDataURL('image/png');
-    const sigImageBytes = await fetch(sigDataUrl).then(r => r.arrayBuffer());
-
-    // Load PDF and embed signature at bottom-center of every page
-    const { PDFDocument, rgb } = PDFLib;
-    const pdfDoc = await PDFDocument.load(sigPdfBytes.slice(0));
-    const sigImage = await pdfDoc.embedPng(sigImageBytes);
-    const pages = pdfDoc.getPages();
-
-    for (const page of pages) {
-      const { width } = page.getSize();
-      const imgW = 150;
-      const imgH = 37;
-      const imgX = width / 2 - imgW / 2;
-      const imgY = 40;
-      page.drawImage(sigImage, { x: imgX, y: imgY, width: imgW, height: imgH });
-    }
-
-    const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    pages[0].drawText('Electronically signed on ' + dateStr, { x: 50, y: 20, size: 8, font, color: rgb(0.5, 0.5, 0.5) });
-
-    const signedPdf = await pdfDoc.save();
-    const signedBlob = new Blob([signedPdf], { type: 'application/pdf' });
-
-    // Upload signed PDF
-    const fd = new FormData();
-    fd.append('file', signedBlob, (doc?.name || 'document').replace(/\.pdf$/i, '') + '_signed.pdf');
-    await fetch('/api/documents/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
-    await fetch('/api/sign-document', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ sigId: sigCurrentSigId, id: sigCurrentId, signature: 'drawn' }) });
-
-    closeSigModal();
-    loadSignatures();
-  } catch (e) {
-    document.getElementById('sigError').textContent = 'Failed: ' + (e.message || 'unknown');
-    document.getElementById('sigError').style.display = 'block';
-  }
-  document.getElementById('sigSignBtn').disabled = false; document.getElementById('sigSignBtn').textContent = 'Sign';
-}
 
 function connectQbo() {
   const token = sessionStorage.getItem('tv_portal_token');
@@ -676,20 +450,6 @@ async function renderQuestionnaireStatus() {
 let _keyMaterial = null;
 let _isAdmin = false;
 function _hexToBytes(h) { const b = new Uint8Array(h.length/2); for(let i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b; }
-async function _decryptFile(blob) {
-  if (_isAdmin) return blob.arrayBuffer();
-  const d = new Uint8Array(await blob.arrayBuffer());
-  const salt = Array.from(d.slice(0,16)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  const base = await crypto.subtle.importKey('raw', _hexToBytes(_keyMaterial), 'PBKDF2', false, ['deriveKey']);
-  // Try 100000 first, fall back to 600000 for older documents
-  try {
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
-  } catch {
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: _hexToBytes(salt), iterations: 600000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: d.slice(16,28) }, key, d.slice(28));
-  }
-}
 
 function initDocManager(data) {
   _keyMaterial = data.keyMaterial;
