@@ -185,6 +185,24 @@ export default {
       if (!email) return json(401, { error: 'Unauthorized' });
       return handleUploadDocument(request, env, email);
     }
+    // Admin: upload document to a specific client's portal
+    if (url.pathname === '/api/admin/documents/upload' && method === 'POST' && isAdmin(email)) {
+      try {
+        const fd = await request.formData();
+        const file = fd.get('file');
+        const clientEmail = (fd.get('email') || '').toLowerCase();
+        if (!file || !clientEmail) return json(400, { error: 'File and client email required' });
+        const id = crypto.randomUUID();
+        const key = `${clientEmail}/${id}`;
+        const buf = await file.arrayBuffer();
+        await env.tideventure_documents.put(key, buf, {
+          httpMetadata: { contentType: file.type || 'application/octet-stream' },
+          customMetadata: { originalName: file.name, uploadedBy: clientEmail, uploadedAt: new Date().toISOString() },
+        });
+        await logAudit(env, 'UPLOAD', email, `${file.name} to ${clientEmail}`);
+        return json(200, { ok: true, id });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
 
     if (url.pathname === '/api/audit' && method === 'GET') {
       if (!isAdmin(email)) return json(403, { error: 'Admin access required' });

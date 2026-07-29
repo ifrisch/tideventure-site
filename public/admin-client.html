@@ -115,7 +115,8 @@
     </div>
 
     <div class="card">
-<h3>Documents</h3>
+<div style="margin-bottom:0.75rem;"><button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="document.getElementById('adminFileInput').click()">Upload Document</button><input type="file" id="adminFileInput" style="display:none;" onchange="uploadClientDoc(this)" /><span id="adminUploadStatus" style="font-size:0.76rem;color:var(--text-muted);margin-left:0.5rem;"></span></div>
+      <h3>Documents</h3>
       <div id="docsList"><div class="empty">Loading…</div></div>
     </div>
 
@@ -297,6 +298,26 @@ async function sendToSign(docId, docName) {
     if (res.ok) alert('Sent for signing!');
     else alert('Failed.');
   } catch { alert('Error.'); }
+}
+
+async function uploadClientDoc(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const email = getEmail();
+  if (!email) return;
+  const status = document.getElementById('adminUploadStatus');
+  status.textContent = 'Uploading…';
+  const token = sessionStorage.getItem('tv_admin_token');
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('email', email);
+  try {
+    const res = await fetch('/api/admin/documents/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+    if (res.ok) { status.textContent = 'Uploaded!'; loadClient(email); }
+    else { const d = await res.json(); status.textContent = 'Error: ' + (d.error || 'Failed'); }
+  } catch { status.textContent = 'Error.'; }
+  input.value = '';
+  setTimeout(() => { status.textContent = ''; }, 3000);
 }
 
 async function saveClientProfile() {
