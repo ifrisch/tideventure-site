@@ -8,7 +8,8 @@
   },
   "assets": {
     "directory": "public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": true
   },
   "compatibility_flags": [
     "nodejs_compat"
@@ -24,6 +25,20 @@
     {
       "bucket_name": "tideventure-documents",
       "binding": "tideventure_documents"
+    },
+    {
+      "bucket_name": "tideventure-backups",
+      "binding": "tideventure_backups"
     }
-  ]
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tideventure-db",
+      "database_id": "308156a2-19ed-4016-a35a-df11e83f82e6"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 12 * * *"]
+  }
 }
