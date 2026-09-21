@@ -5,10 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TideVenture CPA — Trusted Tax & Accounting Services</title>
   <meta name="description" content="TideVenture CPA provides expert tax planning, accounting, and financial advisory services for individuals and businesses." />
+  <link rel="canonical" href="https://tideventurecpa.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TideVenture CPA" />
+  <meta property="og:title" content="TideVenture CPA — Trusted Tax & Accounting Services" />
+  <meta property="og:description" content="Expert tax planning, accounting, and financial advisory for business owners. Licensed CPA firm with transparent pricing and year-round support." />
+  <meta property="og:url" content="https://tideventurecpa.com/" />
+  <meta property="og:image" content="https://tideventurecpa.com/images/logo.png" />
+  <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AccountingService",
+    "name": "TideVenture CPA",
+    "url": "https://tideventurecpa.com",
+    "email": "hello@tideventurecpa.com",
+    "description": "Licensed CPA firm providing business tax returns, quarterly tax planning, and monthly financial review for small business owners.",
+    "priceRange": "$$",
+    "image": "https://tideventurecpa.com/images/logo.png"
+  }
+  </script>
 </head>
 <body>
 
@@ -44,7 +65,7 @@
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Client Login
         </a>
-        <a href="contact.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
+        <a href="pricing.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
       </div>
     </div>
   </nav>
@@ -67,6 +88,16 @@
     </div>
   </section>
 
+  <!-- TRUST BAR -->
+  <div class="trust-bar">
+    <div class="container trust-bar__inner">
+      <span class="trust-item">Licensed CPA Firm</span>
+      <span class="trust-item">Year-Round Support</span>
+      <span class="trust-item">Transparent Pricing</span>
+      <span class="trust-item">Secure Client Portal</span>
+    </div>
+  </div>
+
   <!-- SERVICES OVERVIEW -->
   <section class="section">
     <div class="container">
@@ -77,19 +108,19 @@
       </div>
       <div class="services-grid">
         <div class="service-card">
-          <span class="service-card__icon">🧾</span>
+          <span class="service-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></span>
           <h3>Business Tax Returns</h3>
           <p>Accurate federal &amp; state business tax filing — S-Corps, C-Corps, Partnerships, and LLCs done right.</p>
           <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
-          <span class="service-card__icon">📅</span>
+          <span class="service-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M9 15.5l2 2 4-4"/></svg></span>
           <h3>Quarterly Tax Planning</h3>
           <p>Proactive estimated payment planning every quarter so you avoid surprises and stay ahead of the IRS.</p>
           <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
         </div>
         <div class="service-card">
-          <span class="service-card__icon">📊</span>
+          <span class="service-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-9M21 20H3"/></svg></span>
           <h3>Monthly Financial Review</h3>
           <p>Monthly review of your financial health with clean financial statements to keep you informed and in control.</p>
           <a href="services.html" class="service-card__link">Learn more <span>→</span></a>
@@ -131,31 +162,101 @@
     </div>
   </section>
 
-  <!-- VIDEO SECTION -->
-  <section class="video-section">
-    <div class="container video-section__inner">
-      <div class="video-section__text">
-        <span class="label">Our Approach</span>
-        <h2>Built for Business Owners Who Want Real Answers</h2>
-        <p>We don't just file your taxes — we help you understand your numbers, plan your next move, and build a business that weathers every tide.</p>
-        <a href="about.html" class="btn btn--teal">Meet Your CPA</a>
-      </div>
-      <div class="video-frame">
-        <!--
-          ADD YOUR VIDEO:
-          Option A — Upload a video file to images/intro.mp4 and uncomment:
-          <video autoplay muted loop playsinline poster="images/video-poster.jpg">
-            <source src="images/intro.mp4" type="video/mp4" />
-          </video>
-
-          Option B — Paste a YouTube embed URL (replace VIDEO_ID):
-          <iframe src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID"
-            allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        -->
-        <div class="video-frame__placeholder">
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" stroke="white" stroke-width="1.5"/><path d="M21 18l14 8-14 8V18z" fill="white" opacity="0.6"/></svg>
-          <span>Add your intro video here<br/><small>See comment in HTML for instructions</small></span>
+  <!-- MEET YOUR CPA -->
+  <section class="section">
+    <div class="container founder">
+      <div class="founder__photo">
+        <img src="images/headshot.jpg" alt="Founder of TideVenture CPA" onerror="this.parentElement.classList.add('founder__photo--empty')" />
+        <div class="founder__photo-fallback" aria-hidden="true">
+          <svg width="72" height="72" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(13,61,90,0.35)"/>
+            <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(13,61,90,0.55)"/>
+            <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(13,61,90,0.8)"/>
+            <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          </svg>
         </div>
+      </div>
+      <div class="founder__text">
+        <span class="label">Meet Your CPA</span>
+        <h2>One CPA. Your Whole Financial Picture.</h2>
+        <p>TideVenture was founded on a simple idea: business owners deserve direct access to the CPA who actually does the work — not a rotating cast of associates. When you reach out, you talk to the person who knows your books, your goals, and your tax situation.</p>
+        <div class="founder__creds">
+          <span class="founder__cred">Licensed CPA</span>
+          <span class="founder__cred">MS, Accounting</span>
+          <span class="founder__cred">QuickBooks ProAdvisor</span>
+        </div>
+        <a href="about.html" class="btn btn--outline">Learn More About Me</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW WE WORK -->
+  <section class="process-section">
+    <div class="container">
+      <div class="section-header section-header--center">
+        <span class="label">How We Work</span>
+        <h2>Getting Started Is Simple</h2>
+        <p class="section-header__lead">No pressure, no jargon — just a clear path from first conversation to ongoing partnership.</p>
+      </div>
+      <div class="process-grid">
+        <div class="process-step">
+          <div class="process-step__num">Step 01</div>
+          <h3>Free Strategy Session</h3>
+          <p>A 30-minute conversation about your business, your goals, and where you need help. No obligation, no sales pitch.</p>
+        </div>
+        <div class="process-step">
+          <div class="process-step__num">Step 02</div>
+          <h3>A Plan Built for You</h3>
+          <p>We recommend only the services your business actually needs, with clear, upfront pricing — no surprises later.</p>
+        </div>
+        <div class="process-step">
+          <div class="process-step__num">Step 03</div>
+          <h3>Year-Round Partnership</h3>
+          <p>Ongoing support through our secure client portal, with proactive check-ins so you always know where you stand.</p>
+        </div>
+      </div>
+      <div class="process-cta">
+        <a href="pricing.html" class="btn btn--teal">See What It Would Cost</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-header section-header--center">
+        <span class="label">Common Questions</span>
+        <h2>Frequently Asked Questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>How much do your services cost?</summary>
+          <div class="faq-answer"><p>We believe in transparent pricing. Our <a href="pricing.html">pricing estimator</a> gives you a ballpark range in under a minute — no email required. A firm quote comes after a free strategy session, once we understand your specific situation.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>I already have an accountant. Is switching a hassle?</summary>
+          <div class="faq-answer"><p>It's simpler than most owners expect. Once you authorize us, we handle the transfer of your records and prior returns directly. The cleanest time to switch is after a filing season or at a quarter end, but we can onboard you at any point in the year.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>Do you only prepare tax returns?</summary>
+          <div class="faq-answer"><p>No — filing is just one piece. We work with clients year-round: quarterly tax planning and estimated payments, monthly financial statements and review, and annual returns. The goal is that nothing about your taxes is ever a surprise.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>Do we need to meet in person?</summary>
+          <div class="faq-answer"><p>Not unless you want to. Documents, questionnaires, and signatures all move through our secure client portal, and we meet by phone or video. We can work with you wherever you are.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>What types of businesses do you work with?</summary>
+          <div class="faq-answer"><p>S-Corps, C-Corps, partnerships, multi- and single-member LLCs, and sole proprietors. Our focus is small business owners who want a real relationship with their CPA.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>When is the best time to reach out?</summary>
+          <div class="faq-answer"><p>Earlier than you think. The sooner we start — especially before year-end — the more planning opportunities we can act on. That said, a free strategy session is worthwhile at any point in the year.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>How secure is my financial information?</summary>
+          <div class="faq-answer"><p>Security is built into how we work. Everything moves through our secure client portal over an encrypted connection — never as email attachments — and documents you upload are encrypted at rest, accessible only to you and our firm. We never sell your information or share it for marketing. As a CPA firm, we're also bound by professional confidentiality obligations that go beyond a typical privacy policy — see our <a href="privacy.html">Privacy Policy</a> for details.</p></div>
+        </details>
       </div>
     </div>
   </section>
@@ -177,8 +278,9 @@
       <div class="footer__grid">
         <div>
           <span class="footer__logo-text">Tide<span>Venture</span></span>
-          <p style="font-size:.9rem;max-width:280px;color:#fff;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
-          <p class="footer__disclaimer" style="color:#fff;">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
+          <p class="footer__desc">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
+          <p class="footer__contact"><a href="mailto:hello@tideventurecpa.com">hello@tideventurecpa.com</a></p>
+          <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
         <div class="footer__col">
           <h4>Services</h4>
@@ -195,6 +297,7 @@
             <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="portal.html">Client Login</a></li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
@@ -209,3 +312,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
+

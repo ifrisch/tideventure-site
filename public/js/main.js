@@ -28,43 +28,40 @@ document.querySelectorAll('.nav__links a').forEach(a => {
 // ---- Contact form submission ----
 const contactForm = document.getElementById('contact-form');
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = contactForm.querySelector('button[type="submit"]');
     const original = btn.textContent;
     btn.textContent = 'Sending…';
     btn.disabled = true;
 
-    // Simulate submit — replace with real endpoint (Cloudflare Workers, Formspree, etc.)
-    setTimeout(() => {
+    const fd = new FormData(contactForm);
+    const services = [...contactForm.querySelectorAll('input[name="service"]:checked')].map(cb => cb.value);
+    const payload = {
+      email: fd.get('email'),
+      name: [fd.get('first-name'), fd.get('last-name')].filter(Boolean).join(' ').trim(),
+      phone: fd.get('phone') || '',
+      services,
+      notes: fd.get('message') || '',
+      source: 'contact',
+    };
+
+    try {
+      const res = await fetch('/api/prospect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Request failed');
       const successMsg = document.getElementById('form-success');
-      if (successMsg) successMsg.hidden = false;
+      if (successMsg) { successMsg.hidden = false; successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
       contactForm.reset();
+    } catch (err) {
+      alert('Sorry, something went wrong sending your message. Please email us directly at hello@tideventurecpa.com.');
+    } finally {
       btn.textContent = original;
       btn.disabled = false;
-    }, 1200);
+    }
   });
 }
 
-// ---- Scroll reveal (lightweight) ----
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('revealed');
-      observer.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.service-card, .why-item, .team-card').forEach(el => {
-  el.classList.add('reveal');
-  observer.observe(el);
-});
-
-// ---- Inject scroll reveal CSS ----
-const style = document.createElement('style');
-style.textContent = `
-  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
-  .reveal.revealed { opacity: 1; transform: none; }
-`;
-document.head.appendChild(style);

@@ -5,9 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pricing Estimator — TideVenture CPA</title>
   <meta name="description" content="Get a personalized pricing estimate for TideVenture CPA services based on your business entity type, services needed, and revenue range." />
+  <link rel="canonical" href="https://tideventurecpa.com/pricing.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TideVenture CPA" />
+  <meta property="og:title" content="Pricing Estimator — TideVenture CPA" />
+  <meta property="og:description" content="Get a transparent ballpark price for CPA services in under a minute. No email required." />
+  <meta property="og:url" content="https://tideventurecpa.com/pricing.html" />
+  <meta property="og:image" content="https://tideventurecpa.com/images/logo.png" />
+  <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     /* Hard override: Step 2 service cards must remain white at all times. */
@@ -56,6 +65,69 @@
       background: #ffe566 !important;
     }
 
+    /* ---- Fractional CFO sub-services ---- */
+    .cfo-subs {
+      display: none;
+      margin-top: 0.9rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--hairline);
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .service-option.selected .cfo-subs { display: flex; }
+    .cfo-sub {
+      display: flex; align-items: center; gap: 0.55rem;
+      font-size: 0.87rem; color: var(--ink); cursor: pointer;
+      padding: 0.2rem 0; width: fit-content;
+    }
+    .cfo-sub input[type="checkbox"] {
+      width: 15px; height: 15px; accent-color: var(--brand-dark);
+      cursor: pointer; flex-shrink: 0; margin: 0;
+      pointer-events: none;
+    }
+    .info-tip {
+      position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0;
+      border: 1px solid #b6c4cf; color: #6b7f8f;
+      font-size: 0.6rem; font-weight: 700; font-style: normal;
+      cursor: help; line-height: 1;
+    }
+    .info-tip::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 9px); left: 50%;
+      transform: translateX(-50%);
+      width: 230px; max-width: 60vw;
+      background: #152430; color: #fff;
+      font-size: 0.76rem; font-weight: 400; line-height: 1.55;
+      padding: 0.6rem 0.75rem; border-radius: 7px;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 60; text-align: left; white-space: normal;
+    }
+    .info-tip::before {
+      content: '';
+      position: absolute; bottom: calc(100% + 4px); left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #152430;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.15s ease;
+      z-index: 60;
+    }
+    .info-tip:hover::after, .info-tip:focus::after,
+    .info-tip:hover::before, .info-tip:focus::before {
+      opacity: 1; visibility: visible;
+    }
+    .cfo-quote-note {
+      margin-top: 0.55rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--brand-dark);
+      background: var(--brand-pale); border: 1px solid var(--brand-light);
+      padding: 0.3rem 0.6rem; border-radius: 5px; width: fit-content;
+    }
+    .result-tbd-note {
+      font-size: 0.8rem; color: var(--text-muted);
+      margin-top: 0.5rem; line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -92,7 +164,7 @@
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Client Login
         </a>
-        <a href="contact.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
+        <a href="pricing.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
       </div>
     </div>
   </nav>
@@ -101,7 +173,7 @@
   <section class="pricing-hero">
     <div class="container pricing-hero__inner">
       <span class="label" style="color:rgba(255,255,255,0.5)">Transparent Pricing</span>
-      <h1>Get a Pricing Estimate</h1>
+      <h1>Let's Figure Out What You Need</h1>
       <p>Answer three quick questions to see a ballpark range for your engagement. No email required.</p>
     </div>
   </section>
@@ -128,27 +200,27 @@
           </div>
           <div class="entity-grid">
             <div class="entity-card" data-entity="scorp" tabindex="0" role="button">
-              <div class="entity-card__icon">🏢</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 9h3a1 1 0 0 1 1 1v11"/><path d="M2 21h20"/><path d="M8 7h4M8 11h4M8 15h4"/></svg></div>
               <div class="entity-card__name">S-Corp</div>
             </div>
             <div class="entity-card" data-entity="ccorp" tabindex="0" role="button">
-              <div class="entity-card__icon">🏦</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V8l8-5 8 5v13"/><path d="M9 21v-4a3 3 0 0 1 6 0v4"/><path d="M9 11h.01M15 11h.01"/></svg></div>
               <div class="entity-card__name">C-Corp</div>
             </div>
             <div class="entity-card" data-entity="partnership" tabindex="0" role="button">
-              <div class="entity-card__icon">🤝</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
               <div class="entity-card__name">Partnership</div>
             </div>
             <div class="entity-card" data-entity="mmllc" tabindex="0" role="button">
-              <div class="entity-card__icon">👥</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5"/></svg></div>
               <div class="entity-card__name">Multi-Member LLC</div>
             </div>
             <div class="entity-card" data-entity="smllc" tabindex="0" role="button">
-              <div class="entity-card__icon">👤</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></div>
               <div class="entity-card__name">Single-Member LLC</div>
             </div>
             <div class="entity-card" data-entity="soleprop" tabindex="0" role="button">
-              <div class="entity-card__icon">🙋</div>
+              <div class="entity-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5 21a7 7 0 0 1 12.2-4.7"/><path d="M19 16v6M16 19h6"/></svg></div>
               <div class="entity-card__name">Sole Proprietor</div>
             </div>
           </div>
@@ -187,15 +259,43 @@
             </div>
           </label>
 
-          <label class="service-option" data-service="monthly" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="service-option" data-service="cfo" tabindex="0" role="checkbox" aria-checked="false">
             <div class="service-option__check" aria-hidden="true">
               <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="service-option__body">
-              <h3>Monthly Financial Review &amp; Statements</h3>
-              <p>Monthly P&amp;L, Balance Sheet, and financial health commentary</p>
+              <h3>Fractional CFO</h3>
+              <p>Strategic finance leadership without the full-time hire — select the support you need</p>
+              <div class="cfo-subs" id="cfoSubs">
+                <div class="cfo-sub" data-cfo="budget" tabindex="0" role="checkbox" aria-checked="false">
+                  <input type="checkbox" tabindex="-1" aria-hidden="true" />
+                  <span>Budget Creation &amp; Analysis</span>
+                  <span class="info-tip" tabindex="0" data-tip="We build an annual operating budget with you, then track how actual results compare against it so spending stays intentional and goals stay realistic.">i</span>
+                </div>
+                <div class="cfo-sub" data-cfo="cashflow" tabindex="0" role="checkbox" aria-checked="false">
+                  <input type="checkbox" tabindex="-1" aria-hidden="true" />
+                  <span>Cash Flow Forecasting</span>
+                  <span class="info-tip" tabindex="0" data-tip="A rolling projection of the cash coming in and going out of your business, so you see tight months and surpluses before they arrive — not after.">i</span>
+                </div>
+                <div class="cfo-sub" data-cfo="modeling" tabindex="0" role="checkbox" aria-checked="false">
+                  <input type="checkbox" tabindex="-1" aria-hidden="true" />
+                  <span>Financial Modeling</span>
+                  <span class="info-tip" tabindex="0" data-tip="Custom projections for big decisions — hiring, pricing changes, equipment purchases, expansion, or financing — so you can see the numbers before you commit.">i</span>
+                </div>
+                <div class="cfo-sub" data-cfo="kpi" tabindex="0" role="checkbox" aria-checked="false">
+                  <input type="checkbox" tabindex="-1" aria-hidden="true" />
+                  <span>KPI Development &amp; Reporting</span>
+                  <span class="info-tip" tabindex="0" data-tip="We define the handful of metrics that actually drive your business, then report on them regularly so you can track performance at a glance.">i</span>
+                </div>
+                <div class="cfo-sub" data-cfo="variance" tabindex="0" role="checkbox" aria-checked="false">
+                  <input type="checkbox" tabindex="-1" aria-hidden="true" />
+                  <span>Monthly Variance Analysis</span>
+                  <span class="info-tip" tabindex="0" data-tip="Each month we compare your actual results against budget and prior periods, then explain what drove the differences — so surprises get caught early.">i</span>
+                </div>
+                <div class="cfo-quote-note">Fractional CFO services are priced as a customized quote</div>
+              </div>
             </div>
-          </label>
+          </div>
 
           <label class="service-option" data-service="bookkeeping" tabindex="0" role="checkbox" aria-checked="false">
             <div class="service-option__check" aria-hidden="true">
@@ -305,9 +405,12 @@
             <div class="result-total__label">Estimated Annual Total</div>
             <div class="result-total__value" id="resultTotalValue">—</div>
           </div>
+          <p class="result-tbd-note" id="resultTbdNote" style="display:none;">
+            The service ranges above are still good estimates — but because Fractional CFO work is scoped to your specific needs, we quote it individually. Your total will be finalized together in your free strategy session.
+          </p>
 
           <p class="result-disclaimer">
-            ⚠️ These are estimates only. Actual pricing is determined after a free strategy session and may vary based on the complexity of your specific situation. No commitment required.
+            These are estimates only. Actual pricing is determined after a free strategy session and may vary based on the complexity of your specific situation. No commitment required.
           </p>
 
           <div style="display:flex; gap:1rem; flex-wrap:wrap;">
@@ -371,7 +474,8 @@
         <div>
           <span class="footer__logo-text">Tide<span>Venture</span></span>
           <p class="footer__desc">Focused CPA services for business owners who want real answers and real results.</p>
-          <p class="footer__disclaimer" style="color:#fff;">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
+          <p class="footer__contact"><a href="mailto:hello@tideventurecpa.com">hello@tideventurecpa.com</a></p>
+          <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
         <div class="footer__col">
           <h4>Services</h4>
@@ -388,6 +492,7 @@
             <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="portal.html">Client Login</a></li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
@@ -424,14 +529,13 @@
       soleprop:    { low: 175, high: 375 },
     };
 
-    // --- Monthly financial review: per-month base × 12 = annual ---
-    const ENTITY_MONTHLY_BASE = {
-      scorp:       { low: 450, high: 950 },
-      ccorp:       { low: 500, high: 1100 },
-      partnership: { low: 425, high: 900 },
-      mmllc:       { low: 400, high: 875 },
-      smllc:       { low: 325, high: 700 },
-      soleprop:    { low: 275, high: 575 },
+    // --- Fractional CFO sub-services (custom-quoted, no base pricing) ---
+    const CFO_SUB_LABELS = {
+      budget:   'Budget Creation & Analysis',
+      cashflow: 'Cash Flow Forecasting',
+      modeling: 'Financial Modeling',
+      kpi:      'KPI Development & Reporting',
+      variance: 'Monthly Variance Analysis',
     };
 
     // --- Bookkeeping with financial statement maintenance: per-month base × 12 = annual ---
@@ -462,6 +566,7 @@
     let selectedEntity   = null;
     let selectedServices = new Set();
     let selectedRevenue  = null;
+    let selectedCfoSubs  = new Set();
 
     // --- Helpers ---
     function fmt(n) {
@@ -524,6 +629,7 @@
       selectedEntity   = null;
       selectedServices = new Set();
       selectedRevenue  = null;
+      clearCfoSubs();
       document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.service-option').forEach(o => {
         o.classList.remove('selected');
@@ -571,6 +677,7 @@
           selectedServices.delete(svc);
           option.classList.remove('selected');
           option.setAttribute('aria-checked', 'false');
+          if (svc === 'cfo') clearCfoSubs();
         } else {
           selectedServices.add(svc);
           option.classList.add('selected');
@@ -591,6 +698,41 @@
       option.addEventListener('click', toggleService);
       option.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleService(); } });
     });
+
+    // --- Fractional CFO sub-service checkboxes ---
+    document.querySelectorAll('.cfo-sub').forEach(row => {
+      function toggleCfoSub(e) {
+        e.stopPropagation();
+        const key = row.dataset.cfo;
+        const box = row.querySelector('input[type="checkbox"]');
+        if (selectedCfoSubs.has(key)) {
+          selectedCfoSubs.delete(key);
+          box.checked = false;
+          row.setAttribute('aria-checked', 'false');
+        } else {
+          selectedCfoSubs.add(key);
+          box.checked = true;
+          row.setAttribute('aria-checked', 'true');
+        }
+      }
+      row.addEventListener('click', toggleCfoSub);
+      row.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCfoSub(e); }
+      });
+    });
+    // Info markers should only show their tooltip, never toggle anything
+    document.querySelectorAll('.info-tip').forEach(tip => {
+      tip.addEventListener('click', e => e.stopPropagation());
+      tip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); } });
+    });
+
+    function clearCfoSubs() {
+      selectedCfoSubs = new Set();
+      document.querySelectorAll('.cfo-sub').forEach(row => {
+        row.querySelector('input[type="checkbox"]').checked = false;
+        row.setAttribute('aria-checked', 'false');
+      });
+    }
 
     function updateServiceHints() {
       // Quarterly hint
@@ -633,7 +775,9 @@
       const memberCount = memberInput ? parseInt(memberInput.value) || 1 : 1;
       const memberMult = getMemberMultiplier(memberCount);
       const revMult = REVENUE_MULTIPLIER[selectedRevenue];
-      const mult = revMult * memberMult;
+      // Member count drives tax-return complexity (K-1s, basis tracking) — it
+      // applies to tax and quarterly planning only, not monthly accounting work.
+      const taxMult = revMult * memberMult;
 
       const breakdown = document.getElementById('resultBreakdown');
       breakdown.innerHTML = '';
@@ -644,15 +788,15 @@
       const SERVICE_LABELS = {
         tax:       'Business Tax Return',
         quarterly: 'Quarterly Tax Planning (annual)',
-        monthly:   'Monthly Financial Review (annual)',
+        cfo:       'Fractional CFO',
         bookkeeping: 'Bookkeeping with Financial Statement Maintenance',
         other: 'Other / Custom Service Need',
       };
 
       if (selectedServices.has('tax')) {
         const base = ENTITY_TAX_BASE[selectedEntity];
-        const low  = base.low  * mult;
-        const high = base.high * mult;
+        const low  = base.low  * taxMult;
+        const high = base.high * taxMult;
         totalLow  += low;
         totalHigh += high;
         breakdown.innerHTML += `
@@ -667,31 +811,15 @@
 
       if (selectedServices.has('quarterly')) {
         const base = ENTITY_QUARTERLY_BASE[selectedEntity];
-        const low  = base.low  * mult * 4;
-        const high = base.high * mult * 4;
+        const low  = base.low  * taxMult * 4;
+        const high = base.high * taxMult * 4;
         totalLow  += low;
         totalHigh += high;
         breakdown.innerHTML += `
           <div class="result-line">
             <div>
               <div class="result-line__label">${SERVICE_LABELS.quarterly}</div>
-              <div class="result-line__period">${fmtRange(base.low * mult, base.high * mult)} /quarter × 4</div>
-            </div>
-            <div class="result-line__price">${fmtRange(low, high)}</div>
-          </div>`;
-      }
-
-      if (selectedServices.has('monthly')) {
-        const base = ENTITY_MONTHLY_BASE[selectedEntity];
-        const low  = base.low  * mult * 12;
-        const high = base.high * mult * 12;
-        totalLow  += low;
-        totalHigh += high;
-        breakdown.innerHTML += `
-          <div class="result-line">
-            <div>
-              <div class="result-line__label">${SERVICE_LABELS.monthly}</div>
-              <div class="result-line__period">${fmtRange(base.low * mult, base.high * mult)} /month × 12</div>
+              <div class="result-line__period">${fmtRange(base.low * taxMult, base.high * taxMult)} /quarter × 4</div>
             </div>
             <div class="result-line__price">${fmtRange(low, high)}</div>
           </div>`;
@@ -699,8 +827,8 @@
 
       if (selectedServices.has('bookkeeping')) {
         const base = ENTITY_BOOKKEEPING_BASE[selectedEntity];
-        const low  = base.low  * mult;
-        const high = base.high * mult;
+        const low  = base.low  * revMult;
+        const high = base.high * revMult;
         totalLow  += low * 12;
         totalHigh += high * 12;
         breakdown.innerHTML += `
@@ -710,6 +838,19 @@
               <div class="result-line__period">Billed monthly</div>
             </div>
             <div class="result-line__price">${fmtRange(low, high)}</div>
+          </div>`;
+      }
+
+      if (selectedServices.has('cfo')) {
+        const subs = [...selectedCfoSubs].map(k => CFO_SUB_LABELS[k]).filter(Boolean);
+        const detail = subs.length ? subs.join(' · ') : 'Scope discussed during your strategy session';
+        breakdown.innerHTML += `
+          <div class="result-line">
+            <div>
+              <div class="result-line__label">${SERVICE_LABELS.cfo}</div>
+              <div class="result-line__period">${detail}</div>
+            </div>
+            <div class="result-line__price">Customized quote</div>
           </div>`;
       }
 
@@ -728,7 +869,14 @@
           </div>`;
       }
 
-      document.getElementById('resultTotalValue').textContent = fmtRange(totalLow, totalHigh);
+      const tbdNote = document.getElementById('resultTbdNote');
+      if (selectedServices.has('cfo')) {
+        document.getElementById('resultTotalValue').textContent = 'TBD';
+        tbdNote.style.display = '';
+      } else {
+        document.getElementById('resultTotalValue').textContent = fmtRange(totalLow, totalHigh);
+        tbdNote.style.display = 'none';
+      }
 
       // Hide steps, show result
       document.querySelectorAll('.pricing-step').forEach(s => s.classList.remove('active'));
@@ -739,10 +887,11 @@
 
     // ── Prospect capture ──
     async function submitProspect() {
-      const btn = event.target;
       const svcs = Array.from(selectedServices).join(',');
-      window.location.href = `/get-started.html?entity=${encodeURIComponent(selectedEntity || '')}&services=${encodeURIComponent(svcs)}&revenue=${encodeURIComponent(selectedRevenue || '')}`;
+      const members = parseInt(document.getElementById('memberCount')?.value) || 1;
+      window.location.href = `/get-started.html?entity=${encodeURIComponent(selectedEntity || '')}&services=${encodeURIComponent(svcs)}&revenue=${encodeURIComponent(selectedRevenue || '')}&cfo=${encodeURIComponent([...selectedCfoSubs].join(','))}&members=${members}`;
     }
   </script>
 </body>
 </html>
+

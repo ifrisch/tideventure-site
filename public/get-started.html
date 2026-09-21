@@ -7,7 +7,8 @@
   <meta name="description" content="Take the next step. Share a few details and I'll reach out personally." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     body { background: var(--sand); }
@@ -124,38 +125,37 @@ const params = new URLSearchParams(window.location.search);
 const entityType = params.get('entity') || '';
 const services = (params.get('services') || '').split(',').filter(Boolean);
 const revenue = params.get('revenue') || '';
+const cfoSubs = (params.get('cfo') || '').split(',').filter(Boolean);
+const members = parseInt(params.get('members') || '1') || 1;
 
 const LABELS = { scorp: 'S-Corp', ccorp: 'C-Corp', partnership: 'Partnership', mmllc: 'Multi-Member LLC', smllc: 'Single-Member LLC', soleprop: 'Sole Proprietor' };
 const REV_LABELS = { under500k: 'Under $500k', '500k1m': '$500k–$1M', '1m5m': '$1M–$5M', over5m: 'Over $5M' };
-const SVC_LABELS = { tax: 'Business Tax Return', quarterly: 'Quarterly Planning', monthly: 'Monthly Financial Review', bookkeeping: 'Bookkeeping', other: 'Custom Service' };
+const SVC_LABELS = { tax: 'Business Tax Return', quarterly: 'Quarterly Planning', monthly: 'Monthly Financial Review', cfo: 'Fractional CFO', bookkeeping: 'Bookkeeping', other: 'Custom Service' };
+const CFO_LABELS = { budget: 'Budget Creation & Analysis', cashflow: 'Cash Flow Forecasting', modeling: 'Financial Modeling', kpi: 'KPI Development & Reporting', variance: 'Monthly Variance Analysis' };
 const REV_MULT = { under500k: 1.0, '500k1m': 1.3, '1m5m': 1.7, over5m: 2.3 };
 const TAX_BASE = { scorp: [1500,2800], ccorp: [1800,3200], partnership: [1400,2600], mmllc: [1400,2600], smllc: [900,1800], soleprop: [700,1500] };
 const QTR_BASE = { scorp: [325,650], ccorp: [375,700], partnership: [300,600], mmllc: [300,600], smllc: [225,450], soleprop: [175,375] };
-const MON_BASE = { scorp: [450,950], ccorp: [500,1100], partnership: [425,900], mmllc: [400,875], smllc: [325,700], soleprop: [275,575] };
 const BK_BASE = { scorp: [350,700], ccorp: [400,800], partnership: [325,650], mmllc: [300,600], smllc: [250,500], soleprop: [200,400] };
 
 if (entityType || services.length) {
   const revMult = REV_MULT[revenue] || 1.0;
+  // Member count affects tax-return complexity only (matches the pricing tool)
+  const memberMult = Math.min(1 + (Math.max(members, 1) - 1) * 0.15, 1.9);
+  const taxMult = revMult * memberMult;
   let totalLow = 0, totalHigh = 0;
   const lines = [];
 
   if (services.includes('tax') && TAX_BASE[entityType]) {
-    const l = TAX_BASE[entityType][0] * revMult;
-    const h = TAX_BASE[entityType][1] * revMult;
+    const l = TAX_BASE[entityType][0] * taxMult;
+    const h = TAX_BASE[entityType][1] * taxMult;
     totalLow += l; totalHigh += h;
     lines.push(`${SVC_LABELS.tax}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
   }
   if (services.includes('quarterly') && QTR_BASE[entityType]) {
-    const l = QTR_BASE[entityType][0] * revMult * 4;
-    const h = QTR_BASE[entityType][1] * revMult * 4;
+    const l = QTR_BASE[entityType][0] * taxMult * 4;
+    const h = QTR_BASE[entityType][1] * taxMult * 4;
     totalLow += l; totalHigh += h;
     lines.push(`${SVC_LABELS.quarterly}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
-  }
-  if (services.includes('monthly') && MON_BASE[entityType]) {
-    const l = MON_BASE[entityType][0] * revMult * 12;
-    const h = MON_BASE[entityType][1] * revMult * 12;
-    totalLow += l; totalHigh += h;
-    lines.push(`${SVC_LABELS.monthly}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
   }
   if (services.includes('bookkeeping') && BK_BASE[entityType]) {
     const l = BK_BASE[entityType][0] * revMult * 12;
@@ -163,13 +163,30 @@ if (entityType || services.length) {
     totalLow += l; totalHigh += h;
     lines.push(`${SVC_LABELS.bookkeeping}: $${Math.round(l).toLocaleString()}–$${Math.round(h).toLocaleString()}`);
   }
+  const hasCfo = services.includes('cfo');
+  if (hasCfo) {
+    lines.push(`${SVC_LABELS.cfo}: Customized quote`);
+  }
+
+  // Only ever render known label values — never echo the raw URL param, which
+  // would be a reflected-XSS sink (these come straight from window.location).
+  const cfoNamed = cfoSubs.filter(k => CFO_LABELS[k]).map(k => CFO_LABELS[k]);
+  const cfoDetail = hasCfo && cfoNamed.length
+    ? `<div class="summary-item"><span style="color:var(--text-muted);font-size:0.78rem;">CFO services</span><span class="val" style="font-size:0.78rem;">${cfoNamed.join(', ')}</span></div>`
+    : '';
+
+  const totalDisplay = hasCfo
+    ? 'TBD'
+    : `$${Math.round(totalLow).toLocaleString()}–$${Math.round(totalHigh).toLocaleString()}`;
 
   document.getElementById('pricingSummary').innerHTML = `
     <div style="font-size:0.78rem;font-weight:600;color:var(--brand-dark);margin-bottom:0.4rem;">Your pricing estimate</div>
-    ${entityType ? `<div class="summary-item"><span>Entity type</span><span class="val">${LABELS[entityType] || entityType}</span></div>` : ''}
-    ${revenue ? `<div class="summary-item"><span>Revenue range</span><span class="val">${REV_LABELS[revenue] || revenue}</span></div>` : ''}
-    ${lines.map(l => `<div class="summary-item"><span>${l.split(':')[0]}</span><span class="val">${l.split(':')[1]}</span></div>`).join('')}
-    ${totalLow > 0 ? `<div class="summary-item" style="border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.4rem;font-weight:700;"><span>Estimated annual total</span><span class="val" style="color:var(--brand-dark);">$${Math.round(totalLow).toLocaleString()}–$${Math.round(totalHigh).toLocaleString()}</span></div>` : ''}
+    ${LABELS[entityType] ? `<div class="summary-item"><span>Entity type</span><span class="val">${LABELS[entityType]}</span></div>` : ''}
+    ${REV_LABELS[revenue] ? `<div class="summary-item"><span>Revenue range</span><span class="val">${REV_LABELS[revenue]}</span></div>` : ''}
+    ${lines.map(l => `<div class="summary-item"><span>${l.split(':')[0]}</span><span class="val">${l.split(':').slice(1).join(':')}</span></div>`).join('')}
+    ${cfoDetail}
+    ${(totalLow > 0 || hasCfo) ? `<div class="summary-item" style="border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.4rem;font-weight:700;"><span>Estimated annual total</span><span class="val" style="color:var(--brand-dark);">${totalDisplay}</span></div>` : ''}
+    ${hasCfo ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.35rem;line-height:1.5;">Fractional CFO work is quoted individually, so your total will be finalized in your free strategy session.</div>` : ''}
   `;
 } else {
   document.getElementById('pricingSummary').style.display = 'none';
@@ -181,7 +198,7 @@ if (entityType || services.length) {
   STATES.forEach(st => { const o = document.createElement('option'); o.value = st; o.textContent = st; stateSel.appendChild(o); });
 
   // Populate city datalist
-  const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','Austin','Jacksonville','Fort Worth','Columbus','Charlotte','Indianapolis','San Francisco','Seattle','Denver','Nashville','Oklahoma City','El Paso','Washington','Boston','Las Vegas','Portland','Memphis','Louisville','Baltimore','Milwaukee','Albuquerque','Tucson','Fresno','Sacramento','Mesa','Kansas City','Atlanta','Omaha','Colorado Springs','Raleigh','Long Beach','Virginia Beach','Miami','Oakland','Minneapolis','Tampa','Tulsa','Arlington','New Orleans','Cleveland','Bakersfield','Anaheim','Tampa','Aurora','Honolulu','Santa Ana','Riverside','Corpus Christi','Lexington','Henderson','Stockton','Saint Paul','Cincinnati','St. Louis','Pittsburgh','Greensboro','Lincoln','Orlando','Plano','Anchorage','Newark','Durham','Chandler','Fort Wayne','Reno','St. Petersburg','Lubbock','Scottsdale','Glendale','Gilbert','Madison','Winston-Salem','Norfolk','Boise','Baton Rouge','Spokane','Richmond','Fremont','Des Moines','Shreveport','Chattanooga','Modesto','Tacoma','Fontana','Santa Clarita','Oxnard','Huntsville','Little Rock','Augusta','Akron','Columbus','Birmingham','Grand Rapids','Salt Lake City','Knoxville','Huntsville','Springfield','Grand Prairie','Overland Park','Tallahassee','Mobile','Port St. Lucie','Worcester','Brownsville','Newport News','Santa Rosa','Cape Coral','Providence','Fort Lauderdale','Chattanooga','Rancho Cucamonga','Oceanside','Garden Grove','Vancouver','Sioux Falls','Peoria','Ontario','Elk Grove','Jackson','Lancaster','Salem','Palmdale','Murfreesboro','Corona','Clearwater','Springfield','Pasadena','Pomona','Roseville','Hayward','Joliet','Paterson','Killeen','Alexandria','Macon','Hampton','Eugene','Topeka','Naperville','Victorville','Warren','Columbia','Elizabeth','Lansing','Syracuse','Lakewood','Hollywood','Torrance','Thousand Oaks','Bellevue','Livonia','Bridgeport','New Bedford','Carson','San Mateo','Downey','Burbank','Boca Raton','West Palm Beach','Santa Monica','Tempe','Jersey City','Hialeah','Fort Collins','Yonkers','Charleston','Huntington','Carrollton','Tuscaloosa','Citrus Heights','Gary','Waco','New Haven','Sterling Heights','Denton','Surprise','El Monte','Billings','San Jose','Boulder','Ann Arbor','Berkeley','Cambridge','Evanston','Palo Alto','Irvine','Frisco','Sandy Springs','Sugar Land','Edison','Woodbridge','Troy','Santa Barbara','San Luis Obispo','Flagstaff','Bend','Missoula','Lafayette','Greenville','Columbia','Wilmington','Dover','Cranston','Manchester','Portsmouth','Burlington','Cheyenne','Fargo','Bismarck','Rapid City','Sioux City','Council Bluffs','Waterloo','Cedar Rapids','Davenport','Appleton','Green Bay','Kenosha','Racine','Waukesha','Brookfield','Flint','Dearborn','Farmington Hills','Southfield','Wyoming','Kentwood','Kalamazoo','Battle Creek','Saginaw','Taylor','St. Clair Shores','Royal Oak','Novi','Portage','Rochester','Troy','Warren','Midland','Bay City','Muskegon','Jackson','Benton Harbor','Niles','Holland','Muskegon','Grand Haven','Traverse City','Petoskey','Cadillac','Alpena','Marquette','Sault Ste. Marie','Escanaba','Menominee','Iron Mountain','Houghton','Hancock','Calumet','Laurium','Copper Harbor','Eagle Harbor','Eagle River','Gaylord','Ludington','Manistee','Frankfort','Elberta','Beulah','Benzonia','Thompsonville','Honor','Glen Arbor','Empire','Suttons Bay','Northport','Omena','Leland','Lake Leelanau','Cedar','Maple City','Kingsley','Traverse City','Williamsburg','Acme','Elk Rapids','Kewadin','Central Lake','Bellaire','Alden','Mancelona','East Jordan','Boyne City','Charlevoix','Petoskey','Alanson','Conway','Cross Village','Good Hart','Harbor Springs','Levering','Mackinaw City','St. Ignace','Mackinac Island','St. Ignace','Moran','Brevort','Naubinway','Engadine','Epoufette','Gulliver','Manistique','Thompson','Rapid River','Gladstone','Escanaba','K. I. Sawyer','Gwinn','Harvey','Marquette','Negaunee','Ishpeming','Republic','Champion','Michigamme','Crystal Falls','Alpha','Iron River','Mineral Hills','Gibbs City','Amasa','Stambaugh','Iron River','Gaastra','Ontonagon','White Pine','Bergland','Ewen','')];
+  const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','Austin','Jacksonville','Fort Worth','Columbus','Charlotte','Indianapolis','San Francisco','Seattle','Denver','Nashville','Oklahoma City','El Paso','Washington','Boston','Las Vegas','Portland','Memphis','Louisville','Baltimore','Milwaukee','Albuquerque','Tucson','Fresno','Sacramento','Mesa','Kansas City','Atlanta','Omaha','Colorado Springs','Raleigh','Long Beach','Virginia Beach','Miami','Oakland','Minneapolis','Tampa','Tulsa','Arlington','New Orleans','Cleveland','Bakersfield','Anaheim','Tampa','Aurora','Honolulu','Santa Ana','Riverside','Corpus Christi','Lexington','Henderson','Stockton','Saint Paul','Cincinnati','St. Louis','Pittsburgh','Greensboro','Lincoln','Orlando','Plano','Anchorage','Newark','Durham','Chandler','Fort Wayne','Reno','St. Petersburg','Lubbock','Scottsdale','Glendale','Gilbert','Madison','Winston-Salem','Norfolk','Boise','Baton Rouge','Spokane','Richmond','Fremont','Des Moines','Shreveport','Chattanooga','Modesto','Tacoma','Fontana','Santa Clarita','Oxnard','Huntsville','Little Rock','Augusta','Akron','Columbus','Birmingham','Grand Rapids','Salt Lake City','Knoxville','Huntsville','Springfield','Grand Prairie','Overland Park','Tallahassee','Mobile','Port St. Lucie','Worcester','Brownsville','Newport News','Santa Rosa','Cape Coral','Providence','Fort Lauderdale','Chattanooga','Rancho Cucamonga','Oceanside','Garden Grove','Vancouver','Sioux Falls','Peoria','Ontario','Elk Grove','Jackson','Lancaster','Salem','Palmdale','Murfreesboro','Corona','Clearwater','Springfield','Pasadena','Pomona','Roseville','Hayward','Joliet','Paterson','Killeen','Alexandria','Macon','Hampton','Eugene','Topeka','Naperville','Victorville','Warren','Columbia','Elizabeth','Lansing','Syracuse','Lakewood','Hollywood','Torrance','Thousand Oaks','Bellevue','Livonia','Bridgeport','New Bedford','Carson','San Mateo','Downey','Burbank','Boca Raton','West Palm Beach','Santa Monica','Tempe','Jersey City','Hialeah','Fort Collins','Yonkers','Charleston','Huntington','Carrollton','Tuscaloosa','Citrus Heights','Gary','Waco','New Haven','Sterling Heights','Denton','Surprise','El Monte','Billings','San Jose','Boulder','Ann Arbor','Berkeley','Cambridge','Evanston','Palo Alto','Irvine','Frisco','Sandy Springs','Sugar Land','Edison','Woodbridge','Troy','Santa Barbara','San Luis Obispo','Flagstaff','Bend','Missoula','Lafayette','Greenville','Columbia','Wilmington','Dover','Cranston','Manchester','Portsmouth','Burlington','Cheyenne','Fargo','Bismarck','Rapid City','Sioux City','Council Bluffs','Waterloo','Cedar Rapids','Davenport','Appleton','Green Bay','Kenosha','Racine','Waukesha','Brookfield','Flint','Dearborn','Farmington Hills','Southfield','Wyoming','Kentwood','Kalamazoo','Battle Creek','Saginaw','Taylor','St. Clair Shores','Royal Oak','Novi','Portage','Rochester','Troy','Warren','Midland','Bay City','Muskegon','Jackson','Benton Harbor','Niles','Holland','Muskegon','Grand Haven','Traverse City','Petoskey','Cadillac','Alpena','Marquette','Sault Ste. Marie','Escanaba','Menominee','Iron Mountain','Houghton','Hancock','Calumet','Laurium','Copper Harbor','Eagle Harbor','Eagle River','Gaylord','Ludington','Manistee','Frankfort','Elberta','Beulah','Benzonia','Thompsonville','Honor','Glen Arbor','Empire','Suttons Bay','Northport','Omena','Leland','Lake Leelanau','Cedar','Maple City','Kingsley','Traverse City','Williamsburg','Acme','Elk Rapids','Kewadin','Central Lake','Bellaire','Alden','Mancelona','East Jordan','Boyne City','Charlevoix','Petoskey','Alanson','Conway','Cross Village','Good Hart','Harbor Springs','Levering','Mackinaw City','St. Ignace','Mackinac Island','St. Ignace','Moran','Brevort','Naubinway','Engadine','Epoufette','Gulliver','Manistique','Thompson','Rapid River','Gladstone','Escanaba','K. I. Sawyer','Gwinn','Harvey','Marquette','Negaunee','Ishpeming','Republic','Champion','Michigamme','Crystal Falls','Alpha','Iron River','Mineral Hills','Gibbs City','Amasa','Stambaugh','Iron River','Gaastra','Ontonagon','White Pine','Bergland','Ewen'];
   const cityList = document.getElementById('cityList');
   CITIES.forEach(c => { const o = document.createElement('option'); o.value = c; cityList.appendChild(o); });
 
@@ -214,6 +231,8 @@ if (entityType || services.length) {
         state,
         entityType,
         services,
+        cfoServices: cfoSubs,
+        members,
         revenue,
         notes: message,
         source: 'pricing',

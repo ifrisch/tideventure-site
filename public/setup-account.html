@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Set Up Your Account — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     body { background: var(--sand); font-family: var(--font-body); }
@@ -32,20 +33,30 @@
   <div class="card" id="loadingView" style="text-align:center;padding:3rem;color:var(--text-muted);">Loading…</div>
 
   <div class="card" id="formView" style="display:none;">
-    <h1>Welcome to TideVenture CPA</h1>
-    <p>Set up your account and review your services before getting started.</p>
+    <div style="display:flex;justify-content:center;margin-bottom:1.25rem;">
+      <svg width="46" height="46" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+        <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+        <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+        <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+        <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 style="text-align:center;">Welcome to TideVenture CPA</h1>
+    <p style="text-align:center;">Review your engagement details and create your password to activate your secure client portal.</p>
     <div class="error" id="errorMsg"></div>
     <div class="summary" id="pricingSummary"></div>
     <form id="setupForm">
       <div class="form-group">
         <label for="password">Create a password</label>
-        <input type="password" id="password" minlength="4" required />
+        <input type="password" id="password" minlength="10" required autocomplete="new-password" />
+        <div class="note">At least 10 characters.</div>
       </div>
       <div class="form-group">
         <label for="confirm">Confirm password</label>
-        <input type="password" id="confirm" minlength="4" required />
+        <input type="password" id="confirm" minlength="10" required autocomplete="new-password" />
       </div>
-      <button type="submit" class="btn btn--primary" id="submitBtn">Set Up Account</button>
+      <button type="submit" class="btn btn--primary" id="submitBtn">Activate My Account</button>
     </form>
   </div>
 
@@ -69,12 +80,24 @@ else {
       document.getElementById('loadingView').style.display = 'none';
       document.getElementById('formView').style.display = 'block';
 
-      let html = '';
-      if (data.businessName) html += `<div class="row"><span>Business</span><span class="val">${data.businessName}</span></div>`;
-      html += `<div class="row"><span>Email</span><span class="val">${data.email}</span></div>`;
-      if (data.services && data.services.length) html += `<div class="row"><span>Services</span><span class="val">${data.services.join(', ')}</span></div>`;
-      if (data.monthlyPrice > 0) html += `<div class="row"><span>Monthly price</span><span class="val">$${data.monthlyPrice}</span></div>`;
-      if (data.yearlyPrice > 0) html += `<div class="row"><span>Yearly price</span><span class="val">$${data.yearlyPrice}</span></div>`;
+      const SVC_LABELS = {
+        tax: 'Business Tax Return',
+        quarterly: 'Quarterly Tax Planning',
+        monthly: 'Monthly Financial Review',
+        cfo: 'Fractional CFO',
+        bookkeeping: 'Bookkeeping',
+      };
+      const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+      const fmtMoney = n => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+      let html = '<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:0.5rem;">Your Engagement</div>';
+      if (data.businessName) html += `<div class="row"><span>Business</span><span class="val">${esc(data.businessName)}</span></div>`;
+      html += `<div class="row"><span>Email</span><span class="val">${esc(data.email)}</span></div>`;
+      if (data.services && data.services.length) {
+        const names = data.services.map(s => SVC_LABELS[s] || (s.charAt(0).toUpperCase() + s.slice(1)));
+        html += `<div class="row" style="align-items:flex-start;"><span>Services</span><span class="val" style="text-align:right;max-width:60%;">${names.map(esc).join('<br/>')}</span></div>`;
+      }
+      if (data.monthlyPrice > 0) html += `<div class="row"><span>Monthly fee</span><span class="val">${fmtMoney(data.monthlyPrice)}/month</span></div>`;
+      if (data.yearlyPrice > 0) html += `<div class="row"><span>Annual total</span><span class="val">${fmtMoney(data.yearlyPrice)}/year</span></div>`;
       document.getElementById('pricingSummary').innerHTML = html;
 
       document.getElementById('setupForm').addEventListener('submit', async (e) => {

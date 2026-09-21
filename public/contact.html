@@ -5,9 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact — TideVenture CPA</title>
   <meta name="description" content="Get in touch with TideVenture CPA. Schedule a free strategy session or ask us a question." />
+  <link rel="canonical" href="https://tideventurecpa.com/contact.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TideVenture CPA" />
+  <meta property="og:title" content="Contact — TideVenture CPA" />
+  <meta property="og:description" content="Schedule a free strategy session or ask us a question. We respond within one business day." />
+  <meta property="og:url" content="https://tideventurecpa.com/contact.html" />
+  <meta property="og:image" content="https://tideventurecpa.com/images/logo.png" />
+  <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -44,7 +53,7 @@
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Client Login
         </a>
-        <a href="contact.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
+        <a href="pricing.html" class="btn btn--primary nav__cta">Free Strategy Session</a>
       </div>
     </div>
   </nav>
@@ -68,7 +77,7 @@
         <p>Whether you have a question, want to schedule a strategy session, or are ready to become a client — we're here to help.</p>
 
         <div class="contact-detail">
-          <div class="contact-detail__icon">📍</div>
+          <div class="contact-detail__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
           <div>
             <strong>Office Address</strong>
             <span>123 Main Street, Suite 200<br/>Your City, State 00000</span>
@@ -76,7 +85,7 @@
         </div>
 
         <div class="contact-detail">
-          <div class="contact-detail__icon">📞</div>
+          <div class="contact-detail__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg></div>
           <div>
             <strong>Phone</strong>
             <span><a href="tel:+10000000000">(000) 000-0000</a></span>
@@ -84,7 +93,7 @@
         </div>
 
         <div class="contact-detail">
-          <div class="contact-detail__icon">📧</div>
+          <div class="contact-detail__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg></div>
           <div>
             <strong>Email</strong>
             <span><a href="mailto:hello@tideventurecpa.com">hello@tideventurecpa.com</a></span>
@@ -92,7 +101,7 @@
         </div>
 
         <div class="contact-detail">
-          <div class="contact-detail__icon">🕒</div>
+          <div class="contact-detail__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
           <div>
             <strong>Office Hours</strong>
             <span>Mon – Fri: 9:00 AM – 5:00 PM<br/>Sat: By appointment only</span>
@@ -103,10 +112,10 @@
       <!-- Contact Form -->
       <div>
         <div id="form-success" hidden class="form-success">
-          ✅ Thanks for reaching out! We'll be in touch within one business day.
+          Thanks for reaching out! We'll be in touch within one business day.
         </div>
 
-        <form class="form" id="contact-form" novalidate>
+        <form class="form" id="contact-form">
           <div class="form-row">
             <div class="form-group">
               <label for="first-name">First Name *</label>
@@ -129,15 +138,13 @@
           </div>
 
           <div class="form-group">
-            <label for="service">Service You're Interested In</label>
-            <select id="service" name="service">
-              <option value="">— Select a service —</option>
-              <option value="tax">Business Tax Return</option>
-              <option value="quarterly">Quarterly Tax Planning &amp; Estimated Payments</option>
-              <option value="monthly">Monthly Financial Review &amp; Statements</option>
-              <option value="bundle">All / Full-Service Bundle</option>
-              <option value="other">Other / Not Sure</option>
-            </select>
+            <label>Services You're Interested In</label>
+            <div class="checkbox-group">
+              <label class="checkbox-option"><input type="checkbox" name="service" value="tax"> Business Tax Return</label>
+              <label class="checkbox-option"><input type="checkbox" name="service" value="quarterly"> Quarterly Tax Planning &amp; Estimated Payments</label>
+              <label class="checkbox-option"><input type="checkbox" name="service" value="monthly"> Monthly Financial Review &amp; Statements</label>
+              <label class="checkbox-option"><input type="checkbox" name="service" value="other"> Other / Not Sure</label>
+            </div>
           </div>
 
           <div class="form-group">
@@ -158,7 +165,7 @@
         <div>
           <span class="footer__logo-text">Tide<span>Venture</span></span>
           <p style="font-size:.9rem;max-width:280px;color:#fff;">Providing trusted accounting, tax, and advisory services with integrity and expertise.</p>
-          <p class="footer__disclaimer" style="color:#fff;">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
+          <p class="footer__disclaimer">TideVenture CPA is a licensed CPA firm. Content on this site is for informational purposes only and does not constitute legal or financial advice.</p>
         </div>
         <div class="footer__col">
           <h4>Services</h4>
@@ -175,6 +182,7 @@
             <li><a href="about.html">About</a></li>
             <li><a href="contact.html">Contact</a></li>
             <li><a href="portal.html">Client Login</a></li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
@@ -188,3 +196,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
+
