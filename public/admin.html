@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f5f7fa; color: #1e293b; }
-    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: #f5f7fa; }
-    .login-card { background: #fff; border-radius: 14px; padding: 2.5rem 2rem; width: 100%; max-width: 360px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .login-card h1 { font-family: 'Montserrat',sans-serif; font-size: 1.2rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(165deg, #0c2d43 0%, #0d3d5a 60%, #135375 100%); }
+    .login-card { background: #fff; border-radius: 14px; padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: 0 24px 64px rgba(10,28,43,.35); }
+    .login-card h1 { font-family: 'Source Serif 4',Georgia,serif; font-size: 1.35rem; font-weight: 600; color: #152430; margin: 0 0 0.2rem; }
     .login-card p { font-size: 0.82rem; color: #6b7280; margin: 0 0 1.5rem; }
     .login-card .form-group { margin-bottom: 1rem; }
     .login-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
@@ -22,22 +24,25 @@
     .login-error { font-size: 0.78rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
 
     .app { display: none; min-height: 100vh; }
-    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #0d3f5e; display: flex; flex-direction: column; z-index: 100; }
-    .sidebar-logo { padding: 1.25rem 1.25rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar-logo a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-family: 'Montserrat',sans-serif; font-weight: 700; font-size: 1rem; }
-    .sidebar-logo a em { font-style: normal; color: #6bb4d0; }
-    .sidebar-logo .sub { font-size: 0.65rem; font-weight: 400; color: rgba(255,255,255,.4); display: block; }
-    .sidebar-nav { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
-    .sidebar-nav a { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1.25rem; color: rgba(255,255,255,.6); text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: all .15s; border-left: 3px solid transparent; cursor: pointer; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: linear-gradient(180deg, #0a1c2b 0%, #0c2d43 100%); display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-logo { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .sidebar-logo a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.65rem; }
+    .sidebar-logo .logo-words { display: flex; flex-direction: column; line-height: 1; }
+    .sidebar-logo .logo-name { font-family: 'Source Serif 4',Georgia,serif; font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.015em; line-height: 1; }
+    .sidebar-logo .logo-name em { font-style: normal; font-weight: 400; color: #6bb4d0; }
+    .sidebar-logo .sub { font-family: 'Inter',sans-serif; font-size: 0.56rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 4px; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 0.7rem; padding: 0.62rem 1.25rem; color: rgba(255,255,255,.62); text-decoration: none; font-size: 0.84rem; font-weight: 500; transition: all .15s; border-left: 2px solid transparent; cursor: pointer; }
     .sidebar-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
-    .sidebar-nav a.active { color: #fff; background: rgba(255,255,255,.08); border-left-color: #6bb4d0; }
-    .sidebar-nav a .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-nav a.active { color: #fff; background: rgba(255,255,255,.07); border-left-color: #b0854a; }
+    .sidebar-nav a .icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .sidebar-nav a .icon svg { width: 16px; height: 16px; }
     .sidebar-footer { padding: 0.75rem 1.25rem; border-top: 1px solid rgba(255,255,255,.08); }
     .sidebar-footer button { background: none; border: none; color: rgba(255,255,255,.5); font-size: 0.78rem; cursor: pointer; padding: 0; font-family: inherit; display: flex; align-items: center; gap: 0.5rem; }
     .sidebar-footer button:hover { color: #fca5a5; }
 
     .main { margin-left: 220px; flex: 1; padding: 2rem 2.5rem; min-height: 100vh; }
-    .main h1 { font-family: 'Montserrat',sans-serif; font-size: 1.3rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
+    .main h1 { font-family: 'Source Serif 4',Georgia,serif; font-size: 1.6rem; font-weight: 600; color: #152430; margin: 0 0 0.2rem; letter-spacing: -0.01em; }
     .main .page-desc { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.5rem; }
 
     .page { display: none; }
@@ -45,9 +50,16 @@
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .stat { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.1rem 1.25rem; }
-    .stat-num { font-family: 'Montserrat',sans-serif; font-size: 1.5rem; font-weight: 800; color: #0d3f5e; line-height: 1.1; }
+    .stat-num { font-family: 'Source Serif 4',Georgia,serif; font-size: 1.65rem; font-weight: 600; color: #0d3d5a; line-height: 1.1; }
     .stat-label { font-size: 0.76rem; color: #6b7280; margin-top: 0.1rem; }
     .stat.alert .stat-num { color: #b91c1c; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
+    .kpi-card { background: linear-gradient(165deg,#0c2d43,#0d3d5a); border-radius: 12px; padding: 1.05rem 1.15rem; color: #fff; }
+    .kpi-card .kv { font-family: 'Source Serif 4',Georgia,serif; font-size: 1.7rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+    .kpi-card .kl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,.55); margin-top: 0.4rem; }
+    .kpi-card .kd { font-size: 0.72rem; color: rgba(255,255,255,.7); margin-top: 0.3rem; }
+    .kpi-card.accent { background: linear-gradient(165deg,#135375,#167f9e); }
 
     .tbl { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     .tbl th { text-align: left; padding: 0.5rem 1.25rem; font-size: 0.72rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
@@ -57,7 +69,7 @@
 
     .block { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; margin-bottom: 1.5rem; }
     .block-hdr { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.25rem; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; gap: 0.5rem; }
-    .block-hdr h3 { font-family: 'Montserrat',sans-serif; font-size: 0.82rem; font-weight: 700; color: #374151; margin: 0; }
+    .block-hdr h3 { font-family: 'Inter',sans-serif; font-size: 0.82rem; font-weight: 700; color: #374151; margin: 0; }
 
     .tag { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
     .tag-green { background: #ecfdf5; color: #059669; }
@@ -68,7 +80,8 @@
     .empty { text-align: center; padding: 2rem; font-size: 0.82rem; color: #9ca3af; }
 
     .prospect-row, .audit-row, .doc-row { display: grid; gap: 0.5rem; padding: 0.55rem 1.25rem; border-bottom: 1px solid #f3f4f6; font-size: 0.82rem; align-items: center; }
-    .prospect-row { grid-template-columns: 1.5fr 1fr 1fr 100px; }
+    .prospect-row { grid-template-columns: 1.5fr 1fr 0.8fr 0.95fr 130px; }
+    .stage-select { font-size: 0.74rem; padding: 0.2rem 0.35rem; border: 1.5px solid #e5e7eb; border-radius: 6px; background: #fff; font-family: inherit; color: #374151; cursor: pointer; width: 100%; }
     .audit-row { grid-template-columns: 80px 1.5fr 1fr 140px; }
     .doc-row { grid-template-columns: 1.5fr 1fr 130px 70px; }
     .prospect-row:hover, .audit-row:hover, .doc-row:hover { background: #f8fafc; }
@@ -80,7 +93,7 @@
 
     .schema-sec { background: #f8fafc; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
     .schema-sec-hdr { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .schema-sec-hdr input { flex: 1; padding: 0.3rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.82rem; font-weight: 600; font-family: 'Montserrat',sans-serif; }
+    .schema-sec-hdr input { flex: 1; padding: 0.3rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.82rem; font-weight: 600; font-family: 'Inter',sans-serif; }
     .sch-q { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem; }
     .sch-q input { padding: 0.2rem 0.35rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.76rem; }
     .sch-q input:first-child { width: 110px; }
@@ -92,9 +105,32 @@
 
     .footer { text-align: center; font-size: 0.75rem; color: #9ca3af; padding: 2rem 0 1rem; }
 
+    .reg-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .reg-filter { background: none; border: 1.5px solid #e5e7eb; border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.76rem; font-weight: 500; color: #6b7280; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .reg-filter:hover { border-color: #1a7fa0; color: #1a7fa0; }
+    .reg-filter.active { background: #1a7fa0; border-color: #1a7fa0; color: #fff; }
+
+    .settings-subnav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.85rem; }
+    .settings-subnav__item { display: inline-flex; align-items: center; gap: 0.5rem; background: none; border: 1.5px solid #e5e7eb; border-radius: 9999px; padding: 0.45rem 1.1rem; font-size: 0.82rem; font-weight: 600; color: #6b7280; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .settings-subnav__item .icon { width: 15px; height: 15px; display: flex; }
+    .settings-subnav__item .icon svg { width: 15px; height: 15px; }
+    .settings-subnav__item:hover { border-color: #1a7fa0; color: #1a7fa0; }
+    .settings-subnav__item.active { background: #0d3f5e; border-color: #0d3f5e; color: #fff; }
+    .reg-item { padding: 0.85rem 1.25rem; border-bottom: 1px solid #f3f4f6; }
+    .reg-item:last-child { border-bottom: none; }
+    .reg-item:hover { background: #f8fafc; }
+    .reg-item-title { font-size: 0.88rem; font-weight: 600; color: #1a7fa0; text-decoration: none; display: block; margin-bottom: 0.2rem; }
+    .reg-item-title:hover { text-decoration: underline; }
+    .reg-item-meta { display: flex; gap: 0.6rem; align-items: center; font-size: 0.72rem; color: #9ca3af; margin-bottom: 0.3rem; }
+    .reg-item-summary { font-size: 0.8rem; color: #4b5563; line-height: 1.5; }
+    .reg-new { width: 7px; height: 7px; background: #f59e0b; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
     @media (max-width: 768px) {
       .sidebar { width: 56px; }
-      .sidebar-logo a span, .sidebar-logo .sub, .sidebar-nav a span { display: none; }
+      .sidebar-logo a span, .sidebar-logo .sub, .sidebar-nav a span:not(.icon) { display: none; }
+      .sidebar-logo { padding: 1rem 0.6rem; }
+      .sidebar-logo a { justify-content: center; }
+      .sidebar-logo svg { width: 30px; height: 30px; }
       .sidebar-nav a { justify-content: center; padding: 0.6rem; }
       .sidebar-footer button span { display: none; }
       .sidebar-footer button { justify-content: center; width: 100%; }
@@ -115,6 +151,7 @@
     <form id="loginForm">
       <div class="form-group"><label>Email</label><input type="email" id="loginEmail" required /></div>
       <div class="form-group"><label>Password</label><input type="password" id="loginPass" required /></div>
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAEIhEGFVQHkqQd7w" style="margin-bottom:1rem;"></div>
       <button type="submit" class="btn btn--primary">Sign In</button>
     </form>
   </div>
@@ -122,14 +159,31 @@
 
 <div class="app" id="appView">
   <div class="sidebar">
-    <div class="sidebar-logo"><a href="/"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="rgba(255,255,255,.15)"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,.92)"/></svg>Tide<em>Venture</em><span class="sub">Admin</span></a></div>
+    <div class="sidebar-logo">
+      <a href="/">
+        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <path d="M4 36.5 Q10 32.5 16 36.5 T28 36.5 T36 36.5" stroke="rgba(26,127,160,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-words">
+          <span class="logo-name">Tide<em>Venture</em></span>
+          <span class="sub">Admin</span>
+        </span>
+      </a>
+    </div>
     <nav class="sidebar-nav">
-      <a class="active" data-page="dashboard"><span class="icon">&#9632;</span><span>Dashboard</span></a>
-      <a data-page="clients"><span class="icon">&#128101;</span><span>Clients</span></a>
-      <a data-page="prospects"><span class="icon">&#10133;</span><span>Prospects</span><span id="prospectBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
-      <a data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
-      <a data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
-      <a data-page="audit"><span class="icon">&#128214;</span><span>Audit Log</span></a>
+      <a class="active" data-page="dashboard"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Dashboard</span></a>
+      <a data-page="clients"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Clients</span></a>
+      <a data-page="prospects"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="4"/><path d="M3 21a7 7 0 0 1 12.2-4.7"/><path d="M18 14v6M15 17h6"/></svg></span><span>Prospects</span><span id="prospectBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
+      <a data-page="documents"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg></span><span>Documents</span></a>
+      <a data-page="questionnaire"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span>Questionnaire</span></a>
+      <a data-page="audit"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Audit Log</span></a>
+      <a data-page="regulatory"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V9"/><path d="M12 6h6M12 10h6M12 14h6M12 18h6"/></svg></span><span>Regulatory</span><span id="regulatoryBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
+      <a data-page="settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Settings</span></a>
     </nav>
     <div class="sidebar-footer"><button id="logoutBtn">&#10149;<span> Sign Out</span></button></div>
   </div>
@@ -139,21 +193,37 @@
       <h1>Dashboard</h1>
       <p class="page-desc">Overview of your practice.</p>
       <div class="stats" id="statGrid"></div>
+
+      <div class="block-hdr" style="margin:1.75rem 0 0.75rem;padding:0;background:none;border:none;">
+        <h3 style="font-family:'Source Serif 4',Georgia,serif;font-size:1.05rem;font-weight:600;color:#0d3d5a;">Key Metrics</h3>
+        <span id="kpiRefreshed" style="font-size:0.72rem;color:#9ca3af;"></span>
+      </div>
+      <div class="kpi-grid" id="kpiGrid"><div class="empty">Loading…</div></div>
     </div>
 
     <div class="page" id="page-clients">
       <h1>Clients</h1>
       <p class="page-desc">All client accounts. Click a name to view details.</p>
+      <div class="reg-filters">
+        <button class="reg-filter active" id="clientFilter-current" onclick="filterClients('current',this)">Current</button>
+        <button class="reg-filter" id="clientFilter-deactivated" onclick="filterClients('deactivated',this)">Deactivated</button>
+        <button class="reg-filter" id="clientFilter-all" onclick="filterClients('all',this)">All</button>
+      </div>
       <div class="block">
-        <div class="block-hdr"><h3>All Clients</h3><span id="clientCount"></span></div>
+        <div class="block-hdr"><h3>Clients</h3><span id="clientCount"></span></div>
         <div id="clientList"><div class="empty">Loading…</div></div>
       </div>
     </div>
 
     <div class="page" id="page-prospects">
       <h1>Prospects</h1>
-      <p class="page-desc">People who filled out the pricing tool.</p>
-      <div class="block"><div class="block-hdr"><h3>All Prospects</h3></div><div id="prospectList"><div class="empty">Loading…</div></div></div>
+      <p class="page-desc">Your sales pipeline — leads from the pricing tool and contact form.</p>
+      <div class="reg-filters">
+        <button class="reg-filter active" id="pFilter-pipeline" onclick="filterProspects('pipeline',this)">Pipeline</button>
+        <button class="reg-filter" id="pFilter-lost" onclick="filterProspects('lost',this)">Lost</button>
+        <button class="reg-filter" id="pFilter-all" onclick="filterProspects('all',this)">All</button>
+      </div>
+      <div class="block"><div class="block-hdr"><h3>Prospects</h3><span id="prospectCount" style="font-size:0.76rem;color:#9ca3af;"></span></div><div id="prospectList"><div class="empty">Loading…</div></div></div>
     </div>
 
     <div class="page" id="page-documents">
@@ -164,7 +234,7 @@
 
     <div class="page" id="page-questionnaire">
       <h1>Questionnaire Schema</h1>
-      <p class="page-desc">Edit sections and questions for the 2025 tax questionnaire.</p>
+      <p class="page-desc">Edit sections and questions for the 2026 tax questionnaire.</p>
       <div class="block"><div class="block-hdr"><h3>Sections</h3><button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;cursor:pointer;" onclick="tqSaveSchema()">Save Schema</button></div><div id="tqSchemaEditor" style="padding:1rem 1.25rem;">Loading…</div></div>
     </div>
 
@@ -174,6 +244,101 @@
       <div class="block"><div class="block-hdr"><h3>Events</h3></div><div id="adminAuditList"><div class="empty">Loading…</div></div></div>
     </div>
 
+    <div class="page" id="page-regulatory">
+      <h1>Regulatory Updates</h1>
+      <p class="page-desc">Federal and state tax law changes. Refreshed daily.</p>
+      <div id="gmailStatus" style="margin-bottom:1rem;padding:0.65rem 1rem;border-radius:10px;font-size:0.82rem;display:none;"></div>
+      <div class="reg-filters">
+        <button class="reg-filter active" onclick="filterRegulatory('all',this)">All</button>
+        <button class="reg-filter" onclick="filterRegulatory('important',this)">⭐ Important</button>
+        <button class="reg-filter" onclick="filterRegulatory('federal',this)">Federal</button>
+        <button class="reg-filter" onclick="filterRegulatory('MN',this)">Minnesota</button>
+        <button class="reg-filter" onclick="filterRegulatory('TN',this)">Tennessee</button>
+        <button class="reg-filter" onclick="filterRegulatory('IA',this)">Iowa</button>
+        <button onclick="refreshRegulatory(this)" class="btn-sm" style="margin-left:auto;">&#8635; Refresh All</button>
+      </div>
+      <div class="block">
+        <div class="block-hdr"><h3>Latest Updates</h3><span id="regulatoryCount" style="font-size:0.76rem;color:#9ca3af;"></span></div>
+        <div id="regulatoryList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-settings">
+      <h1>Settings</h1>
+      <p class="page-desc">Firm-wide defaults used across the admin panel.</p>
+
+      <div class="settings-subnav">
+        <button class="settings-subnav__item active" id="settingsCat-templates" onclick="showSettingsCategory('templates')">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></span>
+          Templates
+        </button>
+        <button class="settings-subnav__item" id="settingsCat-general" onclick="showSettingsCategory('general')">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+          General
+        </button>
+        <button class="settings-subnav__item" id="settingsCat-backups" onclick="showSettingsCategory('backups')">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg></span>
+          Backups
+        </button>
+      </div>
+
+      <div class="settings-category" id="settingsCategory-general" style="display:none;">
+        <div class="block" style="padding:1.25rem 1.5rem;">
+          <div class="block-hdr"><h3>Scheduling Link</h3></div>
+          <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">Paste your booking link (Calendly, Cal.com, Google Appointment Schedule, etc.). Clients get a <strong>Book a Call</strong> button on their portal dashboard. Leave blank to hide it.</p>
+          <input id="settingsSchedulingUrl" placeholder="https://calendly.com/your-firm/intro-call" style="width:100%;padding:0.55rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.88rem;outline:none;box-sizing:border-box;font-family:inherit;">
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-top:0.9rem;">
+            <button class="btn btn--primary" id="saveGeneralBtn" onclick="saveGeneralSettings()" style="padding:0.5rem 1.25rem;">Save</button>
+            <span id="settingsGeneralStatus" style="font-size:0.8rem;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-category" id="settingsCategory-templates">
+        <div class="block" style="padding:1.25rem 1.5rem;">
+          <div class="block-hdr"><h3>Master Welcome Email</h3></div>
+          <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">This is the default message shown whenever you generate a welcome link for a new client — you can still edit it per client before sending. Use these placeholders and they'll be filled in automatically: <code>{{firstName}}</code>, <code>{{bizLine}}</code>, <code>{{businessName}}</code>, <code>{{setupUrl}}</code>, <code>{{email}}</code>. The logo, signature, and footer are added automatically and shouldn't be included here.</p>
+          <div style="margin-bottom:0.75rem;">
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Subject</label>
+            <input id="settingsWelcomeSubject" style="width:100%;padding:0.5rem 0.65rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box;font-family:inherit;">
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Message</label>
+            <textarea id="settingsWelcomeMessage" rows="16" style="width:100%;padding:0.65rem 0.75rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box;font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn--primary" id="saveSettingsWelcomeBtn" onclick="saveWelcomeEmailSettings()" style="padding:0.5rem 1.25rem;">Save Template</button>
+            <button class="btn-sm" onclick="resetWelcomeEmailToOriginal()">Reset to Original Default</button>
+            <span id="settingsWelcomeStatus" style="font-size:0.8rem;"></span>
+          </div>
+        </div>
+        <div class="block" style="padding:1.25rem 1.5rem;">
+          <div class="block-hdr"><h3>Master Engagement Letter</h3></div>
+          <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">Every new client reviews and signs this letter in their portal before their account activates. Placeholders are filled in per client automatically: <code>{{clientName}}</code>, <code>{{businessName}}</code>, <code>{{date}}</code>, <code>{{email}}</code>, <code>{{servicesList}}</code> (from their assigned services), and <code>{{feeSchedule}}</code> (from their plan's monthly/yearly pricing). Signed copies are stored with a timestamp, IP address, and document fingerprint, and the client gets a copy in their Documents tab.</p>
+          <div style="margin-bottom:0.75rem;">
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Letter text</label>
+            <textarea id="settingsEngagementMessage" rows="24" style="width:100%;padding:0.65rem 0.75rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box;font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn--primary" id="saveSettingsEngagementBtn" onclick="saveEngagementSettings()" style="padding:0.5rem 1.25rem;">Save Letter</button>
+            <span id="settingsEngagementStatus" style="font-size:0.8rem;"></span>
+          </div>
+          <p style="font-size:0.72rem;color:#9ca3af;margin:0.75rem 0 0;">Note: changes affect clients who haven't signed yet. Clients who already signed keep the exact letter text they agreed to, stored in their signing record.</p>
+        </div>
+      </div>
+
+      <div class="settings-category" id="settingsCategory-backups" style="display:none;">
+        <div class="block" style="padding:1.25rem 1.5rem;">
+          <div class="block-hdr"><h3>Backups</h3></div>
+          <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">All client data (documents, records, signed letters) is copied nightly to a separate backup bucket. Backups are additive — deleting something from the live system never deletes it from the backup.</p>
+          <div id="backupStatus" style="font-size:0.82rem;color:#374151;margin-bottom:1rem;">Loading…</div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn--primary" id="runBackupBtn" onclick="runBackupNow()" style="padding:0.5rem 1.25rem;">Run Backup Now</button>
+            <span id="backupRunStatus" style="font-size:0.8rem;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -187,11 +352,13 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value, password = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError'); err.style.display = 'none';
+  const turnstileToken = typeof turnstile !== 'undefined' ? turnstile.getResponse() : '';
+  if (!turnstileToken) { err.textContent = 'Please complete the verification challenge.'; err.style.display = 'block'; return; }
   try {
-    const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+    const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password,turnstileToken}) });
     if (res.ok) { const d=await res.json(); if(d.role!=='admin'){err.textContent='Admin only.';err.style.display='block';return;} sessionStorage.setItem('tv_admin_token',d.token); showAdmin(); }
-    else err.style.display='block';
-  } catch { err.textContent='Network error.'; err.style.display='block'; }
+    else { const d = await res.json().catch(()=>({})); err.textContent = d.error || 'Invalid email or password.'; err.style.display='block'; if (typeof turnstile !== 'undefined') turnstile.reset(); }
+  } catch { err.textContent='Network error.'; err.style.display='block'; if (typeof turnstile !== 'undefined') turnstile.reset(); }
 });
 document.getElementById('logoutBtn').addEventListener('click', ()=>{ sessionStorage.removeItem('tv_admin_token'); window.location.href='/admin'; });
 
@@ -202,12 +369,42 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     link.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+link.dataset.page).classList.add('active');
-    if (link.dataset.page === 'prospects') markProspectsViewed();
+    // Always refetch fresh data on tab open — this panel can stay open for
+    // hours/days, and nothing here should ever show stale state.
+    if (link.dataset.page === 'dashboard') { loadDashboard(); loadKpis(); }
+    if (link.dataset.page === 'clients') loadDashboard();
+    if (link.dataset.page === 'prospects') { loadProspects(); markProspectsViewed(); }
+    if (link.dataset.page === 'documents') loadDocs();
+    if (link.dataset.page === 'questionnaire') loadTQSchema();
+    if (link.dataset.page === 'audit') loadAudit();
+    if (link.dataset.page === 'regulatory') { loadRegulatory(); markRegulatoryRead(); }
+    if (link.dataset.page === 'settings') { loadWelcomeEmailSettings(); loadEngagementSettings(); loadBackupStatus(); loadGeneralSettings(); }
   });
 });
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); }
+function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadKpis(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); loadRegulatory(); }
+
+async function loadKpis() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const el = document.getElementById('kpiGrid');
+  try {
+    const res = await fetch('/api/admin/kpis', { headers: { 'Authorization': `Bearer ${token}` } });
+    const k = await res.json();
+    const money = n => '$' + Number(n||0).toLocaleString('en-US');
+    const tiles = [
+      { v: money(k.revenue.mrr), l: 'MRR', d: money(k.revenue.arr) + ' / yr', accent: true },
+      { v: money(k.revenue.perClient), l: 'Revenue / client' },
+      { v: k.clients.active, l: 'Active clients', d: (k.clients.pending?k.clients.pending+' onboarding':'') + (k.clients.deactivated?(k.clients.pending?' · ':'')+k.clients.deactivated+' inactive':'') },
+      { v: k.prospects.conversionRate + '%', l: 'Lead → client', d: k.prospects.converted + ' of ' + k.prospects.total, accent: true },
+      { v: k.prospects.open, l: 'Open leads', d: k.prospects.lost + ' lost' },
+      { v: k.questionnaire.rate + '%', l: 'Questionnaires done', d: k.questionnaire.completed + ' of ' + k.questionnaire.eligible },
+      { v: k.signingLagDays == null ? '—' : k.signingLagDays + 'd', l: 'Median sign lag', d: 'sent → signed' },
+    ];
+    el.innerHTML = tiles.map(t => `<div class="kpi-card${t.accent?' accent':''}"><div class="kv">${t.v}</div><div class="kl">${t.l}</div>${t.d?`<div class="kd">${t.d}</div>`:''}</div>`).join('');
+    document.getElementById('kpiRefreshed').textContent = 'as of ' + new Date().toLocaleTimeString();
+  } catch { el.innerHTML = '<div class="empty">Could not load metrics.</div>'; }
+}
 
 
 
@@ -228,14 +425,35 @@ async function loadDashboard() {
       <div class="stat ${(d.stats.newProspects||0)>0?'alert':''}"><div class="stat-num">${d.stats.prospects||0}</div><div class="stat-label">Prospects</div></div>
       <div class="stat ${d.stats.totalAR>0?'alert':''}"><div class="stat-num">$${d.stats.totalAR.toFixed(0)}</div><div class="stat-label">A/R</div></div>
     `;
-    document.getElementById('clientCount').textContent = d.clients.length + ' clients';
-    document.getElementById('clientList').innerHTML = `<table class="tbl"><thead><tr><th>Client</th><th>Status</th><th>Docs</th><th>Balance</th><th>Type</th></tr></thead><tbody>`
-      + d.clients.map(c => `<tr onclick="window.location.href='/admin-client?email=${encodeURIComponent(c.email)}'" style="cursor:pointer;"><td><div style="font-weight:600;color:#1a7fa0;">${esc(c.name)}</div><div style="font-size:0.72rem;color:#9ca3af;">${esc(c.email)}</div></td>
-        <td><span class="tag ${c.status==='active'?'tag-green':c.status==='pending_engagement'?'tag-yellow':'tag-gray'}">${c.status==='active'?'Active':c.status==='pending_engagement'?'Pending':'Setup'}</span></td>
-        <td style="color:#6b7280;">${c.documents}</td>
-        <td style="font-weight:600;${c.balance>0?'color:#b91c1c;':'color:#059669;'}">${c.balance>0?'$'+c.balance.toFixed(2):'&#10003;'}</td>
-        <td><span class="tag ${c.customerType==='both'?'tag-yellow':c.customerType==='bookkeeping'?'tag-green':'tag-gray'}">${c.customerType||'—'}</span></td></tr>`).join('') + `</tbody></table>`;
+    allClients = d.clients;
+    renderClientList(currentClientFilter);
   } catch { document.getElementById('clientList').innerHTML='<div class="empty">Failed.</div>'; }
+}
+
+let allClients = [];
+let currentClientFilter = 'current';
+
+function filterClients(filter, btn) {
+  currentClientFilter = filter;
+  document.querySelectorAll('#page-clients .reg-filter').forEach(b => b.classList.remove('active'));
+  (btn || document.getElementById('clientFilter-' + filter)).classList.add('active');
+  renderClientList(filter);
+}
+
+function renderClientList(filter) {
+  const clients = filter === 'all' ? allClients
+    : filter === 'deactivated' ? allClients.filter(c => c.status === 'deactivated')
+    : allClients.filter(c => c.status !== 'deactivated');
+  document.getElementById('clientCount').textContent = clients.length + (clients.length === 1 ? ' client' : ' clients');
+  if (!clients.length) { document.getElementById('clientList').innerHTML = '<div class="empty">No clients here.</div>'; return; }
+  const STATUS_LABEL = { active: 'Active', pending_engagement: 'Pending', deactivated: 'Deactivated' };
+  const STATUS_TAG = { active: 'tag-green', pending_engagement: 'tag-yellow', deactivated: 'tag-red' };
+  document.getElementById('clientList').innerHTML = `<table class="tbl"><thead><tr><th>Client</th><th>Status</th><th>Docs</th><th>Balance</th><th>Type</th></tr></thead><tbody>`
+    + clients.map(c => `<tr onclick="window.location.href='/admin-client?email=${encodeURIComponent(c.email)}'" style="cursor:pointer;${c.status==='deactivated'?'opacity:0.65;':''}"><td><div style="font-weight:600;color:#1a7fa0;">${esc(c.name)}</div><div style="font-size:0.72rem;color:#9ca3af;">${esc(c.email)}</div></td>
+      <td><span class="tag ${STATUS_TAG[c.status]||'tag-gray'}">${STATUS_LABEL[c.status]||'Setup'}</span></td>
+      <td style="color:#6b7280;">${c.documents}</td>
+      <td style="font-weight:600;${c.balance>0?'color:#b91c1c;':'color:#059669;'}">${c.balance>0?'$'+c.balance.toFixed(2):'&#10003;'}</td>
+      <td><span class="tag ${c.customerType==='both'?'tag-yellow':c.customerType==='bookkeeping'?'tag-green':'tag-gray'}">${c.customerType||'—'}</span></td></tr>`).join('') + `</tbody></table>`;
 }
 
 async function markProspectsViewed() {
@@ -246,19 +464,68 @@ async function markProspectsViewed() {
   } catch {}
 }
 
+let allProspects = [];
+let prospectFilter = 'pipeline';
+const PROSPECT_STAGES = ['new','contacted','proposal','lost'];
+const STAGE_LABEL = { new:'New', contacted:'Contacted', proposal:'Proposal', lost:'Lost' };
+
 async function loadProspects() {
   const token=sessionStorage.getItem('tv_admin_token');
   try {
     const res=await fetch('/api/admin/prospects',{headers:{'Authorization':`Bearer ${token}`}});
     const d=await res.json();
-    const el=document.getElementById('prospectList');
-    if(!d.prospects.length){el.innerHTML='<div class="empty">No prospects.</div>';return;}
-    el.innerHTML='<div class="prospect-row" style="font-weight:600;color:#6b7280;text-transform:uppercase;font-size:0.72rem;background:#f9fafb;"><span>Name</span><span>Services</span><span>Date</span><span>Action</span></div>'
-      + d.prospects.map(p => `<div class="prospect-row"><div><div style="font-weight:600;">${esc(p.name||'Unknown')}</div><div style="font-size:0.72rem;color:#9ca3af;">${esc(p.email)}</div></div>
-        <div style="color:#6b7280;">${esc((p.services||[]).join(', ')||'—')}</div>
-        <div style="font-size:0.76rem;color:#9ca3af;">${new Date(p.createdAt).toLocaleDateString()}</div>
-        <div><a href="/admin-client?email=${encodeURIComponent(p.email)}&prospect=${p.id}" class="btn btn--primary" style="padding:0.25rem 0.6rem;font-size:0.72rem;text-decoration:none;">Convert</a></div></div>`).join('');
+    allProspects = d.prospects || [];
+    renderProspectList(prospectFilter);
   } catch { document.getElementById('prospectList').innerHTML='<div class="empty">Failed.</div>'; }
+}
+
+function filterProspects(f, btn) {
+  prospectFilter = f;
+  document.querySelectorAll('#page-prospects .reg-filter').forEach(b => b.classList.remove('active'));
+  (btn || document.getElementById('pFilter-'+f)).classList.add('active');
+  renderProspectList(f);
+}
+
+function renderProspectList(filter) {
+  const el = document.getElementById('prospectList');
+  const rows = allProspects.filter(p => {
+    const stage = PROSPECT_STAGES.includes(p.stage) ? p.stage : 'new';
+    if (filter === 'lost') return stage === 'lost';
+    if (filter === 'pipeline') return stage !== 'lost';
+    return true;
+  });
+  document.getElementById('prospectCount').textContent = rows.length + (rows.length===1?' lead':' leads');
+  if(!rows.length){el.innerHTML='<div class="empty">No prospects here.</div>';return;}
+  el.innerHTML='<div class="prospect-row" style="font-weight:600;color:#6b7280;text-transform:uppercase;font-size:0.72rem;background:#f9fafb;"><span>Name</span><span>Services</span><span>Date</span><span>Stage</span><span>Action</span></div>'
+    + rows.map(p => {
+      const stage = PROSPECT_STAGES.includes(p.stage) ? p.stage : 'new';
+      const opts = PROSPECT_STAGES.map(s => `<option value="${s}"${s===stage?' selected':''}>${STAGE_LABEL[s]}</option>`).join('');
+      return `<div class="prospect-row"${stage==='lost'?' style="opacity:0.6;"':''}><div><div style="font-weight:600;">${esc(p.name||'Unknown')} <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:0.1rem 0.4rem;border-radius:9999px;background:${p.source==='contact'?'#eef2ff':'#ecfdf5'};color:${p.source==='contact'?'#4f46e5':'#047857'};">${p.source==='contact'?'Contact':'Pricing'}</span></div><div style="font-size:0.72rem;color:#9ca3af;">${esc(p.email)}${p.phone?' · '+esc(p.phone):''}</div>${p.notes?`<div style="font-size:0.76rem;color:#4b5563;margin-top:0.3rem;max-width:420px;white-space:pre-wrap;">${esc(p.notes)}</div>`:''}</div>
+        <div style="color:#6b7280;">${esc((p.services||[]).join(', ')||'—')}${(p.cfoServices||[]).length?`<div style="font-size:0.72rem;color:#9ca3af;margin-top:0.15rem;">CFO: ${esc(p.cfoServices.join(', '))}</div>`:''}</div>
+        <div style="font-size:0.76rem;color:#9ca3af;">${new Date(p.createdAt).toLocaleDateString()}</div>
+        <div><select class="stage-select" onchange="changeProspectStage('${p.id}',this.value)">${opts}</select></div>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;"><a href="/admin-client?email=${encodeURIComponent(p.email)}&prospect=${p.id}" class="btn btn--primary" style="padding:0.25rem 0.6rem;font-size:0.72rem;text-decoration:none;">Convert</a><button onclick="deleteProspect('${p.id}')" class="btn-sm" style="color:#b91c1c;border-color:#fca5a5;">Delete</button></div></div>`;
+    }).join('');
+}
+
+async function changeProspectStage(id, stage) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const p = allProspects.find(x => x.id === id);
+  if (p) p.stage = stage; // optimistic
+  try {
+    await fetch('/api/admin/prospects/stage', { method:'POST', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body: JSON.stringify({ id, stage }) });
+    // Re-render so a "lost" row leaves the Pipeline view immediately
+    renderProspectList(prospectFilter);
+  } catch { alert('Failed to update stage.'); loadProspects(); }
+}
+
+async function deleteProspect(id) {
+  if (!confirm('Delete this prospect? This cannot be undone.')) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/prospects/delete', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    loadProspects();
+  } catch { alert('Failed to delete prospect.'); }
 }
 
 async function loadDocs() {
@@ -270,7 +537,7 @@ async function loadDocs() {
     if(!docs.length){el.innerHTML='<div class="empty">No documents.</div>';return;}
     const docToken = sessionStorage.getItem('tv_admin_token');
     el.innerHTML='<div class="doc-row" style="font-weight:600;color:#6b7280;text-transform:uppercase;font-size:0.72rem;background:#f9fafb;"><span>Client</span><span>File</span><span>Date</span><span></span></div>'
-      + docs.slice(0,30).map(d => `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.name)}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docToken}" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docToken}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;">Download</a></div>`).join('');
+      + docs.slice(0,30).map(d => `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.displayName || d.name)}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;">Download</a></div>`).join('');
   } catch {}
 }
 
@@ -292,7 +559,7 @@ async function loadAudit() {
 
 async function loadTQSchema() {
   try {
-    const res=await fetch('/api/questionnaire/schema/2025');
+    const res=await fetch('/api/questionnaire/schema/2026');
     const schema=await res.json();
     window.tqSchema=schema;
     const el=document.getElementById('tqSchemaEditor');
@@ -317,9 +584,337 @@ async function tqSaveSchema() {
   const btn=event.target; btn.disabled=true; btn.textContent='Saving…';
   try {
     const token=sessionStorage.getItem('tv_admin_token');
-    await fetch('/api/questionnaire/schema/2025',{method:'PUT',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(window.tqSchema)});
+    await fetch('/api/questionnaire/schema/2026',{method:'PUT',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(window.tqSchema)});
     btn.textContent='Saved!';setTimeout(()=>{btn.textContent='Save Schema';btn.disabled=false;},2000);
   } catch { btn.textContent='Failed';btn.disabled=false; }
+}
+
+// ── Regulatory updates ──
+let regItems = [];
+let regFilter = 'all';
+
+async function loadRegulatory() {
+  loadGmailStatus();
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/regulatory', { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    regItems = d.items || [];
+    // Update badge
+    const badge = document.getElementById('regulatoryBadge');
+    if (d.unseenCount > 0) { badge.style.display = 'inline'; badge.textContent = d.unseenCount; }
+    else badge.style.display = 'none';
+    renderRegulatory();
+  } catch { document.getElementById('regulatoryList').innerHTML = '<div class="empty">Failed to load.</div>'; }
+}
+
+function renderRegulatory() {
+  const el = document.getElementById('regulatoryList');
+  let filtered = regItems;
+  if (regFilter === 'important') filtered = regItems.filter(i => i.important);
+  else if (regFilter === 'federal') filtered = regItems.filter(i => !i.state);
+  else if (regFilter !== 'all') filtered = regItems.filter(i => i.state === regFilter);
+
+  document.getElementById('regulatoryCount').textContent = filtered.length + ' update' + (filtered.length !== 1 ? 's' : '');
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty">No updates found for this filter.</div>';
+    return;
+  }
+
+  const SOURCE_COLORS = {
+    'irs-news': 'tag-red',
+    'irs-enews': 'tag-red',
+    'joa': 'tag-gray',
+    'mn-dor': 'tag-green',
+    'tn-dor': 'tag-green',
+    'ia-dor': 'tag-yellow',
+  };
+
+  el.innerHTML = filtered.map(item => {
+    const color = SOURCE_COLORS[item.source] || 'tag-gray';
+    const dateStr = item.date ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+    const star = item.important ? '★' : '☆';
+    const starStyle = item.important ? 'color:#f59e0b;' : 'color:#d1d5db;';
+    return `<div class="reg-item" id="reg-${esc(item.id)}" style="${item.important ? 'border-left:3px solid #f59e0b;' : ''}">
+      <div style="display:flex;align-items:flex-start;gap:0.5rem;">
+        <div style="flex:1;min-width:0;">
+          <a href="${esc(item.url)}" target="_blank" rel="noopener" class="reg-item-title">${esc(item.title)}</a>
+          <div class="reg-item-meta">
+            <span class="tag ${color}">${esc(item.sourceLabel)}</span>
+            ${dateStr ? `<span>${dateStr}</span>` : ''}
+          </div>
+          ${item.summary ? `<div class="reg-item-summary">${esc(item.summary)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:0.35rem;flex-shrink:0;margin-top:0.1rem;">
+          <button onclick="toggleRegulatoryImportant('${esc(item.id)}')" title="${item.important ? 'Unmark important' : 'Mark important'}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;line-height:1;padding:0.1rem 0.2rem;${starStyle}">${star}</button>
+          <button onclick="deleteRegulatoryItem('${esc(item.id)}')" title="Delete" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:#d1d5db;padding:0.1rem 0.2rem;line-height:1;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#d1d5db'">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterRegulatory(filter, btn) {
+  regFilter = filter;
+  document.querySelectorAll('.reg-filter').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderRegulatory();
+}
+
+async function refreshRegulatory(btn) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+  try {
+    const res = await fetch('/api/admin/regulatory/refresh', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    await loadRegulatory();
+    if (btn) {
+      const summary = (d.sources || []).map(s => `${s.source}: ${s.fetched} fetched${s.error ? ' ❌' : ''}`).join(' · ');
+      btn.title = summary;
+      btn.textContent = d.totalStored > 0 ? `✓ +${d.totalStored} new` : '✓ Up to date';
+      console.log('Regulatory refresh:', d);
+      setTimeout(() => { if (btn) { btn.textContent = '↻ Refresh All'; btn.title = ''; } }, 4000);
+    }
+  } catch (e) {
+    if (btn) { btn.textContent = '❌ Failed'; setTimeout(() => { btn.textContent = '↻ Refresh All'; }, 3000); }
+  }
+  if (btn) btn.disabled = false;
+}
+
+async function markRegulatoryRead() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/regulatory/mark-read', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    document.getElementById('regulatoryBadge').style.display = 'none';
+  } catch {}
+}
+
+async function deleteRegulatoryItem(id) {
+  if (!confirm('Delete this item?')) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/regulatory/delete-item', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (!res.ok) return;
+    regItems = regItems.filter(i => i.id !== id);
+    renderRegulatory();
+  } catch {}
+}
+
+async function toggleRegulatoryImportant(id) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/regulatory/toggle-important', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (!res.ok) return;
+    const d = await res.json();
+    const item = regItems.find(i => i.id === id);
+    if (item) { item.important = d.important; renderRegulatory(); }
+  } catch {}
+}
+
+async function loadGmailStatus() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const el = document.getElementById('gmailStatus');
+  try {
+    const res = await fetch('/api/admin/gmail/status', { headers: { 'Authorization': `Bearer ${token}` } });
+    const { connected } = await res.json();
+    el.style.display = 'block';
+    if (connected) {
+      el.style.background = '#ecfdf5';
+      el.style.border = '1px solid #a7f3d0';
+      el.style.color = '#065f46';
+      el.innerHTML = '&#10003; Gmail connected — MN Dept. of Revenue emails are being pulled from your inbox. <button onclick="checkGmailPermissions()" style="margin-left:1rem;background:none;border:1px solid #065f46;color:#065f46;padding:0.15rem 0.55rem;border-radius:6px;font-size:0.74rem;cursor:pointer;font-family:inherit;">Check Permissions</button> <button onclick="disconnectGmail()" style="margin-left:0.5rem;background:none;border:none;color:#b91c1c;font-size:0.78rem;cursor:pointer;text-decoration:underline;">Disconnect</button>';
+    } else {
+      el.style.background = '#fef3c7';
+      el.style.border = '1px solid #fcd34d';
+      el.style.color = '#92400e';
+      el.innerHTML = '&#9888; Gmail not connected — MN updates require Gmail access. <button onclick="connectGmail()" style="margin-left:0.75rem;background:#0d3f5e;color:#fff;padding:0.2rem 0.65rem;border-radius:6px;font-size:0.76rem;border:none;cursor:pointer;font-weight:600;font-family:inherit;">Connect Gmail</button>';
+    }
+  } catch { el.style.display = 'none'; }
+}
+
+function connectGmail() {
+  // Auth rides the HttpOnly session cookie on this top-level navigation — no
+  // admin token in the URL (it would land in history and request logs).
+  window.location.href = '/api/admin/gmail/auth';
+}
+
+async function checkGmailPermissions() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/gmail/status', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    if (!data.connected) { alert('Gmail is not connected.'); return; }
+    if (!data.scopes) { alert('Could not read token scopes: ' + (data.error || 'unknown error')); return; }
+    const lines = [
+      'Reading regulatory emails (gmail.readonly): ' + (data.hasReadonly ? 'YES' : 'NO'),
+      'Sending welcome emails (gmail.send): ' + (data.hasSend ? 'YES' : 'NO'),
+    ];
+    if (!data.hasSend) {
+      lines.push('', 'To fix: in Google Cloud Console, open "OAuth consent screen" → "Data Access" (or "Scopes"), add the scope ".../auth/gmail.send", save, then click Disconnect + Connect Gmail again here and make sure to approve the new "Send email on your behalf" permission on Google\'s screen.');
+    }
+    alert(lines.join('\n'));
+  } catch (e) { alert('Failed to check permissions: ' + e.message); }
+}
+
+async function disconnectGmail() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  if (!confirm('Disconnect Gmail? MN regulatory emails will stop being fetched.')) return;
+  await fetch('/api/admin/gmail/disconnect', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+  loadGmailStatus();
+}
+
+// Mirrors DEFAULT_WELCOME_TEMPLATE in the worker — used only for the "Reset to
+// Original Default" button; the worker is the source of truth for new prospects.
+const ORIGINAL_WELCOME_TEMPLATE = {
+  subject: 'Welcome to TideVenture CPA — Your Client Portal Is Ready',
+  message: [
+    'Dear {{firstName}},',
+    '',
+    "Welcome to TideVenture CPA. I'm glad you've chosen to work with us{{bizLine}}, and I look forward to serving as your trusted advisor.",
+    '',
+    'Your secure client portal is now ready. It will serve as our home base throughout the engagement — a private, encrypted space where you can share documents, complete your annual questionnaire, and review your services at any time.',
+    '',
+    'To activate your account, please use the link below:',
+    '{{setupUrl}}',
+    '',
+    'A few things to note:',
+    "  •  This activation link expires in 24 hours. If it lapses, just reply to this email and I'll send a new one.",
+    "  •  After creating your password, you'll be asked to review and sign your engagement letter.",
+    '  •  Everything you upload is encrypted and accessible only to you and our firm.',
+    '',
+    'If you have any questions at any point, reply directly to this email — it comes straight to my desk.',
+  ].join('\n'),
+};
+
+async function loadWelcomeEmailSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/settings/welcome-email', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    document.getElementById('settingsWelcomeSubject').value = data.subject || ORIGINAL_WELCOME_TEMPLATE.subject;
+    document.getElementById('settingsWelcomeMessage').value = data.message || ORIGINAL_WELCOME_TEMPLATE.message;
+  } catch {
+    document.getElementById('settingsWelcomeSubject').value = ORIGINAL_WELCOME_TEMPLATE.subject;
+    document.getElementById('settingsWelcomeMessage').value = ORIGINAL_WELCOME_TEMPLATE.message;
+  }
+}
+
+function resetWelcomeEmailToOriginal() {
+  if (!confirm('Reset the master welcome email to the original default? This does not save until you click Save Template.')) return;
+  document.getElementById('settingsWelcomeSubject').value = ORIGINAL_WELCOME_TEMPLATE.subject;
+  document.getElementById('settingsWelcomeMessage').value = ORIGINAL_WELCOME_TEMPLATE.message;
+}
+
+function showSettingsCategory(cat) {
+  document.querySelectorAll('.settings-subnav__item').forEach(b => b.classList.remove('active'));
+  document.getElementById('settingsCat-' + cat).classList.add('active');
+  document.querySelectorAll('.settings-category').forEach(c => c.style.display = 'none');
+  document.getElementById('settingsCategory-' + cat).style.display = 'block';
+}
+
+async function loadGeneralSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/settings/general', { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    document.getElementById('settingsSchedulingUrl').value = d.schedulingUrl || '';
+  } catch {}
+}
+
+async function saveGeneralSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('saveGeneralBtn');
+  const status = document.getElementById('settingsGeneralStatus');
+  btn.disabled = true; btn.textContent = 'Saving…'; status.textContent = '';
+  try {
+    const res = await fetch('/api/admin/settings/general', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schedulingUrl: document.getElementById('settingsSchedulingUrl').value }),
+    });
+    const d = await res.json();
+    if (d.ok) { status.style.color = '#059669'; status.textContent = d.schedulingUrl ? '✓ Saved — clients now see a Book a Call button.' : '✓ Saved — Book a Call hidden.'; document.getElementById('settingsSchedulingUrl').value = d.schedulingUrl || ''; }
+    else { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + (d.error || 'unknown'); }
+  } catch (e) { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Save';
+}
+
+async function loadBackupStatus() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const el = document.getElementById('backupStatus');
+  try {
+    const res = await fetch('/api/admin/backup/status', { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    if (!d.lastRun) { el.innerHTML = '&#9888; No backup has run yet — the first one runs automatically tonight, or click Run Backup Now.'; el.style.color = '#92600e'; return; }
+    el.style.color = '#374151';
+    el.innerHTML = `Last backup: <strong>${new Date(d.lastRun).toLocaleString()}</strong> — ${d.copied} object(s) copied, ${d.skipped} already current${d.failed ? `, <span style="color:#b91c1c;">${d.failed} failed</span>` : ''}${d.pending ? `, ${d.pending} deferred to next run` : ''}.`;
+  } catch { el.textContent = 'Could not load backup status.'; }
+}
+
+async function runBackupNow() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('runBackupBtn');
+  const status = document.getElementById('backupRunStatus');
+  btn.disabled = true; btn.textContent = 'Running…'; status.textContent = '';
+  try {
+    const res = await fetch('/api/admin/backup/run', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    status.style.color = '#059669';
+    status.textContent = `✓ Done — ${d.copied} copied, ${d.skipped} already current${d.failed ? `, ${d.failed} failed` : ''}${d.pending ? `, ${d.pending} deferred` : ''}.`;
+    loadBackupStatus();
+  } catch (e) { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Run Backup Now';
+}
+
+async function loadEngagementSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/settings/engagement-letter', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    document.getElementById('settingsEngagementMessage').value = data.message || '';
+  } catch {
+    document.getElementById('settingsEngagementMessage').value = '';
+  }
+}
+
+async function saveEngagementSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('saveSettingsEngagementBtn');
+  const status = document.getElementById('settingsEngagementStatus');
+  const message = document.getElementById('settingsEngagementMessage').value.trim();
+  if (!message) { status.style.color = '#b91c1c'; status.textContent = 'Letter text is required.'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…'; status.textContent = '';
+  try {
+    const res = await fetch('/api/admin/settings/engagement-letter', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    if (data.ok) { status.style.color = '#059669'; status.textContent = '✓ Saved — unsigned clients will see this version.'; }
+    else { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + (data.error || 'unknown error'); }
+  } catch (e) { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Save Letter';
+}
+
+async function saveWelcomeEmailSettings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('saveSettingsWelcomeBtn');
+  const status = document.getElementById('settingsWelcomeStatus');
+  const subject = document.getElementById('settingsWelcomeSubject').value.trim();
+  const message = document.getElementById('settingsWelcomeMessage').value.trim();
+  if (!subject || !message) { status.style.color = '#b91c1c'; status.textContent = 'Subject and message are required.'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…'; status.textContent = '';
+  try {
+    const res = await fetch('/api/admin/settings/welcome-email', {
+      method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, message }),
+    });
+    const data = await res.json();
+    if (data.ok) { status.style.color = '#059669'; status.textContent = '✓ Saved — new prospects will use this template.'; }
+    else { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + (data.error || 'unknown error'); }
+  } catch (e) { status.style.color = '#b91c1c'; status.textContent = 'Failed: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Save Template';
 }
 </script>
 </body>

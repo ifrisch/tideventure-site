@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Details — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     body { background: var(--sand); font-family: var(--font-body); }
@@ -65,35 +66,114 @@
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcTax"> Business Tax Return</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcQuarterly"> Quarterly Planning</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcMonthly"> Monthly Financial Review</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="svcCfo"> Fractional CFO</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcBookkeeping"> Bookkeeping</label>
         <label style="font-size:0.82rem;"><input type="checkbox" id="svcOther" onchange="document.getElementById('otherServiceInput').style.display=this.checked?'inline-block':'none'"> Other</label>
       </div>
       <input id="otherServiceInput" placeholder="Describe other service" style="display:none;width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
     </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Dashboard cards <span style="font-weight:400;color:var(--text-muted);">(what this client sees on their portal dashboard)</span></label>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <label style="font-size:0.82rem;"><input type="checkbox" id="cardTaxStatus"> Tax Return Status</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="cardDeadlines"> Tax Deadlines</label>
+        <label style="font-size:0.82rem;"><input type="checkbox" id="cardRevenue"> Monthly Revenue (QuickBooks)</label>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">Defaults follow the client's services — <a href="#" onclick="applyDefaultCards();return false;" style="color:var(--brand-teal);">reset to defaults</a></div>
+    </div>
+    <div id="engagementStatus" style="display:none;margin-bottom:1rem;padding:0.65rem 0.9rem;border-radius:var(--radius-sm);font-size:0.82rem;"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
       <div>
         <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Monthly price ($)</label>
-        <input type="number" id="editMonthly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+        <input type="number" id="editMonthly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;" oninput="syncPrice('monthly')">
       </div>
       <div>
         <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Yearly price ($)</label>
-        <input type="number" id="editYearly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+        <input type="number" id="editYearly" value="0" min="0" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;" oninput="syncPrice('yearly')">
       </div>
     </div>
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
       <button class="btn btn--primary" id="saveProfileBtn" onclick="saveClientProfile()" style="padding:0.5rem 1.25rem;">Save Profile</button>
       <button class="btn btn--primary" id="generateLinkBtn" onclick="generateSetupLink()" style="padding:0.5rem 1.25rem;display:none;">Generate Welcome Link</button>
       <button class="btn--back" onclick="impersonateClient()" style="padding:0.5rem 1.25rem;">View as Client</button>
+      <button id="toggleStatusBtn" onclick="toggleClientStatus()" style="display:none;padding:0.5rem 1.25rem;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;cursor:pointer;border:1.5px solid;"></button>
       <button class="btn--back" onclick="window.location.href='/admin'" style="padding:0.5rem 1.25rem;">Back to Dashboard</button>
     </div>
+    <div id="statusChangeMsg" style="margin-top:0.5rem;font-size:0.82rem;display:none;"></div>
     <div id="setupResult" style="margin-top:1rem;display:none;padding:1rem;background:#f0fdf4;border-radius:var(--radius-sm);font-size:0.82rem;">
-      <strong style="color:#059669;">&#10003; Client created!</strong>
-      <p style="margin:0.5rem 0 0.25rem;color:var(--ink);">Send this link to the client to set up their account:</p>
+      <strong id="setupResultHeadline" style="color:#059669;">&#10003; Client created!</strong>
+      <p id="setupResultSub" style="margin:0.5rem 0 0.25rem;color:var(--ink);">Send this link to the client to set up their account:</p>
       <input id="setupLinkOutput" readonly style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--white);margin-bottom:0.5rem;box-sizing:border-box;">
       <button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;" onclick="navigator.clipboard.writeText(document.getElementById('setupLinkOutput').value).then(()=>this.textContent='Copied!')">Copy Link</button>
     </div>
+    <div id="welcomeEmailEditor" style="margin-top:1rem;display:none;padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white);">
+      <h3 style="margin:0 0 0.25rem;">Welcome Email</h3>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 1rem;">Review and edit the message below before sending — the logo, signature, and footer are added automatically and don't need to be included here.</p>
+      <div style="margin-bottom:0.75rem;">
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Subject</label>
+        <input id="welcomeSubject" style="width:100%;padding:0.5rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;font-family:var(--font-body);">
+      </div>
+      <div style="margin-bottom:0.75rem;">
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem;">Message</label>
+        <textarea id="welcomeMessage" rows="14" style="width:100%;padding:0.65rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;font-family:var(--font-body);line-height:1.6;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn--primary" id="sendWelcomeBtn" onclick="sendWelcomeEmail()" style="padding:0.5rem 1.25rem;">Send Welcome Email</button>
+        <button class="btn--back" onclick="resetWelcomeEmail()" style="padding:0.5rem 1.1rem;">Reset to Default</button>
+        <button class="btn--back" id="previewWelcomeBtn" onclick="previewWelcomeEmail()" style="padding:0.5rem 1.1rem;">Preview</button>
+        <span id="welcomeEmailStatus" style="font-size:0.8rem;"></span>
+      </div>
+    </div>
     <div id="saveResult" style="margin-top:0.5rem;font-size:0.82rem;color:#059669;display:none;">&#10003; Profile saved</div>
   </div>
+
+  <!-- Tax Return Status editor (drives the client's portal "Tax Return Status" card) -->
+  <div class="card" id="taxStatusEditor" style="display:none;">
+    <h2>Tax Return Status</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;">These appear on the client's portal dashboard. Add a return per year and set where it stands.</p>
+    <div id="taxStatusRows"></div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-top:0.75rem;">
+      <button class="btn--back" onclick="addTaxStatusRow()" style="padding:0.4rem 1rem;">+ Add Return</button>
+      <button class="btn btn--primary" id="saveTaxStatusBtn" onclick="saveTaxStatuses()" style="padding:0.4rem 1.1rem;">Save Statuses</button>
+      <span id="taxStatusMsg" style="font-size:0.82rem;"></span>
+    </div>
+  </div>
+
+  <!-- Tax Savings Ledger (drives the client's "Your Tax Savings" dashboard card) -->
+  <div class="card" id="savingsEditor" style="display:none;">
+    <h2>Tax Savings Ledger</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;">Log every dollar you save this client — deductions found, elections, credits, penalties abated. The running total shows on their dashboard and grows year over year.</p>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.9rem;align-items:center;">
+      <input type="number" id="savAmount" placeholder="Amount ($)" min="0" step="0.01" style="width:110px;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <select id="savCategory" style="padding:0.45rem 0.5rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:#fff;">
+        <option value="deduction">Deduction found</option>
+        <option value="election">Entity election</option>
+        <option value="credit">Credit claimed</option>
+        <option value="penalty">Penalty abated</option>
+        <option value="amended">Amended return</option>
+        <option value="planning">Planning strategy</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="number" id="savYear" placeholder="Tax year" style="width:90px;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <input id="savDesc" placeholder="Short description (the client sees this)" style="flex:1;min-width:180px;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <button class="btn btn--primary" id="savAddBtn" onclick="addSavings()" style="padding:0.45rem 1rem;">Log Savings</button>
+    </div>
+    <div id="savingsTotalAdmin" style="font-size:0.85rem;margin-bottom:0.5rem;"></div>
+    <div id="savingsRows"></div>
+  </div>
+
+  <!-- Document requests (drives the client's portal checklist) -->
+  <div class="card" id="docReqEditor" style="display:none;">
+    <h2>Document Requests</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1rem;">Ask for specific documents. The client sees a checklist with "the ball is in your court" nudges, marks items uploaded, and you confirm receipt here.</p>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.9rem;">
+      <input id="reqTitle" placeholder="Document (e.g. December bank statement)" style="flex:1;min-width:200px;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <input id="reqNote" placeholder="Note (optional)" style="flex:1;min-width:150px;padding:0.45rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <button class="btn btn--primary" id="reqAddBtn" onclick="addDocRequest()" style="padding:0.45rem 1rem;">Request</button>
+    </div>
+    <div id="docReqRows"></div>
+  </div>
+
 
   <!-- Existing client view -->
   <div id="content" style="display:none;">
@@ -102,7 +182,7 @@
       <div class="info-grid">
         <div class="info-item"><div class="label">Email</div><div class="value" id="cEmail"></div></div>
         <div class="info-item"><div class="label">State</div><div class="value" id="cState"></div></div>
-        <div class="info-item"><div class="label">Questionnaire 2025</div><div class="value" id="cQuestionnaire"></div></div>
+        <div class="info-item"><div class="label">Questionnaire 2026</div><div class="value" id="cQuestionnaire"></div></div>
         <div class="info-item"><div class="label">Documents</div><div class="value" id="cDocCount"></div></div>
         <div class="info-item"><div class="label">Outstanding Balance</div><div class="value" id="cBalance"></div></div>
       </div>
@@ -121,7 +201,7 @@
     </div>
 
     <div class="card">
-      <h3>Questionnaire Answers (2025)</h3>
+      <h3>Questionnaire Answers (2026)</h3>
       <div id="answersList"><div class="empty">Loading…</div></div>
     </div>
   </div>
@@ -162,7 +242,7 @@ async function loadClient(email) {
 
   // Questionnaire
   try {
-    const qr = await fetch('/api/admin/questionnaire/view/' + encodeURIComponent(email) + '/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    const qr = await fetch('/api/admin/questionnaire/view/' + encodeURIComponent(email) + '/2026', { headers: { 'Authorization': `Bearer ${token}` } });
     if (qr.ok) {
       const qd = await qr.json();
       const answers = qd.answers || {};
@@ -187,7 +267,7 @@ async function loadClient(email) {
     if (!clientDocs.length) { el.innerHTML = '<div class="empty">No documents.</div>'; }
     else {
       const docTok = sessionStorage.getItem('tv_admin_token');
-      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1&token=${docTok}" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}?token=${docTok}" class="doc-dl" style="margin-right:0.5rem;">Download</a></div>`).join('');
+      el.innerHTML = clientDocs.map(d => `<div class="doc-row"><span class="doc-name">${esc(d.displayName || d.name)}</span><span class="doc-date">${new Date(d.uploaded).toLocaleDateString()}</span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" class="doc-dl" style="margin-right:0.75rem;">View</a><a href="/api/documents/${esc(d.id)}" class="doc-dl" style="margin-right:0.5rem;">Download</a></div>`).join('');
     }
   } catch {}
 
@@ -244,6 +324,7 @@ function getServices() {
   if (document.getElementById('svcTax').checked) s.push('tax');
   if (document.getElementById('svcQuarterly').checked) s.push('quarterly');
   if (document.getElementById('svcMonthly').checked) s.push('monthly');
+  if (document.getElementById('svcCfo').checked) s.push('cfo');
   if (document.getElementById('svcBookkeeping').checked) s.push('bookkeeping');
   const otherVal = document.getElementById('otherServiceInput').value.trim();
   if (document.getElementById('svcOther').checked && otherVal) s.push(otherVal);
@@ -285,21 +366,6 @@ async function sendPandaDoc(docId, docName) {
 
 
 
-async function sendToSign(docId, docName) {
-  const email = getEmail();
-  if (!email) return;
-  if (!confirm(`Send "${docName}" to ${email} for signing?`)) return;
-  const token = sessionStorage.getItem('tv_admin_token');
-  try {
-    const res = await fetch('/api/admin/signing-request', {
-      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, documentId: docId, documentName: docName }),
-    });
-    if (res.ok) alert('Sent for signing!');
-    else alert('Failed.');
-  } catch { alert('Error.'); }
-}
-
 async function uploadClientDoc(input) {
   const file = input.files[0];
   if (!file) return;
@@ -332,6 +398,7 @@ async function saveClientProfile() {
         email,
         businessName: document.getElementById('editBizName').value,
         services: getServices(),
+        dashboardCards: getDashboardCards(),
         monthlyPrice: parseFloat(document.getElementById('editMonthly').value) || 0,
         yearlyPrice: parseFloat(document.getElementById('editYearly').value) || 0,
       }),
@@ -344,6 +411,48 @@ async function saveClientProfile() {
   btn.disabled = false; btn.textContent = 'Save Profile';
 }
 
+function getDashboardCards() {
+  const cards = [];
+  if (document.getElementById('cardTaxStatus').checked) cards.push('taxStatus');
+  if (document.getElementById('cardDeadlines').checked) cards.push('deadlines');
+  if (document.getElementById('cardRevenue').checked) cards.push('revenue');
+  return cards;
+}
+
+function setDashboardCards(cards) {
+  document.getElementById('cardTaxStatus').checked = cards.includes('taxStatus');
+  document.getElementById('cardDeadlines').checked = cards.includes('deadlines');
+  document.getElementById('cardRevenue').checked = cards.includes('revenue');
+}
+
+// Mirrors defaultDashboardCards() in the worker
+function defaultCardsFor(services) {
+  const cards = [];
+  if (services.includes('tax') || services.includes('quarterly')) cards.push('taxStatus', 'deadlines');
+  if (services.includes('bookkeeping') || services.includes('cfo')) cards.push('revenue');
+  return cards;
+}
+
+function applyDefaultCards() {
+  setDashboardCards(defaultCardsFor(getServices()));
+}
+
+function syncPrice(changed) {
+  const monthlyEl = document.getElementById('editMonthly');
+  const yearlyEl = document.getElementById('editYearly');
+  if (changed === 'monthly') {
+    const monthly = parseFloat(monthlyEl.value) || 0;
+    yearlyEl.value = Math.round(monthly * 12 * 100) / 100;
+  } else {
+    const yearly = parseFloat(yearlyEl.value) || 0;
+    monthlyEl.value = Math.round((yearly / 12) * 100) / 100;
+  }
+}
+
+let welcomeClientEmail = null;
+let defaultWelcomeSubject = '';
+let defaultWelcomeMessage = '';
+
 async function generateSetupLink() {
   const btn = document.getElementById('generateLinkBtn');
   btn.disabled = true; btn.textContent = 'Creating…';
@@ -354,24 +463,95 @@ async function generateSetupLink() {
       method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: prospectId,
-        customerType: document.getElementById('setupCustomerType').value,
-        businessName: document.getElementById('setupBusinessName').value,
+        businessName: document.getElementById('editBizName').value,
         services,
-        monthlyPrice: parseFloat(document.getElementById('setupMonthly').value) || 0,
-        yearlyPrice: parseFloat(document.getElementById('setupYearly').value) || 0,
+        dashboardCards: getDashboardCards(),
+        monthlyPrice: parseFloat(document.getElementById('editMonthly').value) || 0,
+        yearlyPrice: parseFloat(document.getElementById('editYearly').value) || 0,
       }),
     });
     const data = await res.json();
     if (data.setupUrl) {
       document.getElementById('setupLinkOutput').value = data.setupUrl;
+      document.getElementById('setupResultHeadline').innerHTML = '&#10003; Client created!';
+      document.getElementById('setupResultSub').textContent = 'Setup link (also included in the welcome email below):';
       document.getElementById('setupResult').style.display = 'block';
       btn.style.display = 'none';
-      document.querySelector('#setupView .btn--back').style.display = 'none';
-    } else throw Error();
-  } catch { alert('Failed to create client.'); btn.disabled = false; btn.textContent = 'Generate Welcome Link'; }
+
+      // Populate the editable welcome email, prefilled with the default template
+      welcomeClientEmail = data.email;
+      defaultWelcomeSubject = data.defaultSubject;
+      defaultWelcomeMessage = data.defaultMessage;
+      document.getElementById('welcomeSubject').value = defaultWelcomeSubject;
+      document.getElementById('welcomeMessage').value = defaultWelcomeMessage;
+      document.getElementById('welcomeEmailStatus').textContent = '';
+      document.getElementById('welcomeEmailEditor').style.display = 'block';
+    } else throw Error(data.error || 'Unknown error');
+  } catch (e) { alert('Failed to create client.' + (e && e.message ? ' (' + e.message + ')' : '')); btn.disabled = false; btn.textContent = 'Generate Welcome Link'; }
 }
 
+function resetWelcomeEmail() {
+  document.getElementById('welcomeSubject').value = defaultWelcomeSubject;
+  document.getElementById('welcomeMessage').value = defaultWelcomeMessage;
+}
+
+function previewWelcomeEmail() {
+  const subject = document.getElementById('welcomeSubject').value;
+  const message = document.getElementById('welcomeMessage').value;
+  const w = window.open('', '_blank');
+  if (!w) { alert('Please allow pop-ups to preview the email.'); return; }
+  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+  w.document.write(`<div style="max-width:640px;margin:2rem auto;font-family:sans-serif;">
+    <div style="font-size:0.8rem;color:#666;margin-bottom:1rem;">Subject: <strong>${esc(subject)}</strong></div>
+    <div style="white-space:pre-wrap;border:1px solid #ddd;border-radius:8px;padding:1.5rem;font-size:0.9rem;line-height:1.6;">${esc(message)}
+
+Warm regards,
+
+Isaac Frisch, CPA
+TideVenture CPA
+tideventurecpa.com</div>
+    <p style="font-size:0.75rem;color:#999;margin-top:1rem;">Note: this is a plain-text preview. The actual email is styled with the TideVenture logo and branded layout.</p>
+  </div>`);
+  w.document.close();
+}
+
+async function sendWelcomeEmail() {
+  if (!welcomeClientEmail) return;
+  const btn = document.getElementById('sendWelcomeBtn');
+  const status = document.getElementById('welcomeEmailStatus');
+  btn.disabled = true; btn.textContent = 'Sending…'; status.textContent = '';
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/send-welcome-email', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: welcomeClientEmail,
+        subject: document.getElementById('welcomeSubject').value,
+        text: document.getElementById('welcomeMessage').value,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = '#059669';
+      status.textContent = '✓ Sent to ' + welcomeClientEmail;
+    } else {
+      status.style.color = '#b91c1c';
+      status.textContent = 'Failed: ' + (data.error || 'unknown error');
+    }
+  } catch (e) {
+    status.style.color = '#b91c1c';
+    status.textContent = 'Failed: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Send Welcome Email';
+}
+
+let currentClientStatus = null;
+let currentClientEmail = null;
+
 function loadEditorData(clientData) {
+  currentClientStatus = clientData.status || 'active';
+  currentClientEmail = clientData.email;
+  updateStatusButton();
   document.getElementById('editBizName').value = clientData.name || clientData.email.split('@')[0];
   document.getElementById('editMonthly').value = clientData.monthlyPrice || 0;
   document.getElementById('editYearly').value = clientData.yearlyPrice || 0;
@@ -379,13 +559,230 @@ function loadEditorData(clientData) {
   document.getElementById('svcTax').checked = svcs.includes('tax');
   document.getElementById('svcQuarterly').checked = svcs.includes('quarterly');
   document.getElementById('svcMonthly').checked = svcs.includes('monthly');
+  document.getElementById('svcCfo').checked = svcs.includes('cfo');
   document.getElementById('svcBookkeeping').checked = svcs.includes('bookkeeping');
-  const others = svcs.filter(s => !['tax','quarterly','monthly','bookkeeping'].includes(s));
+  setDashboardCards(Array.isArray(clientData.dashboardCards) ? clientData.dashboardCards : defaultCardsFor(svcs));
+  const others = svcs.filter(s => !['tax','quarterly','monthly','cfo','bookkeeping'].includes(s));
   if (others.length) {
     document.getElementById('svcOther').checked = true;
     document.getElementById('otherServiceInput').value = others.join(', ');
     document.getElementById('otherServiceInput').style.display = 'inline-block';
   }
+  // Tax-return status + savings + doc-request editors (existing clients only, not prospects)
+  if (!prospectId) {
+    document.getElementById('taxStatusEditor').style.display = 'block';
+    renderTaxStatusRows(Array.isArray(clientData.taxStatuses) ? clientData.taxStatuses : []);
+    document.getElementById('savingsEditor').style.display = 'block';
+    loadSavings();
+    document.getElementById('docReqEditor').style.display = 'block';
+    loadDocRequests();
+  }
+}
+
+// ── Tax Savings Ledger (admin) ──
+const SAV_CAT_LABELS = { deduction: 'Deduction found', election: 'Entity election', credit: 'Credit claimed', penalty: 'Penalty abated', amended: 'Amended return', planning: 'Planning strategy', other: 'Other' };
+
+async function loadSavings() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/savings?email=' + encodeURIComponent(currentClientEmail), { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const entries = data.entries || [];
+    document.getElementById('savingsTotalAdmin').innerHTML = entries.length
+      ? `Total saved: <strong style="color:#059669;font-size:1rem;">$${(data.total || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}</strong> across ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`
+      : '<span style="color:var(--text-muted);">No savings logged yet — the client\'s dashboard card stays hidden until the first entry.</span>';
+    document.getElementById('savingsRows').innerHTML = entries.map(e =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;padding:0.45rem 0;border-bottom:1px solid var(--border);font-size:0.84rem;">
+        <span><strong style="color:#059669;">$${Number(e.amount).toLocaleString('en-US')}</strong> · ${SAV_CAT_LABELS[e.category] || escHtml(e.category || '')} <span style="color:var(--text-muted);">(${e.taxYear || ''})</span>${e.description ? '<br><span style="color:var(--text-muted);font-size:0.78rem;">' + escHtml(e.description) + '</span>' : ''}</span>
+        <button onclick="deleteSavings('${e.id}')" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:1.05rem;line-height:1;" title="Delete entry">&times;</button>
+      </div>`).join('');
+  } catch {}
+}
+
+async function addSavings() {
+  const amount = parseFloat(document.getElementById('savAmount').value);
+  if (!(amount > 0)) { alert('Enter a positive amount.'); return; }
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('savAddBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/savings', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: currentClientEmail, amount,
+        category: document.getElementById('savCategory').value,
+        taxYear: parseInt(document.getElementById('savYear').value) || undefined,
+        description: document.getElementById('savDesc').value.trim(),
+      }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+    document.getElementById('savAmount').value = ''; document.getElementById('savDesc').value = '';
+    await loadSavings();
+  } catch (e) { alert('Failed to log savings: ' + e.message); }
+  btn.disabled = false;
+}
+
+async function deleteSavings(id) {
+  if (!confirm('Delete this savings entry?')) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/savings/delete', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: currentClientEmail, id }) });
+    await loadSavings();
+  } catch {}
+}
+
+// ── Document requests (admin) ──
+async function loadDocRequests() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/doc-requests?email=' + encodeURIComponent(currentClientEmail), { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const reqs = data.requests || [];
+    if (!reqs.length) { document.getElementById('docReqRows').innerHTML = '<div style="color:var(--text-muted);font-size:0.84rem;">No document requests yet.</div>'; return; }
+    const chip = s => s === 'received' ? '<span style="font-size:0.72rem;font-weight:700;color:#059669;">&#10003; Received</span>'
+      : s === 'submitted' ? '<span style="font-size:0.72rem;font-weight:700;color:#b45309;">Client uploaded — confirm below</span>'
+      : s === 'waived' ? '<span style="font-size:0.72rem;font-weight:700;color:#9ca3af;">Waived</span>'
+      : '<span style="font-size:0.72rem;font-weight:700;color:#dc2626;">Waiting on client</span>';
+    document.getElementById('docReqRows').innerHTML = reqs.map(r =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;padding:0.45rem 0;border-bottom:1px solid var(--border);font-size:0.84rem;">
+        <span><strong>${escHtml(r.title)}</strong>${r.note ? ' <span style="color:var(--text-muted);font-size:0.78rem;">— ' + escHtml(r.note) + '</span>' : ''}<br>${chip(r.status)}</span>
+        <span style="display:flex;gap:0.4rem;white-space:nowrap;">
+          ${r.status !== 'received' && r.status !== 'waived' ? `<button class="btn--back" style="padding:0.25rem 0.6rem;font-size:0.72rem;" onclick="updateDocRequest('${r.id}','received')">Mark Received</button>` : ''}
+          ${r.status === 'requested' ? `<button class="btn--back" style="padding:0.25rem 0.6rem;font-size:0.72rem;" onclick="updateDocRequest('${r.id}','waived')">Waive</button>` : ''}
+          <button onclick="deleteDocRequest('${r.id}')" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:1.05rem;line-height:1;" title="Delete request">&times;</button>
+        </span>
+      </div>`).join('');
+  } catch {}
+}
+
+async function addDocRequest() {
+  const title = document.getElementById('reqTitle').value.trim();
+  if (!title) { alert('Enter what document you need.'); return; }
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('reqAddBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/doc-requests', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentClientEmail, title, note: document.getElementById('reqNote').value.trim() }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+    document.getElementById('reqTitle').value = ''; document.getElementById('reqNote').value = '';
+    await loadDocRequests();
+  } catch (e) { alert('Failed to create request: ' + e.message); }
+  btn.disabled = false;
+}
+
+async function updateDocRequest(id, status) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/doc-requests/update', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: currentClientEmail, id, status }) });
+    await loadDocRequests();
+  } catch {}
+}
+
+async function deleteDocRequest(id) {
+  if (!confirm('Delete this document request?')) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    await fetch('/api/admin/doc-requests/delete', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: currentClientEmail, id }) });
+    await loadDocRequests();
+  } catch {}
+}
+
+// 5-stage return pipeline shown as a progress tracker on the client's portal.
+const TAX_STATUS_OPTS = [['docs','Awaiting Docs'],['prep','In Preparation'],['review','In Review'],['filed','Filed'],['accepted','Accepted']];
+const LEGACY_STATUS_MAP = { not_started: 'docs', in_review: 'review' };
+
+function renderTaxStatusRows(rows) {
+  const c = document.getElementById('taxStatusRows');
+  c.innerHTML = '';
+  if (!rows.length) { addTaxStatusRow('', 'docs'); return; }
+  rows.forEach(r => addTaxStatusRow(r.label || '', LEGACY_STATUS_MAP[r.status] || r.status || 'docs'));
+}
+
+function addTaxStatusRow(label, status) {
+  label = label || ''; status = status || 'docs';
+  const c = document.getElementById('taxStatusRows');
+  const row = document.createElement('div');
+  row.className = 'tax-status-row';
+  row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;';
+  const opts = TAX_STATUS_OPTS.map(([v,l]) => `<option value="${v}"${v===status?' selected':''}>${l}</option>`).join('');
+  row.innerHTML = `<input class="ts-label" value="${label.replace(/"/g,'&quot;')}" placeholder="e.g. 2025 Business Return" style="flex:1;padding:0.4rem 0.6rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;box-sizing:border-box;">
+    <select class="ts-status" style="padding:0.4rem 0.5rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;background:#fff;">${opts}</select>
+    <button onclick="this.parentElement.remove()" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:1.1rem;line-height:1;padding:0 0.3rem;" title="Remove">&times;</button>`;
+  c.appendChild(row);
+}
+
+async function saveTaxStatuses() {
+  const rows = [...document.querySelectorAll('#taxStatusRows .tax-status-row')].map(r => ({
+    label: r.querySelector('.ts-label').value.trim(),
+    status: r.querySelector('.ts-status').value,
+  })).filter(r => r.label);
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('saveTaxStatusBtn');
+  const msg = document.getElementById('taxStatusMsg');
+  btn.disabled = true; btn.textContent = 'Saving…'; msg.textContent = '';
+  try {
+    const res = await fetch('/api/admin/client-tax-status', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentClientEmail, taxStatuses: rows }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed');
+    msg.style.color = '#059669'; msg.textContent = '✓ Saved — the client sees this on their dashboard.';
+  } catch (e) { msg.style.color = '#b91c1c'; msg.textContent = 'Failed: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Save Statuses';
+}
+
+function updateStatusButton() {
+  const btn = document.getElementById('toggleStatusBtn');
+  // Only meaningful for existing, already-onboarded clients — not prospects
+  // still being converted, and not accounts mid-setup that haven't signed yet.
+  if (prospectId || !currentClientStatus || currentClientStatus === 'pending_setup' || currentClientStatus === 'pending_engagement') {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'inline-block';
+  if (currentClientStatus === 'deactivated') {
+    btn.textContent = 'Reactivate Client';
+    btn.style.color = '#059669';
+    btn.style.borderColor = '#a9d8b8';
+    btn.style.background = '#f0fdf4';
+  } else {
+    btn.textContent = 'Deactivate Client';
+    btn.style.color = '#b91c1c';
+    btn.style.borderColor = '#fca5a5';
+    btn.style.background = '#fef2f2';
+  }
+}
+
+async function toggleClientStatus() {
+  const newStatus = currentClientStatus === 'deactivated' ? 'active' : 'deactivated';
+  const verb = newStatus === 'deactivated' ? 'deactivate' : 'reactivate';
+  if (!confirm(`Are you sure you want to ${verb} ${currentClientEmail}?` + (newStatus === 'deactivated' ? ' They will no longer be able to log into their portal.' : ''))) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  const btn = document.getElementById('toggleStatusBtn');
+  const msg = document.getElementById('statusChangeMsg');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/client-status', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentClientEmail, status: newStatus }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed');
+    currentClientStatus = newStatus;
+    updateStatusButton();
+    msg.style.display = 'block';
+    msg.style.color = '#059669';
+    msg.textContent = newStatus === 'deactivated' ? '✓ Client deactivated.' : '✓ Client reactivated.';
+  } catch (e) {
+    msg.style.display = 'block';
+    msg.style.color = '#b91c1c';
+    msg.textContent = 'Failed: ' + e.message;
+  }
+  btn.disabled = false;
 }
 
 (async () => {
@@ -418,13 +815,59 @@ function loadEditorData(clientData) {
     document.getElementById('planEditorSubtitle').textContent = 'New prospect — configure their plan then generate a welcome link.';
     document.getElementById('editBizName').value = email.split('@')[0];
     document.getElementById('svcTax').checked = true;
+    applyDefaultCards();
     updateCustomerTypeDisplay();
   } else {
     document.getElementById('generateLinkBtn').style.display = 'none';
     document.getElementById('planEditorSubtitle').textContent = 'Edit plan details and click Save Profile.';
     loadClient(email); // Load the detail view too
+    loadEngagementStatus(email);
   }
 })();
+
+let _engagementRecord = null;
+async function loadEngagementStatus(email) {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const el = document.getElementById('engagementStatus');
+  try {
+    const res = await fetch('/api/admin/engagement-record?email=' + encodeURIComponent(email), { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    el.style.display = 'block';
+    if (data.signed) {
+      _engagementRecord = data.record;
+      const when = new Date(data.record.signedAt).toLocaleString();
+      el.style.background = '#f0fdf4'; el.style.border = '1px solid #a9d8b8'; el.style.color = '#1d5c33';
+      el.innerHTML = `&#10003; <strong>Engagement letter signed</strong> by ${escHtml(data.record.signature)} on ${when} <a href="#" onclick="viewSignedLetter();return false;" style="margin-left:0.75rem;color:var(--brand-teal);font-weight:600;">View Signed Letter</a>`;
+    } else {
+      el.style.background = '#fffbeb'; el.style.border = '1px solid #f3d9a4'; el.style.color = '#92600e';
+      el.innerHTML = '&#9998; Engagement letter <strong>not signed yet</strong> — the client will be asked to sign on their next portal login.';
+    }
+  } catch { el.style.display = 'none'; }
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function viewSignedLetter() {
+  if (!_engagementRecord) return;
+  const r = _engagementRecord;
+  const w = window.open('', '_blank');
+  if (!w) { alert('Please allow pop-ups to view the signed letter.'); return; }
+  w.document.write(`<title>Signed Engagement Letter — ${escHtml(r.email)}</title>
+  <div style="max-width:720px;margin:2rem auto;padding:0 1.5rem;font-family:Georgia,serif;color:#152430;line-height:1.7;">
+    <pre style="white-space:pre-wrap;font-family:inherit;font-size:15px;">${escHtml(r.letterText)}</pre>
+    <hr style="margin:2rem 0;"/>
+    <h3 style="font-family:sans-serif;font-size:14px;">ELECTRONICALLY SIGNED</h3>
+    <table style="font-family:sans-serif;font-size:13px;line-height:1.8;">
+      <tr><td style="padding-right:1.5rem;">Signed by:</td><td><strong>${escHtml(r.signature)}</strong></td></tr>
+      <tr><td>Account email:</td><td>${escHtml(r.email)}</td></tr>
+      <tr><td>Date &amp; time (UTC):</td><td>${escHtml(r.signedAt)}</td></tr>
+      <tr><td>IP address:</td><td>${escHtml(r.ip || 'n/a')}</td></tr>
+      <tr><td>Browser:</td><td style="font-size:11px;">${escHtml(r.userAgent || 'n/a')}</td></tr>
+      <tr><td>Document SHA-256:</td><td style="font-family:monospace;font-size:11px;">${escHtml(r.letterHash)}</td></tr>
+    </table>
+  </div>`);
+  w.document.close();
+}
 </script>
 </body>
 </html>

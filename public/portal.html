@@ -5,62 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portal — TideVenture CPA</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f5f7fa; color: #1e293b; }
-    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: #f5f7fa; }
-    .login-card { background: #fff; border-radius: 14px; padding: 2.5rem 2rem; width: 100%; max-width: 360px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .login-card h1 { font-family: 'Montserrat',sans-serif; font-size: 1.2rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
-    .login-card p { font-size: 0.82rem; color: #6b7280; margin: 0 0 1.5rem; }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f6f5f2; color: #152430; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(165deg, #0c2d43 0%, #0d3d5a 60%, #135375 100%); }
+    .login-card { background: #fff; border-radius: 14px; padding: 2.75rem 2.25rem; width: 100%; max-width: 400px; box-shadow: 0 24px 64px rgba(10,28,43,.35); }
+    .login-logo { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-bottom: 1.5rem; }
+    .login-logo .login-logo-name { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.25rem; font-weight: 700; color: #0d3d5a; }
+    .login-logo .login-logo-name em { font-style: normal; font-weight: 400; color: #167f9e; }
+    .login-card h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.4rem; font-weight: 600; color: #152430; margin: 0 0 0.25rem; text-align: center; }
+    .login-card > p { font-size: 0.86rem; color: #7b8b9a; margin: 0 0 1.5rem; text-align: center; }
+    .login-secure { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #2d7a40; background: #eef7f1; border: 1px solid #a9d8b8; border-radius: 50px; padding: 0.3rem 0.85rem; margin: 0 auto 1.5rem; width: fit-content; }
     .login-card .form-group { margin-bottom: 1rem; }
-    .login-card .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
-    .login-card .form-group input { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; outline: none; transition: border-color .2s; }
-    .login-card .form-group input:focus { border-color: #1a7fa0; }
+    .login-card .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #152430; margin-bottom: 0.35rem; }
+    .login-card .form-group input { width: 100%; padding: 0.72rem 0.9rem; border: 1px solid #e2e7eb; border-radius: 7px; font-size: 0.9rem; outline: none; transition: border-color .2s, box-shadow .2s; font-family: inherit; }
+    .login-card .form-group input:focus { border-color: #167f9e; box-shadow: 0 0 0 3px rgba(22,127,158,0.12); }
     .login-card .btn--primary { width: 100%; }
-    .login-error { font-size: 0.78rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
+    .login-error { font-size: 0.8rem; color: #dc2626; text-align: center; display: none; margin-bottom: 0.75rem; }
 
     /* Sidebar layout */
     .app { display: none; min-height: 100vh; }
-    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #0d3f5e; display: flex; flex-direction: column; z-index: 100; }
-    .sidebar-logo { padding: 1.25rem 1.25rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar-logo a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-family: 'Montserrat',sans-serif; font-weight: 700; font-size: 1rem; }
-    .sidebar-logo a em { font-style: normal; color: #6bb4d0; }
-    .sidebar-logo .sub { font-size: 0.65rem; font-weight: 400; color: rgba(255,255,255,.4); display: block; }
-    .sidebar-nav { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
-    .sidebar-nav a { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1.25rem; color: rgba(255,255,255,.6); text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: all .15s; border-left: 3px solid transparent; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 232px; background: linear-gradient(180deg, #0a1c2b 0%, #0c2d43 100%); display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-logo { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .sidebar-logo a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 0.65rem; }
+    .sidebar-logo .logo-words { display: flex; flex-direction: column; line-height: 1; }
+    .sidebar-logo .logo-name { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.015em; line-height: 1; }
+    .sidebar-logo .logo-name em { font-style: normal; font-weight: 400; color: #6bb4d0; }
+    .sidebar-logo .sub { font-family: 'Inter', sans-serif; font-size: 0.56rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 4px; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 0.7rem; padding: 0.62rem 1.4rem; color: rgba(255,255,255,.62); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all .15s; border-left: 2px solid transparent; }
     .sidebar-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
-    .sidebar-nav a.active { color: #fff; background: rgba(255,255,255,.08); border-left-color: #6bb4d0; }
-    .sidebar-nav a .icon { font-size: 1rem; width: 20px; text-align: center; }
-    .sidebar-footer { padding: 0.75rem 1.25rem; border-top: 1px solid rgba(255,255,255,.08); }
-    .sidebar-footer button { background: none; border: none; color: rgba(255,255,255,.5); font-size: 0.78rem; cursor: pointer; padding: 0; font-family: inherit; display: flex; align-items: center; gap: 0.5rem; }
+    .sidebar-nav a.active { color: #fff; background: rgba(255,255,255,.07); border-left-color: #b0854a; }
+    .sidebar-nav a .icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .sidebar-nav a .icon svg { width: 16px; height: 16px; }
+    .sidebar-footer { padding: 0.85rem 1.4rem; border-top: 1px solid rgba(255,255,255,.08); }
+    .sidebar-footer button { background: none; border: none; color: rgba(255,255,255,.5); font-size: 0.8rem; cursor: pointer; padding: 0; font-family: inherit; display: flex; align-items: center; gap: 0.5rem; }
     .sidebar-footer button:hover { color: #fca5a5; }
 
-    .main { margin-left: 220px; flex: 1; padding: 2rem 2.5rem; min-height: 100vh; }
-    .main h1 { font-family: 'Montserrat',sans-serif; font-size: 1.3rem; font-weight: 700; color: #0d3f5e; margin: 0 0 0.2rem; }
-    .main .page-desc { font-size: 0.85rem; color: #6b7280; margin: 0 0 1.5rem; }
+    .main { margin-left: 232px; flex: 1; padding: 2.25rem 2.75rem; min-height: 100vh; }
+    .main h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.65rem; font-weight: 600; color: #152430; margin: 0 0 0.2rem; letter-spacing: -0.01em; }
+    .main .page-desc { font-size: 0.88rem; color: #7b8b9a; margin: 0 0 1.75rem; }
 
     .page { display: none; }
     .page.active { display: block; }
 
+    /* Action items */
+    .action-block { border-radius: 12px; padding: 1.1rem 1.4rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .action-block--todo { background: #fffbeb; border: 1px solid #f3d9a4; }
+    .action-block--clear { background: #f0f9f2; border: 1px solid #b9dfc4; }
+    .action-block__title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .action-block--todo .action-block__title { color: #92600e; }
+    .action-block--clear .action-block__title { color: #1d5c33; }
+    .action-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.88rem; color: #374151; flex-wrap: wrap; }
+    .action-item a { flex-shrink: 0; display: inline-flex; align-items: center; padding: 0.4rem 0.95rem; background: #0d3d5a; color: #fff; border-radius: 6px; font-size: 0.78rem; font-weight: 600; text-decoration: none; transition: background .15s; cursor: pointer; }
+    .action-item a:hover { background: #0a1c2b; }
+    .action-clear-msg { font-size: 0.88rem; color: #1d5c33; }
+
     /* Dashboard grid */
-    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin-bottom: 1.5rem; }
     .dash-wide { grid-column: 1 / -1; }
-    .block { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.25rem 1.5rem; }
-    .block-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-    .block-hdr h3 { font-family: 'Montserrat',sans-serif; font-size: 0.78rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
+    .block { background: #fff; border-radius: 12px; border: 1px solid #e2e7eb; padding: 1.35rem 1.6rem; }
+    .block-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+    .block-hdr h3 { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; color: #7b8b9a; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
     .block ul { list-style: none; padding: 0; margin: 0; }
-    .block ul li { font-size: 0.82rem; color: #374151; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
+    .block ul li { font-size: 0.85rem; color: #374151; padding: 0.5rem 0; border-bottom: 1px solid #f1f3f5; display: flex; align-items: center; gap: 0.55rem; }
     .block ul li:last-child { border-bottom: none; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .status-dot--green { background: #10b981; }
     .status-dot--yellow { background: #f59e0b; }
     .status-dot--gray { background: #d1d5db; }
 
-    .deadline-item { background: #f0f9ff; border-radius: 8px; padding: 0.5rem 0.65rem; margin-bottom: 0.3rem; }
-    .deadline-item .date { font-weight: 700; color: #0d3f5e; font-size: 0.85rem; display: block; }
-    .deadline-item .label { font-size: 0.76rem; color: #374151; }
+    .deadline-item { background: #f3f8fa; border: 1px solid #e7f1f6; border-radius: 8px; padding: 0.55rem 0.75rem; margin-bottom: 0.35rem; }
+    .deadline-item .date { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; color: #0d3d5a; font-size: 0.92rem; display: block; }
+    .deadline-item .label { font-size: 0.78rem; color: #42566a; }
 
     .activity-item { font-size: 0.78rem; padding: 0.35rem 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.5rem; }
     .activity-item:last-child { border-bottom: none; }
@@ -72,31 +93,35 @@
 
     .rev-bar { display: flex; align-items: flex-end; gap: 0.3rem; height: 90px; padding: 0.5rem 0; }
     .rev-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 90px; justify-content: flex-end; }
-    .rev-col .amt { font-size: 0.64rem; font-weight: 600; color: #0d3f5e; margin-bottom: 0.15rem; }
-    .rev-col .bar { width: 100%; background: linear-gradient(180deg,#1a7fa0,#0d3f5e); border-radius: 4px 4px 0 0; min-height: 3px; }
-    .rev-col .month { font-size: 0.64rem; color: #6b7280; margin-top: 0.15rem; }
+    .rev-col .amt { font-size: 0.64rem; font-weight: 600; color: #0d3d5a; margin-bottom: 0.15rem; }
+    .rev-col .bar { width: 100%; background: linear-gradient(180deg,#167f9e,#0d3d5a); border-radius: 4px 4px 0 0; min-height: 3px; }
+    .rev-col .month { font-size: 0.64rem; color: #7b8b9a; margin-top: 0.15rem; }
 
-    .plan-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.82rem; }
+    .plan-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #f1f3f5; font-size: 0.85rem; }
     .plan-row:last-child { border-bottom: none; }
-    .plan-row .lbl { color: #6b7280; }
-    .plan-row .val { font-weight: 600; color: #1e293b; }
+    .plan-row .lbl { color: #7b8b9a; }
+    .plan-row .val { font-weight: 600; color: #152430; }
 
-    .doc-upload-area { border: 2px dashed #e5e7eb; border-radius: 10px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 0.75rem; }
-    .doc-upload-area:hover { border-color: #1a7fa0; background: #f0f9ff; }
-    .doc-upload-area p { font-size: 0.8rem; color: #6b7280; margin: 0.15rem 0 0; }
+    .doc-upload-area { border: 1.5px dashed #d5dce1; border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 1rem; background: #fafbfc; }
+    .doc-upload-area:hover, .doc-upload-area-hover { border-color: #167f9e; background: #f3f8fa; }
+    .doc-upload-area p { font-size: 0.82rem; color: #7b8b9a; margin: 0.35rem 0 0; }
     .doc-upload-area input[type="file"] { display: none; }
     .doc-list { list-style: none; padding: 0; margin: 0; }
-    .doc-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.82rem; }
+    .doc-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.6rem 0; border-bottom: 1px solid #f1f3f5; font-size: 0.85rem; }
     .doc-item:last-child { border-bottom: none; }
-    .doc-item .name { flex: 1; color: #1e293b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .doc-item .date { font-size: 0.74rem; color: #9ca3af; white-space: nowrap; }
-    .doc-item .dl { color: #1a7fa0; text-decoration: none; font-weight: 600; font-size: 0.78rem; cursor: pointer; }
+    .doc-item .ficon { width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f3f8fa; border: 1px solid #e7f1f6; border-radius: 7px; color: #0d3d5a; }
+    .doc-item .ficon svg { width: 15px; height: 15px; }
+    .doc-item .name { flex: 1; color: #152430; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .doc-badge { flex-shrink: 0; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.14rem 0.5rem; border-radius: 50px; background: #eef4f7; color: #0d3d5a; border: 1px solid #d7e6ee; }
+    .doc-item .date { font-size: 0.75rem; color: #9ca3af; white-space: nowrap; }
+    .doc-item .dl { color: #167f9e; text-decoration: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
     .doc-item .dl:hover { text-decoration: underline; }
-    .doc-item .del { color: #dc2626; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
-    .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.82rem; color: #9ca3af; }
+    .doc-item .del { color: #dc2626; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+    .doc-empty { text-align: center; padding: 1.5rem 0; font-size: 0.85rem; color: #9ca3af; }
 
-    .qbo-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 1rem; background: #1a7fa0; color: #fff; border-radius: 8px; font-size: 0.82rem; text-decoration: none; font-weight: 600; transition: background .15s; }
-    .qbo-btn:hover { background: #0d3f5e; }
+    .qbo-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1.1rem; background: #0d3d5a; color: #fff; border-radius: 7px; font-size: 0.82rem; text-decoration: none; font-weight: 600; transition: background .15s; border: none; cursor: pointer; font-family: inherit; }
+    .qbo-btn:hover { background: #0a1c2b; }
+
 
     .imp-banner { position: fixed; bottom: 0; left: 220px; right: 0; background: #fef3c7; color: #92400e; text-align: center; padding: 0.35rem; font-size: 0.76rem; font-weight: 600; border-top: 1px solid #f59e0b; z-index: 200; }
     .imp-banner button { margin-left: 0.5rem; background: #92400e; color: #fff; border: none; border-radius: 3px; padding: 0.15rem 0.5rem; cursor: pointer; font-size: 0.72rem; }
@@ -106,7 +131,10 @@
 
     @media (max-width: 768px) {
       .sidebar { width: 56px; }
-      .sidebar-logo a span, .sidebar-logo .sub, .sidebar-nav a span { display: none; }
+      .sidebar-logo a span, .sidebar-logo .sub, .sidebar-nav a span:not(.icon) { display: none; }
+      .sidebar-logo { padding: 1rem 0.6rem; }
+      .sidebar-logo a { justify-content: center; }
+      .sidebar-logo svg { width: 30px; height: 30px; }
       .sidebar-nav a { justify-content: center; padding: 0.6rem; }
       .sidebar-footer button span { display: none; }
       .sidebar-footer button { justify-content: center; width: 100%; }
@@ -120,8 +148,22 @@
 
 <div class="login-wrap" id="loginView">
   <div class="login-card">
+    <div class="login-logo">
+      <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+        <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+        <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+        <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+        <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="login-logo-name">Tide<em>Venture</em> CPA</span>
+    </div>
     <h1>Client Portal</h1>
-    <p>Sign in to access your documents.</p>
+    <p>Sign in to access your documents and account.</p>
+    <div class="login-secure">
+      <svg width="10" height="12" viewBox="0 0 11 13" fill="none"><rect x="1" y="5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Encrypted &amp; Secure
+    </div>
     <div class="login-error" id="loginError">Invalid email or password.</div>
     <form id="loginForm">
       <div class="form-group">
@@ -131,7 +173,9 @@
       <div class="form-group">
         <label for="loginPass">Password</label>
         <input type="password" id="loginPass" required />
+        <a href="/reset-password" style="display:block;text-align:right;font-size:0.8rem;color:#167f9e;text-decoration:none;margin-top:0.4rem;">Forgot password?</a>
       </div>
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAEIhEGFVQHkqQd7w" style="margin-bottom:1rem;"></div>
       <button type="submit" class="btn btn--primary">Sign In</button>
     </form>
   </div>
@@ -140,14 +184,27 @@
 <div class="app" id="appView">
   <div class="sidebar">
     <div class="sidebar-logo">
-      <a href="/"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="5" fill="rgba(255,255,255,.15)"/><rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,.45)"/><rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,.92)"/></svg>Tide<em>Venture</em><span class="sub">Client Portal</span></a>
+      <a href="/">
+        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="5" fill="#0d3f5e"/>
+          <rect x="7" y="20" width="5.5" height="12" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="15.5" y="14" width="5.5" height="18" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="24" y="8" width="5.5" height="24" rx="1.5" fill="rgba(255,255,255,0.92)"/>
+          <path d="M4 33 Q10 29 16 33 T28 33 T36 33" stroke="#1a7fa0" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <path d="M4 36.5 Q10 32.5 16 36.5 T28 36.5 T36 36.5" stroke="rgba(26,127,160,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-words">
+          <span class="logo-name">Tide<em>Venture</em></span>
+          <span class="sub">Client Portal</span>
+        </span>
+      </a>
     </div>
     <nav class="sidebar-nav">
-      <a href="#" class="active" data-page="dashboard"><span class="icon">&#9632;</span><span>Dashboard</span></a>
-      <a href="#" data-page="documents"><span class="icon">&#128196;</span><span>Documents</span></a>
-      <a href="#" data-page="questionnaire"><span class="icon">&#9998;</span><span>Questionnaire</span></a>
-      <a href="#" data-page="plan"><span class="icon">&#9733;</span><span>My Plan</span></a>
-      <a href="#" data-page="quickbooks"><span class="icon">&#36;</span><span>QuickBooks</span></a>
+      <a href="#" class="active" data-page="dashboard"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Dashboard</span></a>
+      <a href="#" data-page="documents"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg></span><span>Documents</span></a>
+      <a href="#" data-page="questionnaire" style="display:none;"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span>Questionnaire</span></a>
+      <a href="#" data-page="plan"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><span>My Plan</span></a>
+      <a href="#" data-page="quickbooks" style="display:none;"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 6.5C17 4.6 14.8 3.5 12 3.5S7 4.6 7 6.5 9 9.5 12 9.5s5 1.1 5 3-2.2 3-5 3-5-1.1-5-3"/></svg></span><span>QuickBooks</span></a>
     </nav>
     <div class="sidebar-footer">
       <button id="logoutBtn">&#10149;<span> Sign Out</span></button>
@@ -159,22 +216,39 @@
   <div class="main">
     <!-- Dashboard -->
     <div class="page active" id="page-dashboard">
-      <h1 id="dashGreeting">Welcome</h1>
-      <p class="page-desc">Here's your financial snapshot.</p>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <h1 id="dashGreeting">Welcome</h1>
+          <p class="page-desc">Here's your financial snapshot.</p>
+        </div>
+        <span id="bookCallHost"></span>
+      </div>
+      <div id="actionItems" style="display:none;"></div>
       <div class="dash-grid">
-        <div class="block">
+        <div class="block" id="cardSavings" style="display:none;">
+          <div class="block-hdr"><h3>Your Tax Savings</h3></div>
+          <div style="text-align:center;padding:0.5rem 0 0.9rem;">
+            <div id="savingsTotal" style="font-size:2rem;font-weight:800;color:#059669;">$0</div>
+            <div style="font-size:0.74rem;color:#6b7280;">found for you by TideVenture</div>
+          </div>
+          <div id="savingsList"></div>
+        </div>
+        <div class="block" id="cardTaxStatus" style="display:none;">
           <div class="block-hdr"><h3>Tax Return Status</h3></div>
           <ul id="taxStatusList"><li style="text-align:center;color:#9ca3af;padding:1rem 0;">Loading…</li></ul>
         </div>
-        <div class="block">
+        <div class="block" id="cardDeadlines" style="display:none;">
           <div class="block-hdr"><h3>Upcoming Deadlines</h3></div>
           <ul id="deadlineList"><li style="text-align:center;color:#9ca3af;padding:1rem 0;">Loading…</li></ul>
           <div id="stateDeadlineEl" style="margin-top:0.5rem;"></div>
         </div>
-        <div class="block">
+        <div class="block" id="cardRevenue" style="display:none;">
           <div class="block-hdr"><h3>Monthly Revenue</h3></div>
           <div id="revenueChart"><div style="text-align:center;color:#9ca3af;padding:1.5rem 0;font-size:0.82rem;">Loading…</div></div>
         </div>
+      </div>
+      <div class="block" id="noCardsMsg" style="display:none;text-align:center;color:#7b8b9a;font-size:0.88rem;padding:2rem 1.5rem;">
+        Your dashboard is being set up. Check the Documents and My Plan tabs in the meantime — and reach out anytime if you have questions.
       </div>
     </div>
 
@@ -182,6 +256,11 @@
     <div class="page" id="page-documents">
       <h1>Documents</h1>
       <p class="page-desc">Upload, view, and download your files.</p>
+      <div class="block" id="docChecklistBlock" style="display:none;">
+        <div class="block-hdr"><h3>Requested Documents</h3></div>
+        <p style="font-size:0.78rem;color:#6b7280;margin:0 0 0.6rem;">Your CPA needs the items below. Upload each file, then mark it done.</p>
+        <div id="docChecklist"></div>
+      </div>
       <div class="block">
         <div class="doc-upload-area" id="docUploadArea">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 14V6m0 0l-3 3m3-3l3 3" stroke="#1a7fa0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="10" width="16" height="7" rx="1.5" stroke="#1a7fa0" stroke-width="1.5"/></svg>
@@ -220,6 +299,7 @@
         <div id="qboSection"><div style="text-align:center;padding:2rem 0;color:#9ca3af;font-size:0.82rem;">Loading…</div></div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -246,14 +326,31 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const password = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.style.display = 'none';
+
+  const turnstileToken = typeof turnstile !== 'undefined' ? turnstile.getResponse() : '';
+  if (!turnstileToken) {
+    err.textContent = 'Please complete the verification challenge.';
+    err.style.display = 'block';
+    return;
+  }
+
   try {
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, turnstileToken }) });
     if (res.ok) {
       const data = await res.json();
       sessionStorage.setItem('tv_portal_token', data.token);
       showDashboard(data);
-    } else { err.style.display = 'block'; }
-  } catch { err.textContent = 'Network error.'; err.style.display = 'block'; }
+    } else {
+      const data = await res.json().catch(() => ({}));
+      err.textContent = data.error || 'Invalid email or password.';
+      err.style.display = 'block';
+      if (typeof turnstile !== 'undefined') turnstile.reset();
+    }
+  } catch {
+    err.textContent = 'Network error.';
+    err.style.display = 'block';
+    if (typeof turnstile !== 'undefined') turnstile.reset();
+  }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tv_portal_token'); window.location.href = '/portal'; });
@@ -272,6 +369,18 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+async function loadSchedulingLink() {
+  const token = sessionStorage.getItem('tv_portal_token');
+  try {
+    const res = await fetch('/api/scheduling-link', { headers: { 'Authorization': `Bearer ${token}` } });
+    const { schedulingUrl } = await res.json();
+    const host = document.getElementById('bookCallHost');
+    if (schedulingUrl && host) {
+      host.innerHTML = `<a href="${esc(schedulingUrl)}" target="_blank" rel="noopener" class="qbo-btn" style="background:#167f9e;">📅 Book a Call</a>`;
+    }
+  } catch {}
+}
+
 function showDashboard(data) {
   document.getElementById('loginView').style.display = 'none';
   if (data.status === 'pending_engagement') {
@@ -282,42 +391,58 @@ function showDashboard(data) {
   document.getElementById('dashGreeting').textContent = 'Welcome back, ' + data.email.split('@')[0];
   initDocManager(data);
   loadDashboard();
+  loadSchedulingLink();
 }
 
-function showEngagement(data) {
+async function showEngagement(data) {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('appView').style.display = 'flex';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
   const main = document.querySelector('.main');
-  main.innerHTML = `<div style="max-width:600px;margin:2rem auto;"><div class="block" style="padding:2rem;">
-    <h2 style="font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:700;color:#0d3f5e;margin:0 0 0.75rem;">Engagement Letter</h2>
-    <div style="font-size:0.82rem;color:#374151;line-height:1.6;max-height:50vh;overflow-y:auto;margin-bottom:1.5rem;padding:1rem;background:#f9fafb;border-radius:8px;">
-      <p>This letter confirms the terms of our engagement. We will prepare your federal and requested state income tax returns based on the information you provide to us.</p>
-      <p>You represent that all information you supply is accurate and complete to the best of your knowledge.</p>
-      <p>The filing deadline is April 15. Please provide all information no later than March 25.</p>
-      <p>We may communicate with you via email and our secure web portal.</p>
-    </div>
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  main.innerHTML = `<div style="max-width:720px;margin:2rem auto;"><div class="block" style="padding:2rem;">
+    <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:1.45rem;font-weight:600;color:#152430;margin:0 0 0.35rem;">Engagement Letter</h2>
+    <p style="font-size:0.85rem;color:#7b8b9a;margin:0 0 1.25rem;">Please review the full agreement below, then sign to activate your portal.</p>
+    <div id="engLetterBox" style="font-size:0.85rem;color:#374151;line-height:1.7;max-height:55vh;overflow-y:auto;margin-bottom:1.25rem;padding:1.25rem 1.4rem;background:#f9fafb;border:1px solid #e2e7eb;border-radius:8px;white-space:pre-wrap;font-family:'Source Serif 4',Georgia,serif;">Loading your engagement letter…</div>
+    <label style="display:flex;align-items:flex-start;gap:0.6rem;font-size:0.83rem;color:#374151;margin-bottom:1rem;cursor:pointer;line-height:1.55;">
+      <input type="checkbox" id="engConsent" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:#0d3d5a;">
+      <span>I agree to conduct business electronically and to sign this agreement electronically. I understand my electronic signature is legally binding, the same as a handwritten signature.</span>
+    </label>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-      <div style="flex:1;min-width:200px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Signature</label><input id="engSignature" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.88rem;outline:none;box-sizing:border-box;"></div>
-      <div style="flex:1;min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label><input id="engDate" type="date" style="width:100%;padding:0.5rem 0.7rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.88rem;outline:none;box-sizing:border-box;"></div>
+      <div style="flex:1;min-width:220px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Type your full legal name to sign</label><input id="engSignature" placeholder="Full legal name" autocomplete="name" style="width:100%;padding:0.6rem 0.75rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.92rem;outline:none;box-sizing:border-box;"></div>
+      <div style="min-width:150px;"><label style="display:block;font-size:0.75rem;font-weight:600;color:#374151;margin-bottom:0.2rem;">Date</label><div style="padding:0.6rem 0.75rem;border:1.5px solid #f1f3f5;border-radius:8px;font-size:0.9rem;background:#f9fafb;color:#374151;">${today}</div></div>
     </div>
-    <button class="btn btn--primary" id="engSubmitBtn" style="width:100%;padding:0.6rem !important;" onclick="acceptEngagement()">Accept &amp; Continue</button>
-    <div id="engError" style="font-size:0.78rem;color:#dc2626;display:none;margin-top:0.5rem;"></div>
+    <button class="btn btn--primary" id="engSubmitBtn" style="width:100%;padding:0.7rem !important;" onclick="acceptEngagement()">Sign &amp; Activate My Portal</button>
+    <div id="engError" style="font-size:0.8rem;color:#dc2626;display:none;margin-top:0.5rem;"></div>
+    <p style="font-size:0.72rem;color:#9ca3af;margin:0.85rem 0 0;line-height:1.6;">A copy of the signed agreement will be saved to your Documents tab. Your signature is recorded with a timestamp and document fingerprint.</p>
   </div></div>`;
-  document.getElementById('engDate').value = new Date().toISOString().slice(0, 10);
+  try {
+    const token = sessionStorage.getItem('tv_portal_token');
+    const res = await fetch('/api/engagement-letter', { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    if (!d.letterText) throw new Error(d.error || 'Could not load letter');
+    document.getElementById('engLetterBox').textContent = d.letterText;
+  } catch (e) {
+    document.getElementById('engLetterBox').textContent = 'We could not load your engagement letter. Please refresh the page, or contact us at hello@tideventurecpa.com.';
+    document.getElementById('engSubmitBtn').disabled = true;
+  }
 }
 
 async function acceptEngagement() {
+  const err = document.getElementById('engError');
   const sig = document.getElementById('engSignature').value.trim();
-  if (!sig) { document.getElementById('engError').textContent = 'Please enter your signature.'; document.getElementById('engError').style.display = 'block'; return; }
-  document.getElementById('engError').style.display = 'none';
-  document.getElementById('engSubmitBtn').disabled = true; document.getElementById('engSubmitBtn').textContent = 'Submitting…';
+  if (!document.getElementById('engConsent').checked) { err.textContent = 'Please check the box agreeing to sign electronically.'; err.style.display = 'block'; return; }
+  if (!sig) { err.textContent = 'Please type your full legal name to sign.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  const btn = document.getElementById('engSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Signing…';
   try {
     const token = sessionStorage.getItem('tv_portal_token');
-    await fetch('/api/accept-engagement', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ signature: sig }) });
+    const res = await fetch('/api/accept-engagement', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ signature: sig, consentEsign: true }) });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
     window.location.href = '/portal';
-  } catch { document.getElementById('engError').textContent = 'Failed.'; document.getElementById('engSubmitBtn').disabled = false; document.getElementById('engSubmitBtn').textContent = 'Accept & Continue'; }
+  } catch (e) { err.textContent = e.message || 'Failed to sign. Please try again.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Sign & Activate My Portal'; }
 }
 
 async function loadDashboard() {
@@ -325,27 +450,140 @@ async function loadDashboard() {
   try {
     const res = await fetch('/api/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
-    renderTaxStatuses(data.taxStatuses);
-    renderDeadlines(data.deadlines);
-    renderStateDeadline(data.stateDeadline, data.profile?.state);
+    if (data.profile?.businessName) document.getElementById('dashGreeting').textContent = 'Welcome back, ' + data.profile.businessName;
+
+    // Show only the dashboard cards granted to this client
+    const cards = Array.isArray(data.cards) ? data.cards : ['taxStatus', 'deadlines', 'revenue'];
+    document.getElementById('cardTaxStatus').style.display = cards.includes('taxStatus') ? '' : 'none';
+    document.getElementById('cardDeadlines').style.display = cards.includes('deadlines') ? '' : 'none';
+    document.getElementById('cardRevenue').style.display = cards.includes('revenue') ? '' : 'none';
+    document.getElementById('noCardsMsg').style.display = cards.length ? 'none' : '';
+
+    // Tax questionnaire only applies to clients with tax services
+    const services = data.profile?.services || [];
+    const hasTax = services.includes('tax') || services.includes('quarterly');
+    const qNav = document.querySelector('.sidebar-nav a[data-page="questionnaire"]');
+    if (qNav) qNav.style.display = hasTax ? '' : 'none';
+
+    // QuickBooks tab only applies to bookkeeping clients
+    const hasBookkeeping = services.includes('bookkeeping');
+    const qboNav = document.querySelector('.sidebar-nav a[data-page="quickbooks"]');
+    if (qboNav) qboNav.style.display = hasBookkeeping ? '' : 'none';
+
+    if (cards.includes('taxStatus')) renderTaxStatuses(data.taxStatuses);
+    if (cards.includes('deadlines')) {
+      renderDeadlines(data.deadlines);
+      renderStateDeadline(data.stateDeadline, data.profile?.state);
+    }
     renderPlan(data.profile);
-    renderRevenue(data.qbo?.revenue);
-    renderQbo(data.qbo);
-    renderQuestionnaireStatus();
+    if (cards.includes('revenue')) renderRevenue(data.qbo?.revenue);
+    if (hasBookkeeping) renderQbo(data.qbo);
+    renderSavings(data.savings);
+    renderDocChecklist(data.docRequests || []);
+    const qSaved = hasTax ? await renderQuestionnaireStatus(data.questionnaireYear, data.questionnaireOpensAt) : null;
+    renderActionItems(data, qSaved, hasBookkeeping);
   } catch {}
 }
 
+function renderActionItems(data, questionnaireSaved, hasBookkeeping) {
+  const el = document.getElementById('actionItems');
+  const items = [];
+  const docsNeeded = (data.docRequests || []).filter(r => r.status === 'requested').length;
+  if (docsNeeded > 0) {
+    items.push({ text: `Your CPA is waiting on ${docsNeeded} document${docsNeeded > 1 ? 's' : ''} from you.`, cta: 'View Checklist', page: 'documents' });
+  }
+  if (questionnaireSaved === false) {
+    items.push({ text: 'Your annual tax questionnaire hasn’t been started yet.', cta: 'Start Questionnaire', href: '/questionnaire' });
+  }
+  const invs = data.qbo?.invoices || [];
+  const balance = invs.reduce((s, i) => s + i.balance, 0);
+  if (hasBookkeeping && data.qbo?.qboConnected && balance > 0) {
+    items.push({ text: `You have an outstanding balance of $${balance.toFixed(2)}.`, cta: 'View Invoices', page: 'quickbooks' });
+  }
+  el.style.display = '';
+  if (!items.length) {
+    el.className = 'action-block action-block--clear';
+    el.innerHTML = '<span class="action-block__title">Action Items</span><span class="action-clear-msg">You’re all caught up — nothing needs your attention right now.</span>';
+    return;
+  }
+  el.className = 'action-block action-block--todo';
+  el.innerHTML = '<span class="action-block__title">Needs Your Attention</span>' + items.map(i =>
+    `<div class="action-item"><span>${i.text}</span>${i.href ? `<a href="${i.href}">${i.cta}</a>` : `<a onclick="gotoPage('${i.page}')">${i.cta}</a>`}</div>`
+  ).join('');
+}
+
+function gotoPage(page) {
+  const link = document.querySelector(`.sidebar-nav a[data-page="${page}"]`);
+  if (link) link.click();
+}
+
+// Return pipeline: 5 visible stages, rendered as a progress tracker per return.
+// Legacy statuses map in: not_started→docs, in_review→review.
+const TAX_STAGES = [
+  { key: 'docs', label: 'Awaiting Docs' },
+  { key: 'prep', label: 'In Preparation' },
+  { key: 'review', label: 'In Review' },
+  { key: 'filed', label: 'Filed' },
+  { key: 'accepted', label: 'Accepted' },
+];
+function taxStageIndex(status) {
+  const map = { not_started: 0, docs: 0, prep: 1, in_review: 2, review: 2, filed: 3, accepted: 4 };
+  return map[status] ?? 0;
+}
 function renderTaxStatuses(statuses) {
   const el = document.getElementById('taxStatusList');
   el.innerHTML = '';
   if (!statuses || !statuses.length) { el.innerHTML = '<li style="text-align:center;color:#9ca3af;font-size:0.82rem;">No returns yet.</li>'; return; }
   statuses.forEach(s => {
-    const dot = s.status === 'filed' ? 'green' : s.status === 'in_review' ? 'yellow' : 'gray';
-    const label = s.status === 'filed' ? 'Filed' : s.status === 'in_review' ? 'In Review' : 'Not Started';
+    const idx = taxStageIndex(s.status);
+    const done = idx >= 3; // filed or accepted
     const li = document.createElement('li');
-    li.innerHTML = `<span class="status-dot status-dot--${dot}"></span> ${esc(s.label)}<span style="margin-left:auto;font-size:0.72rem;font-weight:600;color:#6b7280;">${label}</span>`;
+    li.style.cssText = 'display:block;padding:0.6rem 0;background:none;border:none;';
+    li.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.45rem;"><span style="font-weight:600;font-size:0.85rem;">${esc(s.label)}</span><span style="font-size:0.72rem;font-weight:700;color:${done ? '#059669' : '#b45309'};">${TAX_STAGES[idx].label}</span></div>`
+      + `<div style="display:flex;gap:4px;" aria-label="Stage ${idx + 1} of 5">`
+      + TAX_STAGES.map((st, i) => `<div title="${st.label}" style="flex:1;height:6px;border-radius:3px;background:${i <= idx ? (done ? '#059669' : '#1a7fa0') : '#e2e7eb'};"></div>`).join('')
+      + `</div>`;
     el.appendChild(li);
   });
+}
+
+// ── Tax Savings Ledger card ──
+function renderSavings(savings) {
+  const card = document.getElementById('cardSavings');
+  if (!card) return;
+  if (!savings || !savings.entries || !savings.entries.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const catLabels = { deduction: 'Deduction found', election: 'Entity election', credit: 'Credit claimed', penalty: 'Penalty abated', amended: 'Amended return', planning: 'Planning strategy', other: 'Tax strategy' };
+  document.getElementById('savingsTotal').textContent = '$' + Number(savings.total).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  document.getElementById('savingsList').innerHTML = savings.entries.slice(0, 4).map(e =>
+    `<div class="plan-row"><span class="lbl">${esc(catLabels[e.category] || e.category || 'Tax strategy')}${e.description ? ' — ' + esc(e.description) : ''} <span style="color:#9ca3af;">(${e.taxYear || ''})</span></span><span class="val" style="color:#059669;white-space:nowrap;">+$${Number(e.amount).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>`
+  ).join('');
+}
+
+// ── Document-request checklist ──
+function renderDocChecklist(requests) {
+  const block = document.getElementById('docChecklistBlock');
+  if (!block) return;
+  const open = (requests || []).filter(r => r.status !== 'waived');
+  if (!open.length) { block.style.display = 'none'; return; }
+  block.style.display = '';
+  const chip = s => s === 'received' ? '<span style="font-size:0.7rem;font-weight:700;color:#059669;">&#10003; Received</span>'
+    : s === 'submitted' ? '<span style="font-size:0.7rem;font-weight:700;color:#b45309;">Uploaded — awaiting review</span>'
+    : '<span style="font-size:0.7rem;font-weight:700;color:#dc2626;">Needed</span>';
+  document.getElementById('docChecklist').innerHTML = open.map(r =>
+    `<div class="plan-row" style="align-items:center;"><span class="lbl"><strong>${esc(r.title)}</strong>${r.note ? '<br><span style="font-weight:400;color:#6b7280;font-size:0.75rem;">' + esc(r.note) + '</span>' : ''}</span><span style="display:flex;gap:0.6rem;align-items:center;">${chip(r.status)}${r.status === 'requested' ? `<button class="qbo-btn" style="padding:0.3rem 0.7rem;font-size:0.72rem;" onclick="fulfillDocRequest('${r.id}')">I uploaded this</button>` : ''}</span></div>`
+  ).join('');
+}
+async function fulfillDocRequest(id) {
+  const token = sessionStorage.getItem('tv_portal_token');
+  try {
+    const res = await fetch('/api/doc-requests/fulfill', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (res.ok) {
+      const lr = await fetch('/api/doc-requests', { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await lr.json();
+      renderDocChecklist(data.requests || []);
+    }
+  } catch {}
 }
 
 function renderDeadlines(deadlines) {
@@ -377,9 +615,9 @@ function renderPlan(profile) {
   if (!profile || (!profile.services?.length && !profile.monthlyPrice && !profile.yearlyPrice)) {
     el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">Plan details not available.</div>'; return;
   }
-  const labels = { tax:'Business Tax Return', quarterly:'Quarterly Planning', monthly:'Monthly Financial Review', bookkeeping:'Bookkeeping' };
+  const labels = { tax:'Business Tax Return', quarterly:'Quarterly Planning', monthly:'Monthly Financial Review', cfo:'Fractional CFO', bookkeeping:'Bookkeeping' };
   el.innerHTML = (profile.businessName ? `<div class="plan-row"><span class="lbl">Business</span><span class="val">${esc(profile.businessName)}</span></div>` : '')
-    + `<div class="plan-row"><span class="lbl">Services</span><span class="val">${(profile.services||[]).map(s => labels[s]||s).join(', ') || '—'}</span></div>`
+    + `<div class="plan-row"><span class="lbl">Services</span><span class="val">${(profile.services||[]).map(s => esc(labels[s]||s)).join(', ') || '—'}</span></div>`
     + (profile.monthlyPrice > 0 ? `<div class="plan-row"><span class="lbl">Monthly</span><span class="val">$${profile.monthlyPrice}</span></div>` : '')
     + (profile.yearlyPrice > 0 ? `<div class="plan-row"><span class="lbl">Yearly</span><span class="val">$${profile.yearlyPrice}</span></div>` : '');
 }
@@ -397,17 +635,23 @@ function renderRevenue(revenue) {
 
 function renderQbo(qbo) {
   const el = document.getElementById('qboSection');
+  // Expired/revoked grant — distinct from never-connected, so prompt a reconnect.
+  if (qbo && qbo.needsReconnect) {
+    el.innerHTML = `<div style="padding:2rem 0;text-align:center;"><p style="font-size:0.82rem;color:#b45309;margin:0 0 1rem;">Your QuickBooks connection expired. Reconnect to keep your financials up to date.</p><button class="qbo-btn" onclick="connectQbo()">Reconnect QuickBooks</button></div>`;
+    return;
+  }
   if (!qbo || !qbo.qboConnected) {
     el.innerHTML = `<div style="padding:2rem 0;text-align:center;"><p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">Connect QuickBooks to see invoices.</p><button class="qbo-btn" onclick="connectQbo()">Connect QuickBooks</button></div>`;
     return;
   }
-  if (qbo.error) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#9ca3af;">Unable to load invoices.</div>'; return; }
   const invs = qbo.invoices || [];
-  if (!invs.length) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#059669;">No outstanding invoices. &#10003;</div>'; return; }
+  const asOf = qbo.syncedAt ? `<div style="text-align:center;font-size:0.7rem;color:#9ca3af;margin-top:0.5rem;">Updated ${new Date(qbo.syncedAt).toLocaleDateString()}</div>` : '';
+  if (!invs.length) { el.innerHTML = '<div style="padding:2rem 0;text-align:center;color:#059669;">No outstanding invoices. &#10003;</div>' + asOf; return; }
   const total = invs.reduce((s,i) => s + i.balance, 0);
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;"><span style="font-size:0.78rem;color:#6b7280;">Total Outstanding</span><span style="font-size:1.2rem;font-weight:700;color:#0d3f5e;">$${total.toFixed(2)}</span></div>`
     + invs.map(i => `<div class="plan-row"><span class="lbl">Invoice #${esc(i.docNumber)}</span><span class="val" style="color:#dc2626;">$${i.balance.toFixed(2)}</span></div>`).join('')
-    + `<div style="margin-top:0.75rem;text-align:center;"><a href="https://qbo.intuit.com" target="_blank" class="qbo-btn">Pay in QuickBooks</a></div>`;
+    + `<div style="margin-top:0.75rem;text-align:center;"><a href="https://qbo.intuit.com" target="_blank" class="qbo-btn">Pay in QuickBooks</a></div>`
+    + asOf;
 }
 
 
@@ -415,21 +659,31 @@ function renderQbo(qbo) {
 
 
 function connectQbo() {
-  const token = sessionStorage.getItem('tv_portal_token');
-  if (token) window.location.href = '/api/qbo/auth?token=' + encodeURIComponent(token);
+  // Auth rides the HttpOnly session cookie on this top-level navigation — no
+  // token in the URL (it would leak into history and request logs).
+  window.location.href = '/api/qbo/auth';
 }
 
-async function renderQuestionnaireStatus() {
+async function renderQuestionnaireStatus(year, opensAtIso) {
   const el = document.getElementById('taxQuestionnaireStatus');
+  // The questionnaire covers a full tax year, so it can't be completed until
+  // that year has actually ended — nothing to nudge about before then.
+  const isOpen = !opensAtIso || Date.now() >= new Date(opensAtIso).getTime();
+  if (!isOpen) {
+    const opensLabel = new Date(opensAtIso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    el.innerHTML = `<div style="padding:0.35rem 0;color:#7b8b9a;font-size:0.85rem;line-height:1.6;">Your ${year} tax questionnaire will be available starting <strong>${opensLabel}</strong>, once the ${year} tax year has ended.</div>`;
+    return null;
+  }
   try {
     const token = sessionStorage.getItem('tv_portal_token');
-    const res = await fetch('/api/questionnaire/2025', { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`/api/questionnaire/${year}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
     const label = data.saved ? 'View / Edit' : 'Start';
     const status = data.saved ? '&#10003; Completed' : 'Not started';
     const color = data.saved ? '#059669' : '#6b7280';
     el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;"><span style="color:${color};">${status}</span><a href="/questionnaire" class="qbo-btn" style="font-size:0.78rem;">${label}</a></div>`;
-  } catch { el.innerHTML = '<div style="padding:1rem 0;text-align:center;color:#9ca3af;">Unable to load.</div>'; }
+    return !!data.saved;
+  } catch { el.innerHTML = '<div style="padding:1rem 0;text-align:center;color:#9ca3af;">Unable to load.</div>'; return null; }
 }
 
 // ── Document Manager ──
@@ -505,20 +759,32 @@ function initDocManager(data) {
   function render(docs) {
     docList.innerHTML = ''; docError.style.display = 'none';
     if (!docs.length) { docList.innerHTML = '<li class="doc-empty">No documents yet. Upload your first file above.</li>'; return; }
+    const FILE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>';
     docs.forEach(d => {
+      const isFirm = d.source === 'firm';
       const li = document.createElement('li'); li.className = 'doc-item';
-      li.innerHTML = `<span class="name">${esc(d.name)}</span><span class="date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="dl">Download</a><span class="del">Delete</span>`;
+      li.innerHTML = `<span class="ficon">${FILE_ICON}</span><span class="name">${esc(d.displayName || d.name)}</span>`
+        + (isFirm ? '<span class="doc-badge">From TideVenture</span>' : '')
+        + `<span class="date">${new Date(d.uploaded).toLocaleDateString()}</span><a class="dl">Download</a>`
+        + (isFirm && !_isAdmin ? '' : '<span class="del">Delete</span>');
       li.querySelector('.dl').addEventListener('click', async () => {
         try {
           const res = await authFetch(`/api/documents/${d.id}`);
           if (!res.ok) throw Error();
           const blob = await res.blob();
-          let decrypted = isAdmin ? await blob.arrayBuffer() : await decryptFile(blob);
-          const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([decrypted])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
+          let fileBytes;
+          if (isFirm) {
+            fileBytes = await blob.arrayBuffer();
+          } else {
+            try { fileBytes = await decryptFile(blob); }
+            catch { fileBytes = await blob.arrayBuffer(); }
+          }
+          const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([fileBytes])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
         } catch { showError('Download failed.'); }
       });
-      li.querySelector('.del').addEventListener('click', async () => {
-        if (!confirm(`Delete "${d.name}"?`)) return;
+      const delBtn = li.querySelector('.del');
+      if (delBtn) delBtn.addEventListener('click', async () => {
+        if (!confirm(`Delete "${d.displayName || d.name}"?`)) return;
         try { await authFetch(`/api/documents/${d.id}`, { method: 'DELETE' }); loadDocs(); } catch { showError('Delete failed.'); }
       });
       docList.appendChild(li);
