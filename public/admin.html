@@ -231,6 +231,10 @@
       <h1>Documents</h1>
       <p class="page-desc">All client files.</p>
       <div class="block"><div class="block-hdr"><h3>Recent Uploads</h3></div><div id="adminDocList"><div class="empty">Loading…</div></div></div>
+      <div class="block" style="margin-top:1rem;"><div class="block-hdr"><h3>Held in backups after deletion</h3>
+        <button id="refreshOrphans" class="btn-sm">Refresh</button></div>
+        <div id="backupOrphans"><div class="empty">Loading…</div></div>
+      </div>
     </div>
 
     <div class="page" id="page-questionnaire">
@@ -517,7 +521,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (link.dataset.page === 'dashboard') { loadDashboard(); loadKpis(); }
     if (link.dataset.page === 'clients') loadDashboard();
     if (link.dataset.page === 'prospects') { loadProspects(); markProspectsViewed(); }
-    if (link.dataset.page === 'documents') loadDocs();
+    if (link.dataset.page === 'documents') { loadDocs(); loadBackupOrphans(); }
     if (link.dataset.page === 'questionnaire') loadTQSchema();
     if (link.dataset.page === 'taxproj') loadTaxProjTab();
     if (link.dataset.page === 'audit') loadAudit();
@@ -1055,6 +1059,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tpK1Open.add(tpK1s.length - 1);
     tpRenderK1s([]);
   });
+  const ro = document.getElementById('refreshOrphans');
+  if (ro) ro.addEventListener('click', loadBackupOrphans);
   const roll = document.getElementById('tpRollover');
   if (roll) roll.addEventListener('click', tpRollover);
   const kind = document.getElementById('tpKind');
@@ -1240,12 +1246,63 @@ async function loadDocs() {
 // all. Deletion is permanent and there is no recycle bin, hence the named confirm.
 async function deleteAdminDoc(id, name) {
   if (!confirm(`Permanently delete "${name}"?\n\nThis cannot be undone. The client will no longer see it in their portal.`)) return;
+  // Asked as a second, separate question. Deleting is routine; destroying the
+  // backup copy removes the only means of recovery, so it should never ride
+  // along silently with an ordinary delete.
+  const purge = confirm(`Also remove "${name}" from backups?\n\nOK — erase the backup copy too. The file becomes unrecoverable. Choose this when the document must genuinely be gone.\n\nCancel — keep the backup copy, so the deletion can still be undone.`);
   const token = sessionStorage.getItem('tv_admin_token');
   try {
-    const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`/api/documents/${encodeURIComponent(id)}${purge ? '?purge=1' : ''}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Delete failed.'); return; }
+    const d = await res.json().catch(() => ({}));
+    if (purge && d.purged) alert(d.purged.purged ? 'Deleted, and the backup copy was purged.' : 'Deleted. No backup copy existed — it was never backed up.');
     loadDocs();
+    loadBackupOrphans();
   } catch { alert('Delete failed — check your connection and try again.'); }
+}
+
+// ── Stranded backup copies ──
+// A document deleted after a backup had already run stays in the backup bucket
+// forever. Those copies are invisible everywhere else in the panel, which is
+// how "I deleted it" quietly stops meaning "it is gone".
+async function loadBackupOrphans() {
+  const el = document.getElementById('backupOrphans');
+  if (!el) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/backup/orphans', { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await res.json();
+    const list = d.orphans || [];
+    if (!list.length) {
+      el.innerHTML = '<div class="empty">No stranded copies. Every backed-up document still exists live.</div>';
+      return;
+    }
+    el.innerHTML = `<div style="padding:0.75rem 1rem;font-size:0.8rem;color:#7f1d1d;background:#fef2f2;border-left:3px solid #b91c1c;line-height:1.6;">
+        ${list.length} document${list.length === 1 ? '' : 's'} deleted from the portal but still held in backups. Purging is permanent.
+      </div>` +
+      list.map(o => `<div class="doc-row">
+        <span style="font-weight:600;">${esc(o.client)}</span>
+        <span style="color:#374151;">${esc(o.name)}${o.encrypted ? '' : ' <span style="color:#b45309;font-size:0.7rem;font-weight:700;">&#9650; unencrypted</span>'}</span>
+        <span style="color:#9ca3af;">${o.backedUp ? new Date(o.backedUp).toLocaleDateString() : ''}</span>
+        <span><button data-purge="${esc(o.key)}" data-purgename="${esc(o.name)}" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:0.76rem;padding:0;">Purge from backups</button></span>
+      </div>`).join('');
+    el.querySelectorAll('[data-purge]').forEach(b => b.addEventListener('click', () => purgeBackupCopy(b.dataset.purge, b.dataset.purgename)));
+  } catch { el.innerHTML = '<div class="empty">Could not load backup status.</div>'; }
+}
+
+async function purgeBackupCopy(key, name) {
+  if (!confirm(`Purge the backup copy of "${name}"?\n\nThis is the last remaining copy. Once purged it cannot be recovered by you or anyone else.`)) return;
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    const res = await fetch('/api/admin/backup/purge', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys: [key] }),
+    });
+    const d = await res.json();
+    if (!res.ok) { alert(d.error || 'Purge failed.'); return; }
+    loadBackupOrphans();
+  } catch { alert('Purge failed — check your connection and try again.'); }
 }
 
 async function loadAudit() {

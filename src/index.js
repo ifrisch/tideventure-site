@@ -992,6 +992,48 @@ async function handleFetch(request, env) {
       } catch (e) { return json(500, { error: e.message }); }
     }
     // Admin: backups
+    // Client documents sitting in the backup bucket with no live counterpart —
+    // deleted at some point after a backup had already copied them. These are
+    // exactly the files that "delete" failed to actually remove, so they are
+    // listed explicitly rather than left invisible.
+    if (url.pathname === '/api/admin/backup/orphans' && method === 'GET' && isAdmin(email)) {
+      if (!env.tideventure_backups) return json(200, { orphans: [], error: 'Backup bucket not bound' });
+      try {
+        const live = new Set();
+        const liveList = await listAll(env.tideventure_documents);
+        for (const o of liveList.objects) live.add(o.key);
+        const backupList = await listAll(env.tideventure_backups, { include: ['customMetadata'] });
+        const orphans = [];
+        for (const o of backupList.objects) {
+          const parts = o.key.split('/');
+          if (!(parts.length === 2 && parts[0].includes('@') && isDocId(parts[1]))) continue;
+          if (live.has(o.key)) continue;
+          orphans.push({
+            key: o.key,
+            client: parts[0],
+            name: o.customMetadata?.originalName || parts[1],
+            uploaded: o.customMetadata?.uploadedAt || null,
+            backedUp: o.uploaded,
+            size: o.size,
+            encrypted: (o.customMetadata?.originalName || '').endsWith('.enc'),
+          });
+          if (orphans.length >= 200) break;
+        }
+        return json(200, { orphans, total: orphans.length });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
+    if (url.pathname === '/api/admin/backup/purge' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        const keys = Array.isArray(body.keys) ? body.keys.slice(0, 200) : [];
+        if (!keys.length) return json(400, { error: 'No keys supplied' });
+        const result = await purgeFromBackups(env, keys);
+        await logAudit(env, 'PURGE', email, `${result.purged} backup copies purged${result.skipped ? `, ${result.skipped} skipped` : ''}`);
+        return json(200, { ok: true, ...result });
+      } catch (e) { return json(500, { error: e.message }); }
+    }
+
     if (url.pathname === '/api/admin/backup/status' && method === 'GET' && isAdmin(email)) {
       try {
         const obj = await env.tideventure_documents.get('settings/backup-state.json');
@@ -1874,7 +1916,7 @@ async function handleFetch(request, env) {
         try { return await handleDownloadDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.has('view')); } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'DELETE') {
-        try { return await handleDeleteDocument(env, docId, docEmail, isAdmin(docEmail)); } catch (e) { return json(500, { error: e.message }); }
+        try { return await handleDeleteDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.get('purge') === '1'); } catch (e) { return json(500, { error: e.message }); }
       }
     }
 
@@ -2949,7 +2991,29 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   return new Response(rawBuf, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${origName}"`, 'Cache-Control': 'private, max-age=3600' } });
 }
 
-async function handleDeleteDocument(env, docId, email, admin) {
+// Backups are additive on purpose: a deletion in the live bucket never
+// propagates, so an accidental delete is recoverable. That protection has a
+// cost — a document deleted after a backup has run is retained there
+// indefinitely, and nothing in the app could remove it. Purging is therefore a
+// SEPARATE, admin-only, explicitly-confirmed action rather than a change to how
+// deletion works: the safety net stays, and there is now a deliberate way to
+// cut it when deletion genuinely has to be final.
+//
+// Constrained to real client-document keys (`<email>/<uuid>`) so a purge can
+// never reach settings, audit entries, or any other backed-up record.
+async function purgeFromBackups(env, keys) {
+  if (!env.tideventure_backups) return { purged: 0, skipped: keys.length, error: 'Backup bucket not bound' };
+  let purged = 0, skipped = 0;
+  for (const key of keys) {
+    const parts = String(key).split('/');
+    const looksLikeClientDoc = parts.length === 2 && parts[0].includes('@') && isDocId(parts[1]);
+    if (!looksLikeClientDoc) { skipped++; continue; }
+    try { await env.tideventure_backups.delete(key); purged++; } catch { skipped++; }
+  }
+  return { purged, skipped };
+}
+
+async function handleDeleteDocument(env, docId, email, admin, purge = false) {
   if (!isDocId(docId)) return json(404, { error: 'Document not found' });
   let found = null;
   const listResult = await listAll(env.tideventure_documents, { include: ['customMetadata', 'httpMetadata'] });
@@ -2964,8 +3028,16 @@ async function handleDeleteDocument(env, docId, email, admin) {
   if (!admin && found.customMetadata?.source === 'firm') return json(403, { error: 'Documents from your CPA cannot be deleted' });
   const name = found.customMetadata?.originalName || docId;
   await env.tideventure_documents.delete(found.key);
+  // Purging is admin-only even though a client may delete their own document:
+  // reaching into the firm's backups is a different act from removing a file
+  // from your own portal.
+  let purged = null;
+  if (purge && admin) {
+    purged = await purgeFromBackups(env, [found.key]);
+    await logAudit(env, 'PURGE', email, `${name} removed from backups`);
+  }
   await logAudit(env, 'DELETE', email, name);
-  return json(200, { success: true });
+  return json(200, { success: true, purged });
 }
 
 async function handleAdminDashboard(env) {
