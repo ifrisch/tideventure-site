@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/ifrisch/tideventure-site#readme",
   "dependencies": {
-    "jose": "^6.2.3"
+    "jose": "^6.2.3",
+    "pdfjs-dist": "^6.3.289"
   }
 }

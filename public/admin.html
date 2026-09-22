@@ -352,6 +352,16 @@
           </div>
         </div>
 
+        <div class="block" id="tpImportBlock" style="margin-bottom:1rem;">
+          <div class="block-hdr"><h3>Import prior year from a return</h3>
+            <button id="tpImportBtn" class="btn-sm">Read a PDF</button></div>
+          <div style="padding:0.75rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
+            Reads a prior-year Form 1040 already in this client's documents and proposes figures for the prior-year column. The PDF is parsed in this browser and its contents are never sent anywhere. <strong>Nothing is written until you accept it</strong> &mdash; check every figure against the return before you do.
+          </div>
+          <div id="tpImportPicker" style="display:none;padding:0 1rem 1rem;"></div>
+          <div id="tpImportResult" style="display:none;"></div>
+        </div>
+
         <div class="block" id="tpK1Block" style="margin-bottom:1rem;">
           <div class="block-hdr"><h3>Schedule K-1 detail</h3>
             <button id="tpAddK1" class="btn-sm">Add K-1</button></div>
@@ -707,6 +717,116 @@ async function tpCheckPteAllocation() {
 }
 
 
+
+// ── Import a prior-year return ──
+// The heavy lifting is in /js/return-import.js, loaded on demand so pdf.js is
+// not pulled in for every visit to the panel.
+let tpImportMod = null, tpImportFindings = null;
+
+async function tpImportOpen() {
+  const picker = document.getElementById('tpImportPicker');
+  const result = document.getElementById('tpImportResult');
+  result.style.display = 'none';
+  picker.style.display = 'block';
+  picker.innerHTML = '<div style="color:#9ca3af;font-size:0.84rem;">Loading this client&rsquo;s documents…</div>';
+  const token = sessionStorage.getItem('tv_admin_token');
+  const client = document.getElementById('tpClient').value;
+  try {
+    const res = await fetch('/api/documents', { headers: { 'Authorization': `Bearer ${token}` } });
+    const docs = ((await res.json()).documents || []).filter(d => (d.uploadedBy || '') === client);
+    if (!docs.length) {
+      picker.innerHTML = `<div style="color:#9ca3af;font-size:0.84rem;">No documents for ${esc(client)}. Upload the prior-year return to their portal first.</div>`;
+      return;
+    }
+    picker.innerHTML = '<div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.5rem;">Choose the return</div>'
+      + docs.map(d => `<div style="padding:0.35rem 0;"><button data-readdoc="${esc(d.id)}" data-readname="${esc(d.displayName || d.name)}" class="btn-sm">${esc(d.displayName || d.name)}</button></div>`).join('');
+    picker.querySelectorAll('[data-readdoc]').forEach(b =>
+      b.addEventListener('click', () => tpImportRead(b.dataset.readdoc, b.dataset.readname)));
+  } catch { picker.innerHTML = '<div style="color:#b91c1c;font-size:0.84rem;">Could not load documents.</div>'; }
+}
+
+async function tpImportRead(id, name) {
+  const result = document.getElementById('tpImportResult');
+  result.style.display = 'block';
+  result.innerHTML = '<div style="padding:1rem;color:#6b7280;font-size:0.84rem;">Reading the PDF in this browser…</div>';
+  const token = sessionStorage.getItem('tv_admin_token');
+  try {
+    if (!tpImportMod) tpImportMod = await import('/js/return-import.js');
+    // An admin fetch returns the document already decrypted by the Worker.
+    const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Could not fetch the document');
+    const buf = await res.arrayBuffer();
+    const pages = await tpImportMod.extractLines(buf);
+    const findings = tpImportMod.matchForm1040(pages);
+    tpImportFindings = findings;
+    tpImportRender(name, pages, findings);
+  } catch (e) {
+    result.innerHTML = `<div style="padding:1rem;color:#b91c1c;font-size:0.84rem;">Could not read that PDF: ${esc(e.message)}<br><br>If it is a scan rather than a generated PDF there is no text layer to read, and the figures have to be entered by hand.</div>`;
+  }
+}
+
+function tpImportRender(name, pages, findings) {
+  const result = document.getElementById('tpImportResult');
+  const usable = findings.filter(f => f.appliesToWorksheet);
+  const crossCheck = findings.filter(f => !f.appliesToWorksheet);
+  const lineCount = pages.reduce((s, p) => s + p.lines.length, 0);
+
+  const rows = usable.map((f, i) => `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:0.4rem 0.75rem;"><input type="checkbox" data-acc="${i}" checked></td>
+      <td style="padding:0.4rem 0.75rem;">${esc(f.label)}</td>
+      <td style="padding:0.4rem 0.75rem;text-align:right;font-weight:600;">${tpMoney(f.amount)}</td>
+      <td style="padding:0.4rem 0.75rem;color:#9ca3af;font-size:0.72rem;">p${f.page}: ${esc(f.source.slice(0, 70))}</td>
+    </tr>`).join('');
+
+  result.innerHTML = `
+    <div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;font-size:0.82rem;color:#374151;">
+      Read <strong>${esc(name)}</strong> — ${pages.length} page${pages.length === 1 ? '' : 's'}, ${lineCount} text lines, ${findings.length} figure${findings.length === 1 ? '' : 's'} recognised.
+    </div>
+    ${usable.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+      <thead><tr style="background:#f8fafc;">
+        <th style="padding:0.45rem 0.75rem;width:40px;"></th>
+        <th style="text-align:left;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Form line</th>
+        <th style="text-align:right;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Amount</th>
+        <th style="text-align:left;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Where it came from</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="padding:0.75rem 1rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button id="tpImportAccept" class="btn-sm" style="background:#0d3f5e;color:#fff;">Fill prior-year column</button>
+        <span style="font-size:0.78rem;color:#6b7280;">Fills the prior column only. Review, then Save draft.</span>
+      </div>`
+      : '<div style="padding:1rem;color:#b45309;font-size:0.84rem;">No Form 1040 lines were recognised. The extracted text is below — send me a few of those lines and I will correct the patterns.</div>'}
+    ${crossCheck.length ? `<div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.4rem;">Cross-check only — not imported</div>
+      <div style="font-size:0.8rem;color:#374151;line-height:1.8;">${crossCheck.map(f => `${esc(f.label)}: <strong>${tpMoney(f.amount)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
+      <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.4rem;">These are totals the worksheet computes from its own parts. Compare them against what the worksheet produces — a mismatch means something upstream is wrong.</div>
+    </div>` : ''}
+    <details style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
+      <summary style="cursor:pointer;font-size:0.8rem;color:#6b7280;">Show the raw extracted text</summary>
+      <pre style="max-height:320px;overflow:auto;background:#f8fafc;padding:0.75rem;border-radius:4px;font-size:0.72rem;line-height:1.5;white-space:pre-wrap;margin-top:0.5rem;">${esc(pages.map(p => `— page ${p.page} —\n` + p.lines.join('\n')).join('\n\n'))}</pre>
+    </details>`;
+
+  const accept = document.getElementById('tpImportAccept');
+  if (accept) accept.addEventListener('click', () => tpImportApply(usable));
+}
+
+// Writes into the prior-year inputs only, and leaves the current-year column
+// alone: "roll prior to current" is a separate, deliberate step.
+function tpImportApply(usable) {
+  let filled = 0, skipped = [];
+  document.querySelectorAll('[data-acc]').forEach(cb => {
+    if (!cb.checked) return;
+    const f = usable[Number(cb.dataset.acc)];
+    if (!f) return;
+    const el = document.querySelector(`[data-tp="${f.key}"][data-col="prior"]`);
+    if (!el) { skipped.push(f.label); return; }
+    el.value = f.amount;
+    filled++;
+  });
+  const msg = document.getElementById('tpMsg');
+  msg.textContent = `Filled ${filled} prior-year line${filled === 1 ? '' : 's'}`
+    + (skipped.length ? ` — ${skipped.length} had no matching worksheet row (${skipped.join(', ')})` : '')
+    + '. Review, then Save draft.';
+}
+
 // ── Schedule K-1 detail ──
 // Each K-1 is collapsible. Expanding one reveals the full detail, and whatever
 // is entered there drives the summary lines above rather than documenting them,
@@ -1052,6 +1172,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (load) load.addEventListener('click', () => tpIsEntity() ? tpFetchEntity() : tpFetch());
   const save = document.getElementById('tpSave');
   if (save) save.addEventListener('click', () => tpIsEntity() ? tpSaveEntity() : tpSave());
+  const imp = document.getElementById('tpImportBtn');
+  if (imp) imp.addEventListener('click', tpImportOpen);
   const addK1 = document.getElementById('tpAddK1');
   if (addK1) addK1.addEventListener('click', () => {
     tpCollectK1s();
