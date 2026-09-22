@@ -348,6 +348,15 @@
           </div>
         </div>
 
+        <div class="block" id="tpK1Block" style="margin-bottom:1rem;">
+          <div class="block-hdr"><h3>Schedule K-1 detail</h3>
+            <button id="tpAddK1" class="btn-sm">Add K-1</button></div>
+          <div style="padding:0.75rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
+            These figures <strong>drive</strong> the summary above. A K-1's ordinary income less its Section&nbsp;179 deduction becomes S corporation income; its interest, dividends, capital gains and Section&nbsp;1231 gains flow to their own lines. A K-1 left unexpanded uses the single figure on its row instead.
+          </div>
+          <div id="tpK1List"></div>
+        </div>
+
         <div class="block">
           <div class="block-hdr"><h3>Lines</h3>
             <label style="font-size:0.78rem;font-weight:500;color:#6b7280;display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
@@ -693,6 +702,123 @@ async function tpCheckPteAllocation() {
   } catch {}
 }
 
+
+// ── Schedule K-1 detail ──
+// Each K-1 is collapsible. Expanding one reveals the full detail, and whatever
+// is entered there drives the summary lines above rather than documenting them,
+// so the summary figures it feeds are rendered read-only.
+let tpK1s = [];
+const tpK1Open = new Set();
+
+function tpRenderK1s(computedK1) {
+  const host = document.getElementById('tpK1List');
+  if (!tpK1s.length) {
+    host.innerHTML = '<div style="padding:0 1rem 1rem;color:#9ca3af;font-size:0.84rem;">No K-1s yet.</div>';
+    return;
+  }
+  host.innerHTML = tpK1s.map((k1, i) => {
+    const c = (computedK1 || [])[i];
+    const open = tpK1Open.has(i);
+    const net = c && c.hasDetail ? c.computed.lines.net_profit : null;
+    const summary = net
+      ? `${tpMoney(net.prior)} &rarr; <strong>${tpMoney(net.baseline)}</strong> <span style="color:#9ca3af;">net profit (loss)</span>`
+      : '<span style="color:#9ca3af;">summary figure only &mdash; expand to enter detail</span>';
+    const detail = open ? tpK1DetailHtml(i, k1) : '';
+    return `<div style="border-top:1px solid #e5e7eb;">
+      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 1rem;flex-wrap:wrap;">
+        <button data-k1toggle="${i}" class="btn-sm" style="width:1.8rem;padding:0.15rem;">${open ? '&minus;' : '+'}</button>
+        <input data-k1f="name" data-i="${i}" value="${esc(k1.name || '')}" placeholder="Entity name" style="width:230px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;">
+        <input data-k1f="ein" data-i="${i}" value="${esc(k1.ein || '')}" placeholder="EIN" style="width:120px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;">
+        <span style="font-size:0.84rem;margin-left:auto;">${summary}</span>
+        <button data-k1rm="${i}" class="btn-sm" style="padding:0.2rem 0.5rem;">Remove</button>
+      </div>
+      ${detail}
+    </div>`;
+  }).join('');
+
+  host.querySelectorAll('[data-k1toggle]').forEach(b => b.addEventListener('click', () => {
+    const i = Number(b.dataset.k1toggle);
+    tpK1Open.has(i) ? tpK1Open.delete(i) : tpK1Open.add(i);
+    tpCollectK1s();
+    tpRenderK1s(computedK1);
+  }));
+  host.querySelectorAll('[data-k1rm]').forEach(b => b.addEventListener('click', () => {
+    tpCollectK1s();
+    tpK1s.splice(Number(b.dataset.k1rm), 1);
+    tpK1Open.clear();
+    tpRenderK1s([]);
+  }));
+}
+
+function tpK1DetailHtml(i, k1) {
+  const v = k1.values || {};
+  const rows = tpSchema.k1Lines.map(line => {
+    if (line.t === 'header') {
+      return `<tr><td colspan="4" style="padding:0.55rem 0.75rem;font-size:0.66rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;background:#fafafa;">${esc(line.l)}</td></tr>`;
+    }
+    if (line.t === 'bool' || line.t === 'text') {
+      const cur = (k1.flags || {})[line.k];
+      const ctrl = line.t === 'bool'
+        ? `<input type="checkbox" data-k1flag="${esc(line.k)}" data-i="${i}" ${cur ? 'checked' : ''}>`
+        : `<input data-k1meta="${esc(line.k)}" data-i="${i}" value="${esc(k1[line.k] || '')}" style="width:140px;padding:0.25rem;border:1px solid #d1d5db;border-radius:4px;">`;
+      return `<tr style="border-bottom:1px solid #f8fafc;"><td style="padding:0.35rem 0.75rem;">${esc(line.l)}</td><td colspan="3" style="padding:0.25rem 0.75rem;">${ctrl}</td></tr>`;
+    }
+    const val = v[line.k] || { prior: 0, baseline: 0 };
+    const prior = Number(val.prior) || 0;
+    const base = val.baseline != null ? Number(val.baseline) || 0 : prior;
+    const isCalc = line.t === 'calc';
+    const isRule = line.t === 'taxrule';
+    const bg = isRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : '');
+    const w = line.major || isCalc ? 'font-weight:600;' : '';
+    const drives = line.drives ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&rarr; drives summary</span>' : '';
+    const marker = isRule ? ' <span style="color:#b45309;font-size:0.66rem;font-weight:700;">&#9650; needs tax law</span>' : '';
+    const note = line.note ? ` title="${esc(line.note)}"` : '';
+    const cell = (col, value) => isCalc
+      ? `<td style="text-align:right;padding:0.35rem 0.75rem;${w}">${tpMoney(value)}</td>`
+      : `<td style="text-align:right;padding:0.2rem 0.4rem;"><input data-k1v="${esc(line.k)}" data-i="${i}" data-col="${col}" value="${value}" style="width:100px;text-align:right;padding:0.25rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.8rem;"></td>`;
+    return `<tr style="${bg}border-bottom:1px solid #f8fafc;"${note}>
+      <td style="padding:0.35rem 0.75rem;${w}">${esc(line.l)}${drives}${marker}</td>
+      ${cell('prior', prior)}
+      <td style="text-align:right;padding:0.35rem 0.75rem;color:#d1d5db;">${tpMoney(base - prior)}</td>
+      ${cell('baseline', base)}
+    </tr>`;
+  }).join('');
+  return `<div style="background:#fcfcfd;border-top:1px solid #e5e7eb;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+      <thead><tr style="background:#f1f5f9;">
+        <th style="text-align:left;padding:0.4rem 0.75rem;font-size:0.66rem;text-transform:uppercase;color:#6b7280;">K-1 line</th>
+        <th style="text-align:right;padding:0.4rem 0.75rem;font-size:0.66rem;text-transform:uppercase;color:#6b7280;">Prior</th>
+        <th style="text-align:right;padding:0.4rem 0.75rem;font-size:0.66rem;text-transform:uppercase;color:#9ca3af;">Diff (auto)</th>
+        <th style="text-align:right;padding:0.4rem 0.75rem;font-size:0.66rem;text-transform:uppercase;color:#6b7280;">Current</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// Read the K-1 editors back into tpK1s. Called before any save or re-render so
+// nothing typed is lost when a panel collapses.
+function tpCollectK1s() {
+  document.querySelectorAll('[data-k1f]').forEach(el => {
+    const i = Number(el.dataset.i);
+    if (tpK1s[i]) tpK1s[i][el.dataset.k1f] = el.value;
+  });
+  document.querySelectorAll('[data-k1meta]').forEach(el => {
+    const i = Number(el.dataset.i);
+    if (tpK1s[i]) tpK1s[i][el.dataset.k1meta] = el.value;
+  });
+  document.querySelectorAll('[data-k1flag]').forEach(el => {
+    const i = Number(el.dataset.i);
+    if (!tpK1s[i]) return;
+    tpK1s[i].flags = tpK1s[i].flags || {};
+    tpK1s[i].flags[el.dataset.k1flag] = el.checked;
+  });
+  document.querySelectorAll('[data-k1v]').forEach(el => {
+    const i = Number(el.dataset.i), k = el.dataset.k1v, c = el.dataset.col;
+    if (!tpK1s[i]) return;
+    tpK1s[i].values = tpK1s[i].values || {};
+    tpK1s[i].values[k] = tpK1s[i].values[k] || { prior: 0, baseline: 0 };
+    tpK1s[i].values[k][c] = Number(String(el.value).replace(/[$,\s]/g, '')) || 0;
+  });
+}
+
 // ── Estimated tax projection ──
 // The worksheet mirrors the three-column shape CPAs already read: prior year
 // actual, the change expected, and the resulting baseline. Only `input` rows are
@@ -868,10 +994,12 @@ async function tpFetch() {
     const empty = { lines: {}, totals: { baseline: { totalTax: 0, balanceDue: 0 } }, projected: { quarterly: 0 }, safeHarbor: { quarterly: 0, basis: '' } };
     tpSchema.lines.forEach(l => { empty.lines[l.k] = { prior: 0, baseline: 0, diff: 0 }; });
     tpRender(empty, {});
+    tpK1s = []; tpRenderK1s([]);
     tpRenderState(null);
     return;
   }
   tpValues = d.values || {}; tpGroups = d.groups || { w2: [], k1s: [] };
+  tpK1s = tpGroups.k1s || [];
   document.getElementById('tpStatus').value = d.filingStatus;
   document.getElementById('tpHdrPrior').textContent = `${d.priorYear} Actual`;
   document.getElementById('tpHdrBase').textContent = `${d.year} Baseline`;
@@ -879,6 +1007,7 @@ async function tpFetch() {
   document.getElementById('tpState').value = d.state || '';
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
   tpRender(d.computed, d.values);
+  tpRenderK1s(d.computed.k1);
   tpRenderState(d.state);
   tpCheckPteAllocation();
 }
@@ -887,6 +1016,8 @@ async function tpSave() {
   const token = sessionStorage.getItem('tv_admin_token');
   const msg = document.getElementById('tpMsg');
   msg.textContent = 'Saving…';
+  tpCollectK1s();
+  tpGroups.k1s = tpK1s;
   const payload = {
     email: document.getElementById('tpClient').value,
     year: Number(document.getElementById('tpYear').value),
@@ -908,6 +1039,7 @@ async function tpSave() {
   if (!r.ok) { msg.textContent = d.error || 'Save failed.'; return; }
   msg.textContent = 'Saved as draft.';
   tpRender(d.computed, payload.values);
+  tpRenderK1s(d.computed.k1);
   tpRenderState(d.state);
 }
 
@@ -916,6 +1048,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (load) load.addEventListener('click', () => tpIsEntity() ? tpFetchEntity() : tpFetch());
   const save = document.getElementById('tpSave');
   if (save) save.addEventListener('click', () => tpIsEntity() ? tpSaveEntity() : tpSave());
+  const addK1 = document.getElementById('tpAddK1');
+  if (addK1) addK1.addEventListener('click', () => {
+    tpCollectK1s();
+    tpK1s.push({ name: '', ein: '', prior: 0, baseline: 0 });
+    tpK1Open.add(tpK1s.length - 1);
+    tpRenderK1s([]);
+  });
   const roll = document.getElementById('tpRollover');
   if (roll) roll.addEventListener('click', tpRollover);
   const kind = document.getElementById('tpKind');

@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS } from './taxworksheet.js';
+import { K1_LINES, K1_LINE_BY_KEY } from './taxk1.js';
 import { STATES, PAID_BY, STATE_LINES, computeStateWorksheet } from './taxstate.js';
 import { ENTITY_TYPES, ENTITY_STATES, ENTITY_LINES, computeEntityWorksheet } from './taxentity.js';
 
@@ -1173,7 +1174,8 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/tax-projection/schema' && method === 'GET' && isAdmin(email)) {
       return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS,
         states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES,
-        entityTypes: ENTITY_TYPES, entityStates: ENTITY_STATES, entityLines: ENTITY_LINES });
+        entityTypes: ENTITY_TYPES, entityStates: ENTITY_STATES, entityLines: ENTITY_LINES,
+        k1Lines: K1_LINES });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
@@ -1210,7 +1212,25 @@ async function handleFetch(request, env) {
       for (const g of GROUPS) {
         groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : [])
           .slice(0, 50)
-          .map(r => ({ name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, baseline: Number(r?.baseline) || 0 }));
+          .map(r => {
+            const row = { name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, baseline: Number(r?.baseline) || 0 };
+            if (g.key === 'k1s') {
+              row.ein = String(r?.ein ?? '').slice(0, 20);
+              // Nested K-1 detail, allowlisted against the K-1 schema exactly as
+              // the top-level lines are. When present it DRIVES the summary, so
+              // an unknown key here would be a figure nobody could account for.
+              const vals = {};
+              for (const [k, v] of Object.entries(r?.values || {})) {
+                if (!K1_LINE_BY_KEY[k]) continue;
+                vals[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
+              }
+              if (Object.keys(vals).length) row.values = vals;
+              for (const f of ['passive_activity', 'actively_participated', 'real_estate_professional', 'publicly_traded', 'specified_trade']) {
+                if (r?.flags && typeof r.flags[f] === 'boolean') { row.flags = row.flags || {}; row.flags[f] = r.flags[f]; }
+              }
+            }
+            return row;
+          });
       }
       // State worksheet, if one applies. Same allowlist discipline as federal.
       const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;

@@ -24,6 +24,8 @@
 // worksheet their detail totals 42 and 1,394 against categories of 599 and
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
+import { aggregateK1s } from './taxk1.js';
+
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
   { key: 'mfj', label: 'Married Filing Jointly' },
@@ -71,13 +73,13 @@ export const LINES = [
   // Capital gains. These DO tie out in the reference worksheet, so they compute.
   { k: 'st_gain', l: 'Short-term capital gain (loss)', t: 'input', depth: 1 },
   { k: 'st_gain_state', l: 'State short-term capital gain (loss)', t: 'memo', depth: 2 },
-  { k: 'st_gain_passthrough', l: 'Short-term capital gain (loss) from passthrough', t: 'input', depth: 1 },
+  { k: 'st_gain_passthrough', l: 'Short-term capital gain (loss) from passthrough', t: 'k1agg', k1: 'stGain', depth: 1 },
   { k: 'st_loss_carryover', l: 'Short-term capital loss carryover', t: 'input', depth: 1 },
   { k: 'net_st_gain', l: 'Net short-term capital gain (loss)', t: 'sum', depth: 1,
     of: ['st_gain', 'st_gain_passthrough', 'st_loss_carryover'] },
   { k: 'lt_gain', l: 'Long-term capital gain (loss)', t: 'input', depth: 1 },
   { k: 'lt_gain_state', l: 'State long-term capital gain (loss)', t: 'memo', depth: 2 },
-  { k: 'lt_gain_passthrough', l: 'Long-term capital gain (loss) from passthrough', t: 'input', depth: 1 },
+  { k: 'lt_gain_passthrough', l: 'Long-term capital gain (loss) from passthrough', t: 'k1agg', k1: 'ltGain', depth: 1 },
   { k: 'cap_gain_distributions', l: 'Capital gain distributions', t: 'input', depth: 1 },
   { k: 'lt_loss_carryover', l: 'Long-term capital loss carryover', t: 'input', depth: 1 },
   { k: 'sec1231_gain', l: 'Section 1231 capital gain', t: 'input', depth: 1 },
@@ -89,14 +91,15 @@ export const LINES = [
   { k: 'capital_gain_income', l: 'Capital Gain Income', t: 'sum', depth: 0, of: ['net_st_gain', 'net_lt_gain'] },
 
   { k: 'ordinary_gain_loss', l: 'Ordinary gain (loss)', t: 'input', depth: 1 },
-  { k: 'other_gains_losses', l: 'Other Gains or Losses', t: 'sum', depth: 0, of: ['ordinary_gain_loss'] },
+  { k: 'ordinary_gain_k1', l: 'Section 1231 and ordinary gains from K-1s', t: 'k1agg', k1: 'ordinaryGain', depth: 1 },
+  { k: 'other_gains_losses', l: 'Other Gains or Losses', t: 'sum', depth: 0, of: ['ordinary_gain_loss', 'ordinary_gain_k1'] },
 
   // Interest / dividends: detail does NOT tie to the category, so the category
   // is entered directly and the detail rows are recorded as breakdown only.
-  { k: 'interest_income', l: 'Interest Income', t: 'input', depth: 0,
-    note: 'Entered directly. The rows below are a breakdown for reference and do not add up to this figure.' },
-  { k: 'interest_income_detail', l: 'Interest income', t: 'memo', depth: 1 },
-  { k: 'interest_k1', l: 'Interest income from Sch K-1', t: 'memo', depth: 1 },
+  { k: 'interest_income', l: 'Interest Income', t: 'sum', depth: 0,
+    of: ['interest_income_own', 'interest_k1'] },
+  { k: 'interest_income_own', l: 'Interest income', t: 'input', depth: 1 },
+  { k: 'interest_k1', l: 'Interest income from Sch K-1', t: 'k1agg', k1: 'interest', depth: 1 },
   { k: 'us_govt_obligations', l: 'U.S. government obligations', t: 'memo', depth: 1 },
   { k: 'us_govt_obligations_k1', l: 'U.S. government obligations from Sch K-1', t: 'memo', depth: 1 },
   { k: 'muni_total', l: 'Total municipal bonds', t: 'memo', depth: 1 },
@@ -104,12 +107,16 @@ export const LINES = [
   { k: 'muni_k1', l: 'Total municipal bonds from Sch K-1', t: 'memo', depth: 1 },
   { k: 'muni_instate_k1', l: 'In-state bonds from Sch K-1', t: 'memo', depth: 1 },
 
-  { k: 'dividend_income', l: 'Dividend Income', t: 'input', depth: 0,
-    note: 'Entered directly. Qualified dividends are a subset of ordinary, so the rows below are a breakdown, not addends.' },
-  { k: 'qualified_dividends', l: 'Qualified dividends', t: 'memo', depth: 1 },
+  { k: 'dividend_income', l: 'Dividend Income', t: 'sum', depth: 0,
+    of: ['ordinary_dividends', 'dividends_k1', 'ordinary_dividends_adj'] },
+  { k: 'ordinary_dividends', l: 'Ordinary dividends', t: 'input', depth: 1 },
+  { k: 'dividends_k1', l: 'Ordinary dividends from Sch K-1', t: 'k1agg', k1: 'dividends', depth: 1 },
+  { k: 'ordinary_dividends_adj', l: 'Adjustments to ordinary dividends', t: 'input', depth: 1 },
+  { k: 'qualified_dividends', l: 'Qualified dividends', t: 'memo', depth: 1,
+    note: 'A subset of ordinary dividends — recorded, never added on top.' },
+  { k: 'qualified_dividends_k1', l: 'Qualified dividends from Sch K-1', t: 'k1agg', k1: 'qualifiedDividends', depth: 1, memoOnly: true,
+    note: 'Subset of the K-1 ordinary dividends already counted above.' },
   { k: 'qualified_dividends_adj', l: 'Adjustments to qualified dividends', t: 'memo', depth: 1 },
-  { k: 'ordinary_dividends', l: 'Ordinary dividends', t: 'memo', depth: 1 },
-  { k: 'ordinary_dividends_adj', l: 'Adjustments to ordinary dividends', t: 'memo', depth: 1 },
 
   { k: 'pension_ira', l: 'Pension and IRA Distributions', t: 'input', depth: 0 },
 
@@ -327,8 +334,12 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   const out = {};
   const col = ['prior', 'baseline'];
 
+  // K-1 detail drives several lines, so it is resolved before anything else.
+  const k1 = aggregateK1s(groups.k1s || []);
+
   const groupTotals = {};
   for (const g of GROUPS) {
+    if (g.key === 'k1s') { groupTotals[g.sumsInto] = k1.totals.scorp; continue; }
     const rows = Array.isArray(groups[g.key]) ? groups[g.key] : [];
     const cols = rows.map(enteredColumns);
     groupTotals[g.sumsInto] = {
@@ -337,25 +348,49 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     };
   }
 
-  for (const line of LINES) {
-    if (line.t === 'header') continue;
+  // Lines are resolved by DEPENDENCY, not by their order in the array. A
+  // category is displayed above the rows it sums (Interest Income sits above
+  // its own/K-1 breakdown), so evaluating top to bottom would read those
+  // children as zero and silently understate the total. Resolving on demand
+  // means display order and calculation order are free to differ.
+  const resolving = new Set();
+  const resolve = (key) => {
+    if (out[key]) return out[key];
+    const line = LINE_BY_KEY[key];
+    if (!line || line.t === 'header') return { prior: 0, baseline: 0, diff: 0 };
+    if (resolving.has(key)) {
+      // A cycle means the line definitions are wrong. Return zero rather than
+      // recursing forever, and make it visible instead of subtly off.
+      return { prior: 0, baseline: 0, diff: 0, cycle: true };
+    }
+    resolving.add(key);
     const v = { prior: 0, baseline: 0 };
     if (line.t === 'group') {
       const gt = groupTotals[line.k] || { prior: 0, baseline: 0 };
       v.prior = gt.prior; v.baseline = gt.baseline;
+    } else if (line.t === 'k1agg') {
+      // Comes from the K-1 detail, never typed here.
+      const t = k1.totals[line.k1] || { prior: 0, baseline: 0 };
+      v.prior = t.prior; v.baseline = t.baseline;
     } else if (line.t === 'sum') {
-      for (const c of col) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+      for (const c of col) v[c] = round((line.of || []).reduce((s, k) => s + resolve(k)[c], 0));
     } else if (line.t === 'net') {
       for (const c of col) {
         const [first, ...rest] = line.of || [];
-        v[c] = round((out[first] ? out[first][c] : 0) - rest.reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+        v[c] = round(resolve(first)[c] - rest.reduce((s, k) => s + resolve(k)[c], 0));
       }
     } else {
       const e = enteredColumns(values[line.k]);
       v.prior = e.prior; v.baseline = e.baseline;
     }
     v.diff = round(v.baseline - v.prior);
-    out[line.k] = v;
+    resolving.delete(key);
+    out[key] = v;
+    return v;
+  };
+  for (const line of LINES) {
+    if (line.t === 'header') continue;
+    resolve(line.k);
   }
 
   // Totals and the numbers the whole worksheet exists to produce.
@@ -382,6 +417,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
 
   return {
     lines: out,
+    k1: k1.perK1,
     totals,
     projected: { annualNeeded: Math.max(0, needed), quarterly },
     safeHarbor: safeHarbor(totals.prior.totalTax, at('agi', 'prior'), filingStatus),
