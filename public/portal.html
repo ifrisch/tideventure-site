@@ -772,13 +772,14 @@ function initDocManager(data) {
           const res = await authFetch(`/api/documents/${d.id}`);
           if (!res.ok) throw Error();
           const blob = await res.blob();
+          // Firm-uploaded documents used to be stored in plaintext and were
+          // handed straight through. They are encrypted now, so that shortcut
+          // would save the client a file full of ciphertext named .pdf. Try to
+          // decrypt whatever arrives and fall back to the raw bytes, which
+          // covers both the encrypted case and anything stored before the fix.
           let fileBytes;
-          if (isFirm) {
-            fileBytes = await blob.arrayBuffer();
-          } else {
-            try { fileBytes = await decryptFile(blob); }
-            catch { fileBytes = await blob.arrayBuffer(); }
-          }
+          try { fileBytes = await decryptFile(blob); }
+          catch { fileBytes = await blob.arrayBuffer(); }
           const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([fileBytes])); a.download = d.name; a.click(); URL.revokeObjectURL(a.href);
         } catch { showError('Download failed.'); }
       });
