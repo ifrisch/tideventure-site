@@ -692,6 +692,12 @@ async function handleFetch(request, env) {
     // ── Protected API routes ──
     const user = await getAuthUser();
     const email = user?.email;
+    // Who the audit log should name. During an impersonation session `email` is
+    // the CLIENT, so attributing actions to it records the client doing things
+    // the admin did — a log that misattributes is worse than one with a gap.
+    const auditActor = (user && typeof user.imp === 'string' && user.imp)
+      ? `${user.imp} (impersonating ${email})`
+      : email;
 
     if (url.pathname === '/api/documents' && method === 'GET') {
       if (!email) return json(401, { error: 'Unauthorized' });
@@ -772,7 +778,7 @@ async function handleFetch(request, env) {
           httpMetadata: { contentType: 'application/octet-stream' },
           customMetadata: { originalName: storedName, uploadedBy: cleanClient, source: 'firm', uploadedAt: new Date().toISOString(), encrypted: 'true' },
         });
-        await logAudit(env, 'UPLOAD', email, `${file.name} to ${cleanClient} (encrypted)`);
+        await logAudit(env, 'UPLOAD', auditActor, `${file.name} to ${cleanClient} (encrypted)`);
         return json(200, { ok: true, id });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1029,7 +1035,7 @@ async function handleFetch(request, env) {
         const keys = Array.isArray(body.keys) ? body.keys.slice(0, 200) : [];
         if (!keys.length) return json(400, { error: 'No keys supplied' });
         const result = await purgeFromBackups(env, keys);
-        await logAudit(env, 'PURGE', email, `${result.purged} backup copies purged${result.skipped ? `, ${result.skipped} skipped` : ''}`);
+        await logAudit(env, 'PURGE', auditActor, `${result.purged} backup copies purged${result.skipped ? `, ${result.skipped} skipped` : ''}`);
         return json(200, { ok: true, ...result });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1044,7 +1050,7 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/backup/run' && method === 'POST' && isAdmin(email)) {
       try {
         const result = await runBackup(env);
-        await logAudit(env, 'BACKUP', email, `Manual backup: ${result.copied} copied, ${result.failed} failed`);
+        await logAudit(env, 'BACKUP', auditActor, `Manual backup: ${result.copied} copied, ${result.failed} failed`);
         return json(200, result);
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1052,8 +1058,11 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/request-password-reset' && method === 'POST') {
       try {
         const body = await request.json();
-        const resetEmail = (body.email || '').toLowerCase().trim();
-        if (!resetEmail) return json(400, { error: 'Email required' });
+        // Normalised like every other address that becomes an R2 key. A
+        // malformed one returns the same { ok: true } as an unknown one, so
+        // this endpoint still reveals nothing about which accounts exist.
+        const resetEmail = normalizeEmail(body.email);
+        if (!resetEmail) return json(200, { ok: true });
         // Rate limit: 3 requests per hour per email
         const rlKey = `reset/${resetEmail}`;
         const existing = await rateGet(env, rlKey);
@@ -1112,7 +1121,7 @@ async function handleFetch(request, env) {
         const html = renderWelcomeEmailHtml(body.text, body.email);
         const fullText = `${body.text}\n\nWarm regards,\n\nIsaac Frisch, CPA\nTideVenture CPA\ntideventurecpa.com`;
         await sendGmailEmail(env, { to: body.email, subject: body.subject, text: fullText, html });
-        await logAudit(env, 'EMAIL', email, `Welcome email sent to ${body.email}`);
+        await logAudit(env, 'EMAIL', auditActor, `Welcome email sent to ${body.email}`);
         return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1121,14 +1130,20 @@ async function handleFetch(request, env) {
       try {
         const body = await request.json();
         if (!body.email) return json(400, { error: 'Email required' });
-        const lowerEmail = body.email.toLowerCase();
+        const lowerEmail = normalizeEmail(body.email);
+        if (!lowerEmail) return json(400, { error: 'Valid email required' });
         const obj = await env.tideventure_documents.get(`user/${lowerEmail}`);
         if (!obj) return json(404, { error: 'User not found' });
         const user = JSON.parse(await obj.text());
-        const token = await new SignJWT({ email: lowerEmail, role: 'client', status: user.status || 'active', imp: true })
+        // `imp` carries the impersonating admin's address, not just a boolean.
+        // Without it nothing downstream can say WHO acted, so every action taken
+        // during the session is recorded against the client. Still truthy, so
+        // the existing checks that only test for presence keep working.
+        const token = await new SignJWT({ email: lowerEmail, role: 'client', status: user.status || 'active', imp: email })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('1h')
           .sign(jwtKey(env));
+        await logAudit(env, 'IMPERSONATE', email, `Started viewing ${lowerEmail}'s portal`);
         return json(200, { token, email: lowerEmail });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1138,7 +1153,8 @@ async function handleFetch(request, env) {
       try {
         const body = await request.json();
         if (!body.email) return json(400, { error: 'Email required' });
-        const lowerEmail = body.email.toLowerCase();
+        const lowerEmail = normalizeEmail(body.email);
+        if (!lowerEmail) return json(400, { error: 'Valid email required' });
         // Save to user profile
         const userKey = `user/${lowerEmail}`;
         const obj = await env.tideventure_documents.get(userKey);
@@ -1172,7 +1188,8 @@ async function handleFetch(request, env) {
         if (!body.email || !['active', 'deactivated'].includes(body.status)) {
           return json(400, { error: 'email and a valid status (active or deactivated) are required' });
         }
-        const lowerEmail = body.email.toLowerCase();
+        const lowerEmail = normalizeEmail(body.email);
+        if (!lowerEmail) return json(400, { error: 'Valid email required' });
         const userKey = `user/${lowerEmail}`;
         const obj = await env.tideventure_documents.get(userKey);
         if (!obj) return json(404, { error: 'Client not found' });
@@ -1205,7 +1222,9 @@ async function handleFetch(request, env) {
           .filter(t => t && typeof t.label === 'string' && t.label.trim())
           .map(t => ({ label: t.label.trim().slice(0, 80), status: allowed.includes(t.status) ? t.status : 'docs' }))
           .slice(0, 12);
-        const userKey = `user/${body.email.toLowerCase()}`;
+        const normTaxEmail = normalizeEmail(body.email);
+        if (!normTaxEmail) return json(400, { error: 'Valid email required' });
+        const userKey = `user/${normTaxEmail}`;
         const obj = await env.tideventure_documents.get(userKey);
         if (!obj) return json(404, { error: 'Client not found' });
         const user = JSON.parse(await obj.text());
@@ -1315,7 +1334,7 @@ async function handleFetch(request, env) {
         ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy })
         : null;
       await syncTaxProjectionToD1(env, record, computed);
-      await logAudit(env, 'TAXPROJ', email, `Saved ${year} projection for ${client} (${record.status})`);
+      await logAudit(env, 'TAXPROJ', auditActor, `Saved ${year} projection for ${client} (${record.status})`);
       return json(200, { ok: true, computed, state });
     }
 
@@ -1362,7 +1381,7 @@ async function handleFetch(request, env) {
       await env.tideventure_documents.put(`taxentity/${entity}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
       const computed = computeEntityWorksheet(stateCode, values, owners);
       await syncEntityProjectionToD1(env, record, computed);
-      await logAudit(env, 'TAXPROJ', email, `Saved ${year} entity worksheet for ${entity} (${record.status})`);
+      await logAudit(env, 'TAXPROJ', auditActor, `Saved ${year} entity worksheet for ${entity} (${record.status})`);
       return json(200, { ok: true, computed });
     }
 
@@ -1387,7 +1406,8 @@ async function handleFetch(request, env) {
 
     if (url.pathname === '/api/admin/savings' && method === 'GET' && isAdmin(email)) {
       try {
-        const target = (url.searchParams.get('email') || '').toLowerCase();
+        const target = normalizeEmail(url.searchParams.get('email') || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         if (!target) return json(400, { error: 'Email required' });
         const { objects } = await listAll(env.tideventure_documents, { prefix: `savings/${target}/` });
         const entries = [];
@@ -1399,7 +1419,8 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/savings' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        const target = (body.email || '').toLowerCase();
+        const target = normalizeEmail(body.email || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         const amount = Math.round((Number(body.amount) || 0) * 100) / 100;
         if (!target || !(amount > 0)) return json(400, { error: 'Email and a positive amount are required' });
         const entry = {
@@ -1412,14 +1433,15 @@ async function handleFetch(request, env) {
         };
         await env.tideventure_documents.put(`savings/${target}/${entry.id}`, JSON.stringify(entry), { httpMetadata: { contentType: 'application/json' } });
         await insertSavingsD1(env, entry);
-        await logAudit(env, 'SAVINGS', email, `Logged $${amount} (${entry.category}) for ${target}`);
+        await logAudit(env, 'SAVINGS', auditActor, `Logged $${amount} (${entry.category}) for ${target}`);
         return json(200, { ok: true, entry });
       } catch (e) { return json(500, { error: e.message }); }
     }
     if (url.pathname === '/api/admin/savings/delete' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        const target = (body.email || '').toLowerCase();
+        const target = normalizeEmail(body.email || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         if (!target || !body.id) return json(400, { error: 'email and id required' });
         await env.tideventure_documents.delete(`savings/${target}/${body.id}`).catch(() => {});
         try { await env.DB.prepare('DELETE FROM savings_entries WHERE id = ?').bind(body.id).run(); } catch {}
@@ -1432,7 +1454,8 @@ async function handleFetch(request, env) {
     // says uploaded) → received (firm confirms), or waived.
     if (url.pathname === '/api/admin/doc-requests' && method === 'GET' && isAdmin(email)) {
       try {
-        const target = (url.searchParams.get('email') || '').toLowerCase();
+        const target = normalizeEmail(url.searchParams.get('email') || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         if (!target) return json(400, { error: 'Email required' });
         const { objects } = await listAll(env.tideventure_documents, { prefix: `docrequest/${target}/` });
         const requests = [];
@@ -1444,7 +1467,8 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/doc-requests' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        const target = (body.email || '').toLowerCase();
+        const target = normalizeEmail(body.email || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         const title = (body.title || '').trim().slice(0, 120);
         if (!target || !title) return json(400, { error: 'email and title required' });
         const reqRec = {
@@ -1454,14 +1478,15 @@ async function handleFetch(request, env) {
         };
         await env.tideventure_documents.put(`docrequest/${target}/${reqRec.id}`, JSON.stringify(reqRec), { httpMetadata: { contentType: 'application/json' } });
         await insertDocRequestD1(env, reqRec);
-        await logAudit(env, 'DOCREQ', email, `Requested "${title}" from ${target}`);
+        await logAudit(env, 'DOCREQ', auditActor, `Requested "${title}" from ${target}`);
         return json(200, { ok: true, request: reqRec });
       } catch (e) { return json(500, { error: e.message }); }
     }
     if (url.pathname === '/api/admin/doc-requests/update' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        const target = (body.email || '').toLowerCase();
+        const target = normalizeEmail(body.email || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         const allowed = ['requested', 'received', 'waived'];
         if (!target || !body.id || !allowed.includes(body.status)) return json(400, { error: 'email, id, and a valid status required' });
         const key = `docrequest/${target}/${body.id}`;
@@ -1478,7 +1503,8 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/doc-requests/delete' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        const target = (body.email || '').toLowerCase();
+        const target = normalizeEmail(body.email || '');
+        if (!target) return json(400, { error: 'Valid client email required' });
         if (!target || !body.id) return json(400, { error: 'email and id required' });
         await env.tideventure_documents.delete(`docrequest/${target}/${body.id}`).catch(() => {});
         try { await env.DB.prepare('DELETE FROM doc_requests WHERE id = ?').bind(body.id).run(); } catch {}
@@ -1661,7 +1687,7 @@ async function handleFetch(request, env) {
           }
         } catch {}
 
-        await logAudit(env, 'SIGN', email, `Engagement letter signed (${letterHash.slice(0, 12)}…)`);
+        await logAudit(env, 'SIGN', auditActor, `Engagement letter signed (${letterHash.slice(0, 12)}…)`);
         return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1729,7 +1755,9 @@ async function handleFetch(request, env) {
     if (url.pathname === '/api/admin/ratelimit' && method === 'POST' && isAdmin(email)) {
       try {
         const body = await request.json();
-        await rateDelete(env, `login/${body.email.toLowerCase()}`);
+        const rlEmail = normalizeEmail(body.email);
+        if (!rlEmail) return json(400, { error: 'Valid email required' });
+        await rateDelete(env, `login/${rlEmail}`);
         return json(200, { ok: true });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -1743,12 +1771,20 @@ async function handleFetch(request, env) {
         const body = await request.json();
         if (!body.email || !body.documentId || !body.documentName) return json(400, { error: 'Missing fields' });
         if (!env.PANDADOC_API_KEY) return json(400, { error: 'PandaDoc not configured' });
-        const targetEmail = body.email.toLowerCase();
-        // Find the document in R2
+        const targetEmail = normalizeEmail(body.email);
+        if (!targetEmail) return json(400, { error: 'Valid recipient email required' });
+        // The document id MUST be a uuid, and the object it names must be a real
+        // client document (`<email>/<uuid>`). Without both checks this suffix
+        // scan resolved any key ending in the supplied string — a documentId of
+        // `victim@x.com` matched `user/victim@x.com`, and the matched object was
+        // then read, wrapped as a PDF and MAILED to an address supplied in the
+        // same request. The download and delete paths were hardened against this
+        // in the August review; this route was missed.
+        if (!isDocId(body.documentId)) return json(404, { error: 'Document not found' });
         const listResult = await listAll(env.tideventure_documents);
         let docKey = null;
         for (const obj of listResult.objects) {
-          if (obj.key.endsWith(`/${body.documentId}`) && !obj.key.startsWith('audit/')) { docKey = obj.key; break; }
+          if (isClientDocKey(obj.key, body.documentId)) { docKey = obj.key; break; }
         }
         if (!docKey) return json(404, { error: 'Document not found' });
         const r2Doc = await env.tideventure_documents.get(docKey);
@@ -2938,7 +2974,7 @@ async function handleUploadDocument(request, env, email) {
     httpMetadata: { contentType: file.type },
     customMetadata: { originalName: file.name, uploadedBy: email, uploadedAt: new Date().toISOString() },
   });
-  await logAudit(env, 'UPLOAD', email, `${file.name} (${file.size} bytes)`);
+  await logAudit(env, 'UPLOAD', auditActor, `${file.name} (${file.size} bytes)`);
   return json(201, { id, key, name: file.name });
 }
 
@@ -2969,7 +3005,7 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   if (!admin && uploader !== email) return json(403, { error: 'Forbidden' });
   const object = await env.tideventure_documents.get(found.key);
   if (!object) return json(404, { error: 'Document not found' });
-  await logAudit(env, 'DOWNLOAD', email, found.customMetadata?.originalName || docId);
+  await logAudit(env, 'DOWNLOAD', auditActor, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
   const EXT_MAP = { 'pdf':'application/pdf','jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png','gif':'image/gif','webp':'image/webp','mp4':'video/mp4','doc':'application/msword','docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','xls':'application/vnd.ms-excel','xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','txt':'text/plain','csv':'text/csv' };
   const fileExt = origName.split('.').pop().toLowerCase();
@@ -3044,9 +3080,9 @@ async function handleDeleteDocument(env, docId, email, admin, purge = false) {
   let purged = null;
   if (purge && admin) {
     purged = await purgeFromBackups(env, [found.key]);
-    await logAudit(env, 'PURGE', email, `${name} removed from backups`);
+    await logAudit(env, 'PURGE', auditActor, `${name} removed from backups`);
   }
-  await logAudit(env, 'DELETE', email, name);
+  await logAudit(env, 'DELETE', auditActor, name);
   return json(200, { success: true, purged });
 }
 
