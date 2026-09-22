@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS } from './taxworksheet.js';
 
 const SEC_HEADERS = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
@@ -266,6 +267,19 @@ function rowToProspect(r) {
     revenue: r.revenue, notes: r.notes, source: r.source, verified: !!r.verified, stage: r.stage, status: r.status,
     viewed: !!r.viewed, createdAt: r.created_at, stageUpdatedAt: r.stage_updated_at, convertedAt: r.converted_at,
   };
+}
+
+async function syncTaxProjectionToD1(env, r, computed) {
+  try {
+    await env.DB.prepare(`INSERT OR REPLACE INTO tax_projections
+      (id,client_email,tax_year,prior_year,filing_status,status,total_tax,balance_due,quarterly,safe_harbor,updated_at,updated_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+      `${r.email}:${r.year}`, r.email, r.year, r.priorYear, r.filingStatus, r.status,
+      computed?.totals?.baseline?.totalTax || 0, computed?.totals?.baseline?.balanceDue || 0,
+      computed?.projected?.quarterly || 0, computed?.safeHarbor?.annual || 0,
+      r.updatedAt || null, r.updatedBy || null,
+    ).run();
+  } catch {}
 }
 
 async function insertAuditD1(env, entry) {
@@ -1126,6 +1140,62 @@ async function handleFetch(request, env) {
     // ── Tax Savings Ledger (admin CRUD) ──
     // One R2 object per entry at savings/<email>/<id>; D1 mirror for future
     // aggregations. The client's dashboard shows the running total.
+    // ── Estimated tax projection worksheets (admin only) ──
+    // Deliberately admin-only and draft-by-default: nothing here is visible to a
+    // client, and no figure reaches one without the CPA marking it reviewed.
+    if (url.pathname === '/api/admin/tax-projection/schema' && method === 'GET' && isAdmin(email)) {
+      return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS });
+    }
+
+    if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
+      const client = normalizeEmail(url.searchParams.get('email'));
+      const year = parseInt(url.searchParams.get('year'), 10);
+      if (!client || !Number.isInteger(year)) return json(400, { error: 'email and year required' });
+      const obj = await env.tideventure_documents.get(`taxproj/${client}/${year}`);
+      if (!obj) return json(200, { exists: false });
+      const saved = JSON.parse(await obj.text());
+      const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus);
+      return json(200, { exists: true, ...saved, computed });
+    }
+
+    if (url.pathname === '/api/admin/tax-projection' && method === 'PUT' && isAdmin(email)) {
+      const body = await request.json();
+      const client = normalizeEmail(body.email);
+      const year = parseInt(body.year, 10);
+      if (!client || !Number.isInteger(year)) return json(400, { error: 'email and year required' });
+      if (!isValidFilingStatus(body.filingStatus)) return json(400, { error: 'Invalid filing status' });
+      // Only keys the schema knows about are stored, so a stray field from a
+      // stale browser tab can't quietly become part of a tax worksheet.
+      const known = new Set(LINES.map(l => l.k));
+      const values = {};
+      for (const [k, v] of Object.entries(body.values || {})) {
+        if (!known.has(k)) continue;
+        values[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+      }
+      const groups = {};
+      for (const g of GROUPS) {
+        groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : [])
+          .slice(0, 50)
+          .map(r => ({ name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, diff: Number(r?.diff) || 0 }));
+      }
+      const record = {
+        email: client,
+        year,
+        priorYear: Number.isInteger(parseInt(body.priorYear, 10)) ? parseInt(body.priorYear, 10) : year - 1,
+        filingStatus: body.filingStatus,
+        status: body.status === 'reviewed' ? 'reviewed' : 'draft',
+        values,
+        groups,
+        updatedAt: new Date().toISOString(),
+        updatedBy: email,
+      };
+      await env.tideventure_documents.put(`taxproj/${client}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
+      const computed = computeWorksheet(values, groups, record.filingStatus);
+      await syncTaxProjectionToD1(env, record, computed);
+      await logAudit(env, 'TAXPROJ', email, `Saved ${year} projection for ${client} (${record.status})`);
+      return json(200, { ok: true, computed });
+    }
+
     if (url.pathname === '/api/admin/savings' && method === 'GET' && isAdmin(email)) {
       try {
         const target = (url.searchParams.get('email') || '').toLowerCase();

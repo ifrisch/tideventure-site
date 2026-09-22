@@ -181,6 +181,7 @@
       <a data-page="prospects"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="4"/><path d="M3 21a7 7 0 0 1 12.2-4.7"/><path d="M18 14v6M15 17h6"/></svg></span><span>Prospects</span><span id="prospectBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a data-page="documents"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg></span><span>Documents</span></a>
       <a data-page="questionnaire"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span>Questionnaire</span></a>
+      <a data-page="taxproj"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h3M13 10h3M8 14h3M13 14h3M8 18h8"/></svg></span><span>Tax Projection</span></a>
       <a data-page="audit"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Audit Log</span></a>
       <a data-page="regulatory"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V9"/><path d="M12 6h6M12 10h6M12 14h6M12 18h6"/></svg></span><span>Regulatory</span><span id="regulatoryBadge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;border-radius:9999px;padding:0.05rem 0.4rem;font-size:0.65rem;font-weight:700;"></span></a>
       <a data-page="settings"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Settings</span></a>
@@ -236,6 +237,64 @@
       <h1>Questionnaire Schema</h1>
       <p class="page-desc">Edit sections and questions for the 2026 tax questionnaire.</p>
       <div class="block"><div class="block-hdr"><h3>Sections</h3><button class="btn btn--primary" style="padding:0.3rem 0.8rem;font-size:0.78rem;cursor:pointer;" onclick="tqSaveSchema()">Save Schema</button></div><div id="tqSchemaEditor" style="padding:1rem 1.25rem;">Loading…</div></div>
+    </div>
+
+    <div class="page" id="page-taxproj">
+      <h1>Estimated Tax Projection</h1>
+      <p class="page-desc">Prior year actuals, the changes you expect, and what that means for quarterly payments. Admin only — nothing here is visible to a client.</p>
+
+      <div class="block">
+        <div class="block-hdr"><h3>Worksheet</h3></div>
+        <div style="padding:0 1rem 1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Client</label>
+            <select id="tpClient" style="padding:0.45rem;min-width:230px;"></select></div>
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Tax year</label>
+            <input id="tpYear" type="number" value="2026" style="padding:0.45rem;width:100px;"></div>
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Filing status</label>
+            <select id="tpStatus" style="padding:0.45rem;min-width:210px;"></select></div>
+          <button id="tpLoad" class="btn-sm">Load</button>
+          <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
+          <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
+        </div>
+      </div>
+
+      <div id="tpResults" style="display:none;">
+        <div class="block" style="margin-bottom:1rem;">
+          <div class="block-hdr"><h3>What to pay</h3></div>
+          <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;">
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Projected total tax</div><div id="tpTotalTax" style="font-size:1.5rem;font-weight:700;color:#0d3f5e;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Balance due / (refund)</div><div id="tpBalance" style="font-size:1.5rem;font-weight:700;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Projected quarterly</div><div id="tpQuarterly" style="font-size:1.5rem;font-weight:700;color:#0d3f5e;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Safe harbor quarterly</div><div id="tpSafeHarbor" style="font-size:1.5rem;font-weight:700;color:#166534;">—</div>
+              <div id="tpSafeHarborBasis" style="font-size:0.72rem;color:#6b7280;margin-top:0.25rem;line-height:1.5;"></div></div>
+          </div>
+          <div style="padding:0 1rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
+            The projected figure is what this worksheet says they will owe. The safe harbor figure is the minimum pay-in that avoids an underpayment penalty regardless of how the projection turns out. They are different numbers and both matter.
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="block-hdr"><h3>Lines</h3>
+            <label style="font-size:0.78rem;font-weight:500;color:#6b7280;display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
+              <input type="checkbox" id="tpShowAll"> Show all lines
+            </label>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="tpTable" style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;" id="tpHdrPrior">Prior Actual</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;" id="tpHdrBase">Baseline</th>
+              </tr></thead>
+              <tbody id="tpBody"></tbody>
+            </table>
+          </div>
+          <div style="padding:0.75rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;border-top:1px solid #e5e7eb;">
+            <strong style="color:#b45309;">Amber rows need tax law</strong> — brackets, floors, caps, phaseouts. They are yours to fill in; the program does not calculate them and will not guess. Every other line is either something you entered or plain arithmetic.
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="page" id="page-audit">
@@ -376,6 +435,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (link.dataset.page === 'prospects') { loadProspects(); markProspectsViewed(); }
     if (link.dataset.page === 'documents') loadDocs();
     if (link.dataset.page === 'questionnaire') loadTQSchema();
+    if (link.dataset.page === 'taxproj') loadTaxProjTab();
     if (link.dataset.page === 'audit') loadAudit();
     if (link.dataset.page === 'regulatory') { loadRegulatory(); markRegulatoryRead(); }
     if (link.dataset.page === 'settings') { loadWelcomeEmailSettings(); loadEngagementSettings(); loadBackupStatus(); loadGeneralSettings(); }
@@ -383,6 +443,176 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
 });
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ── Estimated tax projection ──
+// The worksheet mirrors the three-column shape CPAs already read: prior year
+// actual, the change expected, and the resulting baseline. Only `input` rows are
+// editable; sums and nets are computed by the server so the browser is never the
+// authority on a number. Amber rows are the ones that need tax law.
+let tpSchema = null, tpGroups = { w2: [], k1s: [] }, tpLoaded = false, tpLastComputed = null;
+
+const tpMoney = (v) => {
+  const x = Number(v) || 0;
+  const s = Math.abs(x).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return x < 0 ? `(${s})` : s;
+};
+
+async function loadTaxProjTab() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  if (!tpSchema) {
+    const r = await fetch('/api/admin/tax-projection/schema', { headers: { 'Authorization': `Bearer ${token}` } });
+    tpSchema = await r.json();
+    const sel = document.getElementById('tpStatus');
+    sel.innerHTML = tpSchema.filingStatuses.map(f => `<option value="${esc(f.key)}">${esc(f.label)}</option>`).join('');
+  }
+  if (!tpLoaded) {
+    const r = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+    const users = await r.json();
+    const list = Array.isArray(users) ? users : (users.users || []);
+    document.getElementById('tpClient').innerHTML = list
+      .map(u => `<option value="${esc(u.email)}">${esc(u.businessName || u.contactName || u.email)} — ${esc(u.email)}</option>`).join('');
+    tpLoaded = true;
+  }
+}
+
+function tpRender(computed, values) {
+  tpLastComputed = computed;
+  const showAll = document.getElementById('tpShowAll').checked;
+  const status = document.getElementById('tpStatus').value;
+  const spouseShown = status === 'mfj';
+  const body = document.getElementById('tpBody');
+  const rows = [];
+
+  for (const line of tpSchema.lines) {
+    if (line.spouse && !spouseShown) continue;
+    const v = computed.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const isZero = !v.prior && !v.diff && !v.baseline;
+    if (!showAll && isZero && !line.major && line.t !== 'header') continue;
+
+    if (line.t === 'header') {
+      rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;padding-left:${0.75 + line.depth * 1.1}rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
+      continue;
+    }
+
+    const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
+    const isTaxRule = line.t === 'taxrule';
+    const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : '');
+    const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'net' || line.t === 'group' ? 'font-weight:600;' : '');
+    const pad = 0.75 + line.depth * 1.1;
+    const title = line.note ? ` title="${esc(line.note)}"` : '';
+    const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.68rem;font-weight:700;">▲ needs tax law</span>' : '';
+    const cell = (col) => editable
+      ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tp="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
+      : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+
+    rows.push(
+      `<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
+      `<td style="padding:0.45rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
+      cell('prior') + cell('diff') +
+      `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`
+    );
+  }
+  body.innerHTML = rows.join('');
+
+  const t = computed.totals.baseline;
+  document.getElementById('tpTotalTax').textContent = '$' + tpMoney(t.totalTax);
+  const bal = document.getElementById('tpBalance');
+  bal.textContent = '$' + tpMoney(t.balanceDue);
+  bal.style.color = t.balanceDue > 0 ? '#b91c1c' : '#166534';
+  document.getElementById('tpQuarterly').textContent = '$' + tpMoney(computed.projected.quarterly);
+  document.getElementById('tpSafeHarbor').textContent = '$' + tpMoney(computed.safeHarbor.quarterly);
+  document.getElementById('tpSafeHarborBasis').textContent = computed.safeHarbor.basis;
+  document.getElementById('tpResults').style.display = 'block';
+}
+
+// Re-draw without losing anything typed but not yet saved. Values the CPA has
+// entered are carried into the redraw; the computed rows around them keep their
+// last server-calculated figures until Save, which is the only thing that
+// recomputes. Nothing in the browser is ever the authority on a total.
+function tpRedraw() {
+  if (!tpLastComputed) return;
+  const typed = tpCollect();
+  const merged = { ...tpLastComputed, lines: { ...tpLastComputed.lines } };
+  for (const [k, v] of Object.entries(typed)) {
+    merged.lines[k] = { prior: v.prior, diff: v.diff, baseline: Math.round((v.prior + v.diff) * 100) / 100 };
+  }
+  tpValues = typed;
+  tpRender(merged, typed);
+}
+
+function tpCollect() {
+  const values = {};
+  document.querySelectorAll('[data-tp]').forEach(el => {
+    const k = el.dataset.tp, c = el.dataset.col;
+    values[k] = values[k] || { prior: 0, diff: 0 };
+    values[k][c] = Number(String(el.value).replace(/[$,\s]/g, '')) || 0;
+  });
+  return values;
+}
+
+let tpValues = {};
+
+async function tpFetch() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const email = document.getElementById('tpClient').value;
+  const year = document.getElementById('tpYear').value;
+  const msg = document.getElementById('tpMsg');
+  msg.textContent = 'Loading…';
+  const r = await fetch(`/api/admin/tax-projection?email=${encodeURIComponent(email)}&year=${encodeURIComponent(year)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+  const d = await r.json();
+  if (!d.exists) {
+    tpValues = {}; tpGroups = { w2: [], k1s: [] };
+    msg.textContent = 'No saved worksheet for that year — starting an empty one.';
+    const empty = { lines: {}, totals: { baseline: { totalTax: 0, balanceDue: 0 } }, projected: { quarterly: 0 }, safeHarbor: { quarterly: 0, basis: '' } };
+    tpSchema.lines.forEach(l => { empty.lines[l.k] = { prior: 0, diff: 0, baseline: 0 }; });
+    tpRender(empty, {});
+    return;
+  }
+  tpValues = d.values || {}; tpGroups = d.groups || { w2: [], k1s: [] };
+  document.getElementById('tpStatus').value = d.filingStatus;
+  document.getElementById('tpHdrPrior').textContent = `${d.priorYear} Actual`;
+  document.getElementById('tpHdrBase').textContent = `${d.year} Baseline`;
+  msg.textContent = `Loaded — ${d.status}, last saved ${new Date(d.updatedAt).toLocaleString()}`;
+  tpRender(d.computed, d.values);
+}
+
+async function tpSave() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const msg = document.getElementById('tpMsg');
+  msg.textContent = 'Saving…';
+  const payload = {
+    email: document.getElementById('tpClient').value,
+    year: Number(document.getElementById('tpYear').value),
+    priorYear: Number(document.getElementById('tpYear').value) - 1,
+    filingStatus: document.getElementById('tpStatus').value,
+    status: 'draft',
+    values: tpCollect(),
+    groups: tpGroups,
+  };
+  const r = await fetch('/api/admin/tax-projection', {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const d = await r.json();
+  if (!r.ok) { msg.textContent = d.error || 'Save failed.'; return; }
+  msg.textContent = 'Saved as draft.';
+  tpRender(d.computed, payload.values);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const load = document.getElementById('tpLoad');
+  if (load) load.addEventListener('click', tpFetch);
+  const save = document.getElementById('tpSave');
+  if (save) save.addEventListener('click', tpSave);
+  // Toggling visibility must not write anything — it only changes which rows
+  // are drawn, from the figures already on screen.
+  const all = document.getElementById('tpShowAll');
+  if (all) all.addEventListener('change', tpRedraw);
+  // Changing filing status re-draws so spouse rows appear or disappear.
+  const st = document.getElementById('tpStatus');
+  if (st) st.addEventListener('change', tpRedraw);
+});
 function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadKpis(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); loadRegulatory(); }
 
 async function loadKpis() {
