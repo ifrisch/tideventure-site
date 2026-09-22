@@ -102,6 +102,16 @@ const n = (v) => {
 };
 const round = (x) => Math.round(x * 100) / 100;
 
+// Prior and baseline are the entered columns; difference is derived. Older
+// records stored {prior, diff} and are read forward rather than migrated.
+const enteredColumns = (entered = {}) => {
+  const prior = round(n(entered.prior));
+  const baseline = entered.baseline != null && entered.baseline !== ''
+    ? round(n(entered.baseline))
+    : round(prior + n(entered.diff));
+  return { prior, baseline };
+};
+
 // `federal` is the computed federal worksheet, used to resolve `linked` lines.
 export function computeStateWorksheet(stateCode, values = {}, federal = null, opts = {}) {
   const lines = STATE_LINES[stateCode];
@@ -110,32 +120,29 @@ export function computeStateWorksheet(stateCode, values = {}, federal = null, op
 
   for (const line of lines) {
     if (line.t === 'header') continue;
-    const v = { prior: 0, diff: 0 };
+    const v = { prior: 0, baseline: 0 };
     if (line.t === 'linked') {
       const src = federal?.lines?.[line.from];
       v.prior = src ? src.prior : 0;
-      v.diff = src ? src.diff : 0;
+      v.baseline = src ? src.baseline : 0;
     } else if (line.t === 'sum') {
-      for (const c of ['prior', 'diff']) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+      for (const c of ['prior', 'baseline']) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
     } else if (line.t === 'calc') {
-      for (const c of ['prior', 'diff']) {
+      for (const c of ['prior', 'baseline']) {
         v[c] = round((line.plus || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0)
                    - (line.minus || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
       }
     } else {
-      const entered = values[line.k] || {};
-      v.prior = round(n(entered.prior));
-      v.diff = round(n(entered.diff));
+      const e = enteredColumns(values[line.k]);
+      v.prior = e.prior; v.baseline = e.baseline;
     }
-    v.baseline = round(v.prior + v.diff);
-    // Clamping applies per column, so a refund line reads 0 rather than a
-    // negative amount owed, matching how the figures are presented on a return.
+    // Clamping applies to the two real columns, so a refund line reads 0 rather
+    // than a negative amount owed, matching how a return presents the figures.
     if (line.clampMin != null) {
-      for (const c of ['prior', 'diff', 'baseline']) {
-        if (c !== 'diff') v[c] = Math.max(line.clampMin, v[c]);
-      }
-      v.diff = round(v.baseline - v.prior);
+      v.prior = Math.max(line.clampMin, v.prior);
+      v.baseline = Math.max(line.clampMin, v.baseline);
     }
+    v.diff = round(v.baseline - v.prior);
     out[line.k] = v;
   }
 

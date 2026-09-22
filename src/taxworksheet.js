@@ -304,28 +304,45 @@ const n = (v) => {
 };
 const round = (x) => Math.round(x * 100) / 100;
 
-// Compute all three columns. `values` is { lineKey: {prior, diff} } and `groups`
-// is { groupKey: [{name, prior, diff}] }. Columns are computed independently by
-// the same rules, which is why prior + diff always equals baseline for every row.
+// The two columns anyone actually types are PRIOR (what last year's return
+// said) and BASELINE (what the current year looks like right now). DIFFERENCE
+// is derived from them, never entered — asking for a delta would mean doing the
+// subtraction by hand, and the point of the baseline column is that it starts as
+// a roll-over of prior and gets corrected as real figures arrive through the
+// year. So both real columns are computed independently and diff falls out.
+//
+// `values` is { lineKey: {prior, baseline} }, `groups` is
+// { groupKey: [{name, prior, baseline}] }. Records written before the baseline
+// column existed stored {prior, diff}; those are read forward here rather than
+// migrated, so an old worksheet opens with the figures it was saved with.
+const enteredColumns = (entered = {}) => {
+  const prior = round(n(entered.prior));
+  const baseline = entered.baseline != null && entered.baseline !== ''
+    ? round(n(entered.baseline))
+    : round(prior + n(entered.diff));
+  return { prior, baseline };
+};
+
 export function computeWorksheet(values = {}, groups = {}, filingStatus = 'single') {
   const out = {};
-  const col = ['prior', 'diff'];
+  const col = ['prior', 'baseline'];
 
   const groupTotals = {};
   for (const g of GROUPS) {
     const rows = Array.isArray(groups[g.key]) ? groups[g.key] : [];
+    const cols = rows.map(enteredColumns);
     groupTotals[g.sumsInto] = {
-      prior: round(rows.reduce((s, r) => s + n(r.prior), 0)),
-      diff: round(rows.reduce((s, r) => s + n(r.diff), 0)),
+      prior: round(cols.reduce((s, r) => s + r.prior, 0)),
+      baseline: round(cols.reduce((s, r) => s + r.baseline, 0)),
     };
   }
 
   for (const line of LINES) {
     if (line.t === 'header') continue;
-    const v = { prior: 0, diff: 0 };
+    const v = { prior: 0, baseline: 0 };
     if (line.t === 'group') {
-      const gt = groupTotals[line.k] || { prior: 0, diff: 0 };
-      v.prior = gt.prior; v.diff = gt.diff;
+      const gt = groupTotals[line.k] || { prior: 0, baseline: 0 };
+      v.prior = gt.prior; v.baseline = gt.baseline;
     } else if (line.t === 'sum') {
       for (const c of col) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
     } else if (line.t === 'net') {
@@ -334,18 +351,17 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
         v[c] = round((out[first] ? out[first][c] : 0) - rest.reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
       }
     } else {
-      const entered = values[line.k] || {};
-      v.prior = round(n(entered.prior));
-      v.diff = round(n(entered.diff));
+      const e = enteredColumns(values[line.k]);
+      v.prior = e.prior; v.baseline = e.baseline;
     }
-    v.baseline = round(v.prior + v.diff);
+    v.diff = round(v.baseline - v.prior);
     out[line.k] = v;
   }
 
   // Totals and the numbers the whole worksheet exists to produce.
   const at = (k, c) => (out[k] ? out[k][c] : 0);
   const totals = {};
-  for (const c of ['prior', 'diff', 'baseline']) {
+  for (const c of ['prior', 'baseline']) {
     totals[c] = {
       totalTax: round(at('federal_tax_before_credits', c) - at('credits_nonrefundable', c) + at('other_taxes', c)),
     };
@@ -353,6 +369,11 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
       totals[c].totalTax - at('payments', c) - at('refundable_credits', c) + at('underpayment_penalty', c)
     );
   }
+  // Difference is derived from the two real columns, like every other row.
+  totals.diff = {
+    totalTax: round(totals.baseline.totalTax - totals.prior.totalTax),
+    balanceDue: round(totals.baseline.balanceDue - totals.prior.balanceDue),
+  };
 
   // Projected quarterly instalment: what is still needed after withholding and
   // any prior-year overpayment, split evenly across the four due dates.

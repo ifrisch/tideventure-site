@@ -57,6 +57,16 @@ const n = (v) => {
 };
 const round = (x) => Math.round(x * 100) / 100;
 
+// Prior and baseline are entered; difference is derived. Older records stored
+// {prior, diff} and are read forward rather than migrated.
+const enteredColumns = (entered = {}) => {
+  const prior = round(n(entered.prior));
+  const baseline = entered.baseline != null && entered.baseline !== ''
+    ? round(n(entered.baseline))
+    : round(prior + n(entered.diff));
+  return { prior, baseline };
+};
+
 export function computeEntityWorksheet(stateCode, values = {}, owners = []) {
   const lines = ENTITY_LINES[stateCode];
   if (!lines) return null;
@@ -64,25 +74,23 @@ export function computeEntityWorksheet(stateCode, values = {}, owners = []) {
 
   for (const line of lines) {
     if (line.t === 'header') continue;
-    const v = { prior: 0, diff: 0 };
+    const v = { prior: 0, baseline: 0 };
     if (line.t === 'sum') {
-      for (const c of ['prior', 'diff']) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+      for (const c of ['prior', 'baseline']) v[c] = round((line.of || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
     } else if (line.t === 'calc') {
-      for (const c of ['prior', 'diff']) {
+      for (const c of ['prior', 'baseline']) {
         v[c] = round((line.plus || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0)
                    - (line.minus || []).reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
       }
     } else {
-      const e = values[line.k] || {};
-      v.prior = round(n(e.prior));
-      v.diff = round(n(e.diff));
+      const e = enteredColumns(values[line.k]);
+      v.prior = e.prior; v.baseline = e.baseline;
     }
-    v.baseline = round(v.prior + v.diff);
     if (line.clampMin != null) {
       v.prior = Math.max(line.clampMin, v.prior);
       v.baseline = Math.max(line.clampMin, v.baseline);
-      v.diff = round(v.baseline - v.prior);
     }
+    v.diff = round(v.baseline - v.prior);
     out[line.k] = v;
   }
 

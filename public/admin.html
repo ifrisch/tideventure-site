@@ -264,6 +264,7 @@
           <div id="tpEntityTypeWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity type</label>
             <select id="tpEntityType" style="padding:0.45rem;min-width:170px;"></select></div>
           <button id="tpLoad" class="btn-sm">Load</button>
+          <button id="tpRollover" class="btn-sm" title="Copy every prior-year figure into the current-year column as a starting point">Roll prior &rarr; current</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
         </div>
@@ -298,7 +299,7 @@
               <thead><tr style="background:#f8fafc;">
                 <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Prior Actual</th>
-                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#9ca3af;">Difference <span style="font-weight:400;text-transform:none;">(auto)</span></th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Baseline</th>
               </tr></thead>
               <tbody id="tpEntBody"></tbody>
@@ -339,7 +340,7 @@
               <thead><tr style="background:#f8fafc;">
                 <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Prior Actual</th>
-                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#9ca3af;">Difference <span style="font-weight:400;text-transform:none;">(auto)</span></th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Baseline</th>
               </tr></thead>
               <tbody id="tpStateBody"></tbody>
@@ -358,7 +359,7 @@
               <thead><tr style="background:#f8fafc;">
                 <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;" id="tpHdrPrior">Prior Actual</th>
-                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#9ca3af;">Difference <span style="font-weight:400;text-transform:none;">(auto)</span></th>
                 <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;" id="tpHdrBase">Baseline</th>
               </tr></thead>
               <tbody id="tpBody"></tbody>
@@ -560,7 +561,7 @@ function tpRenderEntity(computed) {
       rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
       continue;
     }
-    const v = computed.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const v = computed.lines[line.k] || { prior: 0, baseline: 0, diff: 0 };
     const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
     const isTaxRule = line.t === 'taxrule';
     const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : '');
@@ -570,8 +571,9 @@ function tpRenderEntity(computed) {
     const cell = (col) => editable
       ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tpe="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
       : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+    const diffCell = `<td style="text-align:right;padding:0.45rem 0.75rem;color:${v.diff ? '#6b7280' : '#d1d5db'};">${tpMoney(v.diff)}</td>`;
     rows.push(`<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}><td style="padding:0.45rem 0.75rem;${weight}">${esc(line.l)}${marker}</td>` +
-      cell('prior') + cell('diff') + `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`);
+      cell('prior') + diffCell + cell('baseline') + `</tr>`);
   }
   document.getElementById('tpEntBody').innerHTML = rows.join('');
   document.getElementById('tpEntPte').textContent = '$' + tpMoney(computed.pteTax);
@@ -582,6 +584,20 @@ function tpRenderEntity(computed) {
     `<div style="margin-top:0.75rem;padding:0.6rem 0.75rem;background:#fef2f2;border-left:3px solid #b91c1c;font-size:0.8rem;color:#7f1d1d;line-height:1.6;">${esc(w)}</div>`).join('');
   tpRenderOwners(computed.allocations);
   block.style.display = 'block';
+}
+
+// Start the current year from last year's figures. This is how a projection
+// actually begins: everything rolls over, then individual lines get corrected as
+// real numbers arrive. Only entered rows are copied — computed ones follow.
+function tpRollover() {
+  let n = 0;
+  document.querySelectorAll('input[data-col="prior"]').forEach(priorEl => {
+    const key = priorEl.getAttribute('data-tp') || priorEl.getAttribute('data-tps') || priorEl.getAttribute('data-tpe');
+    const attr = priorEl.hasAttribute('data-tp') ? 'data-tp' : (priorEl.hasAttribute('data-tps') ? 'data-tps' : 'data-tpe');
+    const baseEl = document.querySelector(`[${attr}="${key}"][data-col="baseline"]`);
+    if (baseEl) { baseEl.value = priorEl.value; n++; }
+  });
+  document.getElementById('tpMsg').textContent = `Rolled ${n} lines forward — adjust what has changed, then save.`;
 }
 
 function tpIsEntity() { return document.getElementById('tpKind').value === 'entity'; }
@@ -620,7 +636,7 @@ async function tpFetchEntity() {
 function computeEmptyEntity() {
   const st = document.getElementById('tpState').value || 'MN';
   const lines = {};
-  (tpSchema.entityLines[st] || []).forEach(l => { lines[l.k] = { prior: 0, diff: 0, baseline: 0 }; });
+  (tpSchema.entityLines[st] || []).forEach(l => { lines[l.k] = { prior: 0, baseline: 0, diff: 0 }; });
   return { state: st, lines, pteTax: 0, remaining: 0, quarterly: 0, allocations: [], warnings: [], basis: '' };
 }
 
@@ -666,10 +682,11 @@ async function tpCheckPteAllocation() {
       <button id="tpPullBtn" class="btn-sm" style="margin-left:0.5rem;">Use as PTE credit</button></div>`;
     wrap.style.display = 'block';
     document.getElementById('tpPullBtn').addEventListener('click', () => {
-      const prior = document.querySelector('[data-tps="pte_credit"][data-col="prior"]');
-      const diff = document.querySelector('[data-tps="pte_credit"][data-col="diff"]');
-      if (prior && diff) {
-        diff.value = Math.round((d.total - (Number(prior.value) || 0)) * 100) / 100;
+      // The allocation is a current-year figure, so it goes straight into the
+      // baseline column; the difference recalculates from it on save.
+      const baseline = document.querySelector('[data-tps="pte_credit"][data-col="baseline"]');
+      if (baseline) {
+        baseline.value = d.total;
         document.getElementById('tpMsg').textContent = 'PTE credit filled from the entity worksheet — save to apply.';
       }
     });
@@ -721,7 +738,7 @@ function tpRender(computed, values) {
 
   for (const line of tpSchema.lines) {
     if (line.spouse && !spouseShown) continue;
-    const v = computed.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const v = computed.lines[line.k] || { prior: 0, baseline: 0, diff: 0 };
     const isZero = !v.prior && !v.diff && !v.baseline;
     if (!showAll && isZero && !line.major && line.t !== 'header') continue;
 
@@ -740,12 +757,13 @@ function tpRender(computed, values) {
     const cell = (col) => editable
       ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tp="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
       : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+    // Difference is always read-only: it is baseline minus prior, never typed.
+    const diffCell = `<td style="text-align:right;padding:0.45rem 0.75rem;color:${v.diff ? '#6b7280' : '#d1d5db'};">${tpMoney(v.diff)}</td>`;
 
     rows.push(
       `<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
       `<td style="padding:0.45rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
-      cell('prior') + cell('diff') +
-      `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`
+      cell('prior') + diffCell + cell('baseline') + `</tr>`
     );
   }
   body.innerHTML = rows.join('');
@@ -770,7 +788,7 @@ function tpRedraw() {
   const typed = tpCollect();
   const merged = { ...tpLastComputed, lines: { ...tpLastComputed.lines } };
   for (const [k, v] of Object.entries(typed)) {
-    merged.lines[k] = { prior: v.prior, diff: v.diff, baseline: Math.round((v.prior + v.diff) * 100) / 100 };
+    merged.lines[k] = { prior: v.prior, baseline: v.baseline, diff: Math.round((v.baseline - v.prior) * 100) / 100 };
   }
   tpValues = typed;
   tpRender(merged, typed);
@@ -780,7 +798,7 @@ function tpCollect(attr = 'data-tp') {
   const values = {};
   document.querySelectorAll(`[${attr}]`).forEach(el => {
     const k = el.getAttribute(attr), c = el.dataset.col;
-    values[k] = values[k] || { prior: 0, diff: 0 };
+    values[k] = values[k] || { prior: 0, baseline: 0 };
     values[k][c] = Number(String(el.value).replace(/[$,\s]/g, '')) || 0;
   });
   return values;
@@ -798,7 +816,7 @@ function tpRenderState(state) {
       rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
       continue;
     }
-    const v = state.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const v = state.lines[line.k] || { prior: 0, baseline: 0, diff: 0 };
     const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
     const isTaxRule = line.t === 'taxrule';
     const isLinked = line.t === 'linked';
@@ -811,10 +829,10 @@ function tpRenderState(state) {
     const cell = (col) => editable
       ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tps="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
       : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+    const diffCell = `<td style="text-align:right;padding:0.45rem 0.75rem;color:${v.diff ? '#6b7280' : '#d1d5db'};">${tpMoney(v.diff)}</td>`;
     rows.push(`<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
       `<td style="padding:0.45rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
-      cell('prior') + cell('diff') +
-      `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`);
+      cell('prior') + diffCell + cell('baseline') + `</tr>`);
   }
   document.getElementById('tpStateBody').innerHTML = rows.join('');
   document.getElementById('tpStateName').textContent = (tpSchema.states[state.state] || {}).name || state.state;
@@ -848,7 +866,7 @@ async function tpFetch() {
     tpValues = {}; tpGroups = { w2: [], k1s: [] };
     msg.textContent = 'No saved worksheet for that year — starting an empty one.';
     const empty = { lines: {}, totals: { baseline: { totalTax: 0, balanceDue: 0 } }, projected: { quarterly: 0 }, safeHarbor: { quarterly: 0, basis: '' } };
-    tpSchema.lines.forEach(l => { empty.lines[l.k] = { prior: 0, diff: 0, baseline: 0 }; });
+    tpSchema.lines.forEach(l => { empty.lines[l.k] = { prior: 0, baseline: 0, diff: 0 }; });
     tpRender(empty, {});
     tpRenderState(null);
     return;
@@ -898,6 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (load) load.addEventListener('click', () => tpIsEntity() ? tpFetchEntity() : tpFetch());
   const save = document.getElementById('tpSave');
   if (save) save.addEventListener('click', () => tpIsEntity() ? tpSaveEntity() : tpSave());
+  const roll = document.getElementById('tpRollover');
+  if (roll) roll.addEventListener('click', tpRollover);
   const kind = document.getElementById('tpKind');
   if (kind) kind.addEventListener('change', tpApplyKind);
   const addOwner = document.getElementById('tpAddOwner');

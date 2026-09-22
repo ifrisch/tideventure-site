@@ -1202,13 +1202,15 @@ async function handleFetch(request, env) {
       const values = {};
       for (const [k, v] of Object.entries(body.values || {})) {
         if (!known.has(k)) continue;
-        values[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+        // Prior and baseline are what gets entered; difference is derived at
+        // compute time and never stored, so the two can't fall out of step.
+        values[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
       }
       const groups = {};
       for (const g of GROUPS) {
         groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : [])
           .slice(0, 50)
-          .map(r => ({ name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, diff: Number(r?.diff) || 0 }));
+          .map(r => ({ name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, baseline: Number(r?.baseline) || 0 }));
       }
       // State worksheet, if one applies. Same allowlist discipline as federal.
       const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;
@@ -1217,7 +1219,7 @@ async function handleFetch(request, env) {
         const knownState = new Set(STATE_LINES[stateCode].map(l => l.k));
         for (const [k, v] of Object.entries(body.stateValues || {})) {
           if (!knownState.has(k)) continue;
-          stateValues[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+          stateValues[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
         }
       }
       const record = {
@@ -1271,7 +1273,7 @@ async function handleFetch(request, env) {
       const values = {};
       for (const [k, v] of Object.entries(body.values || {})) {
         if (!known.has(k)) continue;
-        values[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+        values[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
       }
       const owners = (Array.isArray(body.owners) ? body.owners : []).slice(0, 25).map(o => ({
         email: normalizeEmail(o?.email) || '',
