@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS } from './taxworksheet.js';
 import { STATES, PAID_BY, STATE_LINES, computeStateWorksheet } from './taxstate.js';
+import { ENTITY_TYPES, ENTITY_STATES, ENTITY_LINES, computeEntityWorksheet } from './taxentity.js';
 
 const SEC_HEADERS = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
@@ -280,6 +281,31 @@ async function syncTaxProjectionToD1(env, r, computed) {
       computed?.projected?.quarterly || 0, computed?.safeHarbor?.annual || 0,
       r.updatedAt || null, r.updatedBy || null,
     ).run();
+  } catch {}
+}
+
+async function syncEntityProjectionToD1(env, r, computed) {
+  try {
+    await env.DB.prepare(`INSERT OR REPLACE INTO entity_projections
+      (id,entity_email,tax_year,prior_year,entity_type,state,status,pte_tax,remaining,quarterly,updated_at,updated_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+      `${r.email}:${r.year}`, r.email, r.year, r.priorYear, r.entityType, r.state, r.status,
+      computed?.pteTax || 0, computed?.remaining || 0, computed?.quarterly || 0,
+      r.updatedAt || null, r.updatedBy || null,
+    ).run();
+    // Replace this entity-year's allocations wholesale: an owner removed from
+    // the roster must not keep a stale credit waiting on their return.
+    await env.DB.prepare('DELETE FROM entity_owner_allocations WHERE entity_email = ? AND tax_year = ?')
+      .bind(r.email, r.year).run();
+    for (const a of (computed?.allocations || [])) {
+      if (!a.email) continue;
+      await env.DB.prepare(`INSERT OR REPLACE INTO entity_owner_allocations
+        (id,entity_email,owner_email,tax_year,owner_name,ownership_pct,allocated_pte,updated_at)
+        VALUES (?,?,?,?,?,?,?,?)`).bind(
+        `${r.email}:${r.year}:${a.email}`, r.email, a.email, r.year, a.name || null,
+        a.ownershipPercent || 0, a.allocated || 0, r.updatedAt || null,
+      ).run();
+    }
   } catch {}
 }
 
@@ -1146,7 +1172,8 @@ async function handleFetch(request, env) {
     // client, and no figure reaches one without the CPA marking it reviewed.
     if (url.pathname === '/api/admin/tax-projection/schema' && method === 'GET' && isAdmin(email)) {
       return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS,
-        states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES });
+        states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES,
+        entityTypes: ENTITY_TYPES, entityStates: ENTITY_STATES, entityLines: ENTITY_LINES });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
@@ -1219,6 +1246,72 @@ async function handleFetch(request, env) {
       await syncTaxProjectionToD1(env, record, computed);
       await logAudit(env, 'TAXPROJ', email, `Saved ${year} projection for ${client} (${record.status})`);
       return json(200, { ok: true, computed, state });
+    }
+
+    // ── Pass-through entity worksheets ──
+    if (url.pathname === '/api/admin/entity-projection' && method === 'GET' && isAdmin(email)) {
+      const entity = normalizeEmail(url.searchParams.get('email'));
+      const year = parseInt(url.searchParams.get('year'), 10);
+      if (!entity || !Number.isInteger(year)) return json(400, { error: 'email and year required' });
+      const obj = await env.tideventure_documents.get(`taxentity/${entity}/${year}`);
+      if (!obj) return json(200, { exists: false });
+      const saved = JSON.parse(await obj.text());
+      const computed = computeEntityWorksheet(saved.state, saved.values, saved.owners);
+      return json(200, { exists: true, ...saved, computed });
+    }
+
+    if (url.pathname === '/api/admin/entity-projection' && method === 'PUT' && isAdmin(email)) {
+      const body = await request.json();
+      const entity = normalizeEmail(body.email);
+      const year = parseInt(body.year, 10);
+      if (!entity || !Number.isInteger(year)) return json(400, { error: 'email and year required' });
+      const stateCode = typeof body.state === 'string' && ENTITY_LINES[body.state] ? body.state : null;
+      if (!stateCode) return json(400, { error: 'A state with a built worksheet is required' });
+      const known = new Set(ENTITY_LINES[stateCode].map(l => l.k));
+      const values = {};
+      for (const [k, v] of Object.entries(body.values || {})) {
+        if (!known.has(k)) continue;
+        values[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+      }
+      const owners = (Array.isArray(body.owners) ? body.owners : []).slice(0, 25).map(o => ({
+        email: normalizeEmail(o?.email) || '',
+        name: String(o?.name ?? '').slice(0, 120),
+        ownershipPercent: Number(o?.ownershipPercent) || 0,
+        allocatedPte: o?.allocatedPte === '' || o?.allocatedPte == null ? null : Number(o.allocatedPte) || 0,
+      })).filter(o => o.email);
+      const record = {
+        email: entity, year,
+        priorYear: Number.isInteger(parseInt(body.priorYear, 10)) ? parseInt(body.priorYear, 10) : year - 1,
+        entityType: ENTITY_TYPES.some(t => t.key === body.entityType) ? body.entityType : 'scorp',
+        state: stateCode,
+        status: body.status === 'reviewed' ? 'reviewed' : 'draft',
+        values, owners,
+        updatedAt: new Date().toISOString(), updatedBy: email,
+      };
+      await env.tideventure_documents.put(`taxentity/${entity}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
+      const computed = computeEntityWorksheet(stateCode, values, owners);
+      await syncEntityProjectionToD1(env, record, computed);
+      await logAudit(env, 'TAXPROJ', email, `Saved ${year} entity worksheet for ${entity} (${record.status})`);
+      return json(200, { ok: true, computed });
+    }
+
+    // What an owner's individual worksheet should show as its PTE credit. This
+    // exists so the figure is read from the entity that actually pays it rather
+    // than typed onto two worksheets that can then disagree.
+    if (url.pathname === '/api/admin/pte-allocation' && method === 'GET' && isAdmin(email)) {
+      const owner = normalizeEmail(url.searchParams.get('email'));
+      const year = parseInt(url.searchParams.get('year'), 10);
+      if (!owner || !Number.isInteger(year)) return json(400, { error: 'email and year required' });
+      try {
+        const rows = await env.DB.prepare(
+          'SELECT entity_email, owner_name, ownership_pct, allocated_pte FROM entity_owner_allocations WHERE owner_email = ? AND tax_year = ?'
+        ).bind(owner, year).all();
+        const list = rows.results || [];
+        return json(200, {
+          allocations: list,
+          total: Math.round(list.reduce((s, r) => s + (Number(r.allocated_pte) || 0), 0) * 100) / 100,
+        });
+      } catch { return json(200, { allocations: [], total: 0 }); }
     }
 
     if (url.pathname === '/api/admin/savings' && method === 'GET' && isAdmin(email)) {

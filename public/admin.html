@@ -246,6 +246,11 @@
       <div class="block">
         <div class="block-hdr"><h3>Worksheet</h3></div>
         <div style="padding:0 1rem 1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Worksheet</label>
+            <select id="tpKind" style="padding:0.45rem;min-width:180px;">
+              <option value="individual">Individual</option>
+              <option value="entity">Pass-through entity</option>
+            </select></div>
           <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Client</label>
             <select id="tpClient" style="padding:0.45rem;min-width:230px;"></select></div>
           <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Tax year</label>
@@ -256,6 +261,8 @@
             <select id="tpState" style="padding:0.45rem;min-width:150px;"></select></div>
           <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">State estimates paid by</label>
             <select id="tpPaidBy" style="padding:0.45rem;min-width:250px;"></select></div>
+          <div id="tpEntityTypeWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity type</label>
+            <select id="tpEntityType" style="padding:0.45rem;min-width:170px;"></select></div>
           <button id="tpLoad" class="btn-sm">Load</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
@@ -277,6 +284,46 @@
           </div>
         </div>
 
+        <div class="block" id="tpEntityBlock" style="display:none;margin-bottom:1rem;">
+          <div class="block-hdr"><h3>Entity pass-through tax</h3></div>
+          <div id="tpEntityWarnings" style="padding:0 1rem;"></div>
+          <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;">
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Entity tax for the year</div><div id="tpEntPte" style="font-size:1.4rem;font-weight:700;color:#0d3f5e;">&mdash;</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Remaining to pay</div><div id="tpEntRemaining" style="font-size:1.4rem;font-weight:700;">&mdash;</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Entity pays / quarter</div><div id="tpEntQuarterly" style="font-size:1.4rem;font-weight:700;color:#166534;">&mdash;</div></div>
+          </div>
+          <div id="tpEntBasis" style="padding:0 1rem 1rem;font-size:0.8rem;color:#6b7280;line-height:1.6;"></div>
+          <div style="overflow-x:auto;border-top:1px solid #e5e7eb;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Prior Actual</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Baseline</th>
+              </tr></thead>
+              <tbody id="tpEntBody"></tbody>
+            </table>
+          </div>
+          <div class="block-hdr" style="border-top:1px solid #e5e7eb;"><h3>Owners</h3>
+            <button id="tpAddOwner" class="btn-sm">Add owner</button></div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Owner</th>
+                <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Email</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Ownership %</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Allocated PTE</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Their credit / qtr</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="tpOwnerBody"></tbody>
+            </table>
+          </div>
+          <div style="padding:0.75rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;border-top:1px solid #e5e7eb;">
+            Allocated PTE defaults to the ownership percentage but can be overridden. Each owner's amount becomes the pass-through entity tax credit on their individual state worksheet &mdash; pull it there rather than retyping it.
+          </div>
+        </div>
+
         <div class="block" id="tpStateBlock" style="display:none;margin-bottom:1rem;">
           <div class="block-hdr"><h3><span id="tpStateName">State</span></h3></div>
           <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;">
@@ -286,6 +333,7 @@
             <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Entity pays / quarter</div><div id="tpStateEntQ" style="font-size:1.4rem;font-weight:700;color:#166534;">—</div></div>
           </div>
           <div id="tpStateBasis" style="padding:0 1rem 1rem;font-size:0.8rem;color:#6b7280;line-height:1.6;"></div>
+          <div id="tpPtePull" style="display:none;padding:0 1rem 1rem;"></div>
           <div style="overflow-x:auto;border-top:1px solid #e5e7eb;">
             <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
               <thead><tr style="background:#f8fafc;">
@@ -470,6 +518,164 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
+
+// ── Entity worksheets ──
+// Kept in the same tab because the two sides are read together: an owner's
+// credit comes from their entity's payment, and mixing them up is the error
+// this whole feature exists to prevent.
+let tpOwners = [];
+
+function tpRenderOwners(allocations) {
+  const body = document.getElementById('tpOwnerBody');
+  body.innerHTML = tpOwners.map((o, i) => {
+    const a = (allocations || [])[i] || {};
+    return `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:0.3rem 0.5rem;"><input data-own="name" data-i="${i}" value="${esc(o.name || '')}" style="width:150px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;"></td>
+      <td style="padding:0.3rem 0.5rem;"><input data-own="email" data-i="${i}" value="${esc(o.email || '')}" style="width:200px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;"></td>
+      <td style="padding:0.3rem 0.5rem;text-align:right;"><input data-own="ownershipPercent" data-i="${i}" value="${o.ownershipPercent ?? 0}" style="width:80px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;"></td>
+      <td style="padding:0.3rem 0.5rem;text-align:right;"><input data-own="allocatedPte" data-i="${i}" value="${o.allocatedPte ?? ''}" placeholder="${a.suggested ?? ''}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;"></td>
+      <td style="padding:0.45rem 0.75rem;text-align:right;font-weight:600;">${a.quarterly != null ? tpMoney(a.quarterly) : '—'}</td>
+      <td style="padding:0.3rem 0.5rem;"><button data-rmowner="${i}" class="btn-sm" style="padding:0.2rem 0.5rem;">Remove</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="padding:1rem;color:#9ca3af;">No owners yet — add one so the entity tax lands on somebody\'s return.</td></tr>';
+
+  body.querySelectorAll('[data-own]').forEach(el => {
+    el.addEventListener('change', () => {
+      const i = Number(el.dataset.i), f = el.dataset.own;
+      tpOwners[i][f] = f === 'name' || f === 'email' ? el.value : (el.value === '' ? null : Number(el.value));
+    });
+  });
+  body.querySelectorAll('[data-rmowner]').forEach(el => {
+    el.addEventListener('click', () => { tpOwners.splice(Number(el.dataset.rmowner), 1); tpRenderOwners([]); });
+  });
+}
+
+function tpRenderEntity(computed) {
+  const block = document.getElementById('tpEntityBlock');
+  if (!computed) { block.style.display = 'none'; return; }
+  const defs = tpSchema.entityLines[computed.state] || [];
+  const rows = [];
+  for (const line of defs) {
+    if (line.t === 'header') {
+      rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
+      continue;
+    }
+    const v = computed.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
+    const isTaxRule = line.t === 'taxrule';
+    const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : '');
+    const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'calc' ? 'font-weight:600;' : '');
+    const title = line.note ? ` title="${esc(line.note)}"` : '';
+    const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.68rem;font-weight:700;">▲ needs tax law</span>' : '';
+    const cell = (col) => editable
+      ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tpe="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
+      : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+    rows.push(`<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}><td style="padding:0.45rem 0.75rem;${weight}">${esc(line.l)}${marker}</td>` +
+      cell('prior') + cell('diff') + `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`);
+  }
+  document.getElementById('tpEntBody').innerHTML = rows.join('');
+  document.getElementById('tpEntPte').textContent = '$' + tpMoney(computed.pteTax);
+  document.getElementById('tpEntRemaining').textContent = '$' + tpMoney(computed.remaining);
+  document.getElementById('tpEntQuarterly').textContent = '$' + tpMoney(computed.quarterly);
+  document.getElementById('tpEntBasis').textContent = computed.basis;
+  document.getElementById('tpEntityWarnings').innerHTML = (computed.warnings || []).map(w =>
+    `<div style="margin-top:0.75rem;padding:0.6rem 0.75rem;background:#fef2f2;border-left:3px solid #b91c1c;font-size:0.8rem;color:#7f1d1d;line-height:1.6;">${esc(w)}</div>`).join('');
+  tpRenderOwners(computed.allocations);
+  block.style.display = 'block';
+}
+
+function tpIsEntity() { return document.getElementById('tpKind').value === 'entity'; }
+
+function tpApplyKind() {
+  const ent = tpIsEntity();
+  document.getElementById('tpEntityTypeWrap').style.display = ent ? 'block' : 'none';
+  document.getElementById('tpStatus').parentElement.style.display = ent ? 'none' : 'block';
+  document.getElementById('tpPaidBy').parentElement.style.display = ent ? 'none' : 'block';
+  document.getElementById('tpResults').style.display = 'none';
+  document.getElementById('tpEntityBlock').style.display = 'none';
+}
+
+async function tpFetchEntity() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const msg = document.getElementById('tpMsg');
+  const email = document.getElementById('tpClient').value;
+  const year = document.getElementById('tpYear').value;
+  msg.textContent = 'Loading…';
+  const r = await fetch(`/api/admin/entity-projection?email=${encodeURIComponent(email)}&year=${encodeURIComponent(year)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+  const d = await r.json();
+  document.getElementById('tpResults').style.display = 'none';
+  if (!d.exists) {
+    tpOwners = [];
+    msg.textContent = 'No saved entity worksheet for that year — starting an empty one.';
+    tpRenderEntity(computeEmptyEntity());
+    return;
+  }
+  tpOwners = d.owners || [];
+  document.getElementById('tpEntityType').value = d.entityType || 'scorp';
+  document.getElementById('tpState').value = d.state || 'MN';
+  msg.textContent = `Loaded — ${d.status}, last saved ${new Date(d.updatedAt).toLocaleString()}`;
+  tpRenderEntity(d.computed);
+}
+
+function computeEmptyEntity() {
+  const st = document.getElementById('tpState').value || 'MN';
+  const lines = {};
+  (tpSchema.entityLines[st] || []).forEach(l => { lines[l.k] = { prior: 0, diff: 0, baseline: 0 }; });
+  return { state: st, lines, pteTax: 0, remaining: 0, quarterly: 0, allocations: [], warnings: [], basis: '' };
+}
+
+async function tpSaveEntity() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const msg = document.getElementById('tpMsg');
+  msg.textContent = 'Saving…';
+  const payload = {
+    email: document.getElementById('tpClient').value,
+    year: Number(document.getElementById('tpYear').value),
+    priorYear: Number(document.getElementById('tpYear').value) - 1,
+    entityType: document.getElementById('tpEntityType').value,
+    state: document.getElementById('tpState').value || 'MN',
+    status: 'draft',
+    values: tpCollect('data-tpe'),
+    owners: tpOwners,
+  };
+  const r = await fetch('/api/admin/entity-projection', {
+    method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const d = await r.json();
+  if (!r.ok) { msg.textContent = d.error || 'Save failed.'; return; }
+  msg.textContent = 'Saved as draft.';
+  tpRenderEntity(d.computed);
+}
+
+// Offer the owner's allocated PTE from whichever entity actually pays it, so
+// the figure is read across rather than typed onto two worksheets.
+async function tpCheckPteAllocation() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  const email = document.getElementById('tpClient').value;
+  const year = document.getElementById('tpYear').value;
+  const wrap = document.getElementById('tpPtePull');
+  wrap.style.display = 'none';
+  try {
+    const r = await fetch(`/api/admin/pte-allocation?email=${encodeURIComponent(email)}&year=${encodeURIComponent(year)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await r.json();
+    if (!d.total) return;
+    const src = d.allocations.map(a => a.entity_email).join(', ');
+    wrap.innerHTML = `<div style="padding:0.6rem 0.75rem;background:#f0fdf4;border-left:3px solid #166534;font-size:0.8rem;color:#14532d;line-height:1.6;">
+      ${esc(src)} allocates <strong>${tpMoney(d.total)}</strong> of pass-through entity tax to this client for ${esc(String(year))}.
+      <button id="tpPullBtn" class="btn-sm" style="margin-left:0.5rem;">Use as PTE credit</button></div>`;
+    wrap.style.display = 'block';
+    document.getElementById('tpPullBtn').addEventListener('click', () => {
+      const prior = document.querySelector('[data-tps="pte_credit"][data-col="prior"]');
+      const diff = document.querySelector('[data-tps="pte_credit"][data-col="diff"]');
+      if (prior && diff) {
+        diff.value = Math.round((d.total - (Number(prior.value) || 0)) * 100) / 100;
+        document.getElementById('tpMsg').textContent = 'PTE credit filled from the entity worksheet — save to apply.';
+      }
+    });
+  } catch {}
+}
+
 // ── Estimated tax projection ──
 // The worksheet mirrors the three-column shape CPAs already read: prior year
 // actual, the change expected, and the resulting baseline. Only `input` rows are
@@ -493,6 +699,7 @@ async function loadTaxProjTab() {
     document.getElementById('tpState').innerHTML = '<option value="">No state worksheet</option>' +
       Object.values(tpSchema.states).map(st => `<option value="${esc(st.code)}"${tpSchema.stateLines[st.code] ? '' : ' disabled'}>${esc(st.name)}${tpSchema.stateLines[st.code] ? '' : ' — not built yet'}</option>`).join('');
     document.getElementById('tpPaidBy').innerHTML = tpSchema.paidBy.map(p => `<option value="${esc(p.key)}">${esc(p.label)}</option>`).join('');
+    document.getElementById('tpEntityType').innerHTML = tpSchema.entityTypes.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join('');
   }
   if (!tpLoaded) {
     const r = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -655,6 +862,7 @@ async function tpFetch() {
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
   tpRender(d.computed, d.values);
   tpRenderState(d.state);
+  tpCheckPteAllocation();
 }
 
 async function tpSave() {
@@ -687,9 +895,13 @@ async function tpSave() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const load = document.getElementById('tpLoad');
-  if (load) load.addEventListener('click', tpFetch);
+  if (load) load.addEventListener('click', () => tpIsEntity() ? tpFetchEntity() : tpFetch());
   const save = document.getElementById('tpSave');
-  if (save) save.addEventListener('click', tpSave);
+  if (save) save.addEventListener('click', () => tpIsEntity() ? tpSaveEntity() : tpSave());
+  const kind = document.getElementById('tpKind');
+  if (kind) kind.addEventListener('change', tpApplyKind);
+  const addOwner = document.getElementById('tpAddOwner');
+  if (addOwner) addOwner.addEventListener('click', () => { tpOwners.push({ name: '', email: '', ownershipPercent: 0, allocatedPte: null }); tpRenderOwners([]); });
   // Toggling visibility must not write anything — it only changes which rows
   // are drawn, from the figures already on screen.
   const all = document.getElementById('tpShowAll');
