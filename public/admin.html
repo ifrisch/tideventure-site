@@ -1345,13 +1345,19 @@ async function deleteProspect(id) {
 
 async function loadDocs() {
   const token=sessionStorage.getItem('tv_admin_token');
+  const el=document.getElementById('adminDocList');
+  // A swallowed error here rendered as "No documents", so a failing endpoint and
+  // an empty bucket looked identical — which is how a missing document becomes
+  // impossible to diagnose from the panel.
   try {
     const res=await fetch('/api/documents',{headers:{'Authorization':`Bearer ${token}`}});
-    const docs=(await res.json()).documents||[];
-    const el=document.getElementById('adminDocList');
-    if(!docs.length){el.innerHTML='<div class="empty">No documents.</div>';return;}
+    const payload=await res.json().catch(()=>null);
+    if(!res.ok||!payload){el.innerHTML='<div class="empty" style="color:#b91c1c;">Could not load documents (HTTP '+res.status+((payload&&payload.error)?': '+esc(payload.error):'')+').</div>';return;}
+    const docs=payload.documents||[];
+    if(!docs.length){el.innerHTML='<div class="empty">No documents. The endpoint responded successfully with an empty list.</div>';return;}
     const docToken = sessionStorage.getItem('tv_admin_token');
     el.innerHTML='<div class="doc-row" style="font-weight:600;color:#6b7280;text-transform:uppercase;font-size:0.72rem;background:#f9fafb;"><span>Client</span><span>File</span><span>Date</span><span></span></div>'
+      + (docs.length > 30 ? '<div class="doc-row" style="color:#b45309;font-size:0.76rem;">Showing the newest 30 of ' + docs.length + '.</div>' : '')
       + docs.slice(0,30).map(d => {
         // Documents stored before firm uploads were encrypted are flagged, since
         // the only way to fix one is to delete it and upload it again.
@@ -1360,7 +1366,9 @@ async function loadDocs() {
         return `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.displayName || d.name)}${warn}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">Download</a><button data-deldoc="${esc(d.id)}" data-delname="${esc(d.displayName || d.name)}" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:0.76rem;padding:0;">Delete</button></span></div>`;
       }).join('');
     el.querySelectorAll('[data-deldoc]').forEach(b => b.addEventListener('click', () => deleteAdminDoc(b.dataset.deldoc, b.dataset.delname)));
-  } catch {}
+  } catch (e) {
+    el.innerHTML = '<div class="empty" style="color:#b91c1c;">Could not load documents: ' + esc(e.message) + '</div>';
+  }
 }
 
 // The API has always allowed an admin to delete a client document; there was no
