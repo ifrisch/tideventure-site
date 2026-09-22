@@ -816,7 +816,10 @@ async function toggleClientStatus() {
     document.getElementById('editBizName').value = email.split('@')[0];
     document.getElementById('svcTax').checked = true;
     applyDefaultCards();
-    updateCustomerTypeDisplay();
+    // updateCustomerTypeDisplay() used to be called here. It was deleted when
+    // customer type became derived from services, but this call site survived —
+    // so opening a new prospect's plan editor threw a ReferenceError and the
+    // rest of the setup never ran.
   } else {
     document.getElementById('generateLinkBtn').style.display = 'none';
     document.getElementById('planEditorSubtitle').textContent = 'Edit plan details and click Save Profile.';
