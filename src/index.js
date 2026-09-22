@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS } from './taxworksheet.js';
+import { STATES, PAID_BY, STATE_LINES, computeStateWorksheet } from './taxstate.js';
 
 const SEC_HEADERS = {
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
@@ -1144,7 +1145,8 @@ async function handleFetch(request, env) {
     // Deliberately admin-only and draft-by-default: nothing here is visible to a
     // client, and no figure reaches one without the CPA marking it reviewed.
     if (url.pathname === '/api/admin/tax-projection/schema' && method === 'GET' && isAdmin(email)) {
-      return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS });
+      return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS,
+        states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
@@ -1155,7 +1157,10 @@ async function handleFetch(request, env) {
       if (!obj) return json(200, { exists: false });
       const saved = JSON.parse(await obj.text());
       const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus);
-      return json(200, { exists: true, ...saved, computed });
+      const state = saved.state && STATE_LINES[saved.state]
+        ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy, entityShare: saved.entityShare })
+        : null;
+      return json(200, { exists: true, ...saved, computed, state });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'PUT' && isAdmin(email)) {
@@ -1178,6 +1183,16 @@ async function handleFetch(request, env) {
           .slice(0, 50)
           .map(r => ({ name: String(r?.name ?? '').slice(0, 120), prior: Number(r?.prior) || 0, diff: Number(r?.diff) || 0 }));
       }
+      // State worksheet, if one applies. Same allowlist discipline as federal.
+      const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;
+      const stateValues = {};
+      if (stateCode) {
+        const knownState = new Set(STATE_LINES[stateCode].map(l => l.k));
+        for (const [k, v] of Object.entries(body.stateValues || {})) {
+          if (!knownState.has(k)) continue;
+          stateValues[k] = { prior: Number(v?.prior) || 0, diff: Number(v?.diff) || 0 };
+        }
+      }
       const record = {
         email: client,
         year,
@@ -1186,14 +1201,23 @@ async function handleFetch(request, env) {
         status: body.status === 'reviewed' ? 'reviewed' : 'draft',
         values,
         groups,
+        state: stateCode,
+        stateValues,
+        // Who actually remits the state estimates. This changes what we tell
+        // them to pay, never what the tax computes to.
+        paidBy: PAID_BY.some(p => p.key === body.paidBy) ? body.paidBy : 'individual',
+        entityShare: Number(body.entityShare) || 0,
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };
       await env.tideventure_documents.put(`taxproj/${client}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
       const computed = computeWorksheet(values, groups, record.filingStatus);
+      const state = stateCode
+        ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy, entityShare: record.entityShare })
+        : null;
       await syncTaxProjectionToD1(env, record, computed);
       await logAudit(env, 'TAXPROJ', email, `Saved ${year} projection for ${client} (${record.status})`);
-      return json(200, { ok: true, computed });
+      return json(200, { ok: true, computed, state });
     }
 
     if (url.pathname === '/api/admin/savings' && method === 'GET' && isAdmin(email)) {

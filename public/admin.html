@@ -252,6 +252,12 @@
             <input id="tpYear" type="number" value="2026" style="padding:0.45rem;width:100px;"></div>
           <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Filing status</label>
             <select id="tpStatus" style="padding:0.45rem;min-width:210px;"></select></div>
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">State</label>
+            <select id="tpState" style="padding:0.45rem;min-width:150px;"></select></div>
+          <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">State estimates paid by</label>
+            <select id="tpPaidBy" style="padding:0.45rem;min-width:250px;"></select></div>
+          <div id="tpEntityShareWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity covers (annual)</label>
+            <input id="tpEntityShare" type="number" value="0" style="padding:0.45rem;width:130px;"></div>
           <button id="tpLoad" class="btn-sm">Load</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
@@ -270,6 +276,28 @@
           </div>
           <div style="padding:0 1rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
             The projected figure is what this worksheet says they will owe. The safe harbor figure is the minimum pay-in that avoids an underpayment penalty regardless of how the projection turns out. They are different numbers and both matter.
+          </div>
+        </div>
+
+        <div class="block" id="tpStateBlock" style="display:none;margin-bottom:1rem;">
+          <div class="block-hdr"><h3><span id="tpStateName">State</span></h3></div>
+          <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;">
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Net state tax due</div><div id="tpStateNetTax" style="font-size:1.4rem;font-weight:700;color:#0d3f5e;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Still to pay in</div><div id="tpStateRemaining" style="font-size:1.4rem;font-weight:700;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Individual pays / quarter</div><div id="tpStateIndQ" style="font-size:1.4rem;font-weight:700;color:#0d3f5e;">—</div></div>
+            <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Entity pays / quarter</div><div id="tpStateEntQ" style="font-size:1.4rem;font-weight:700;color:#166534;">—</div></div>
+          </div>
+          <div id="tpStateBasis" style="padding:0 1rem 1rem;font-size:0.8rem;color:#6b7280;line-height:1.6;"></div>
+          <div style="overflow-x:auto;border-top:1px solid #e5e7eb;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Source</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Prior Actual</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Difference</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.7rem;text-transform:uppercase;color:#6b7280;">Baseline</th>
+              </tr></thead>
+              <tbody id="tpStateBody"></tbody>
+            </table>
           </div>
         </div>
 
@@ -464,6 +492,9 @@ async function loadTaxProjTab() {
     tpSchema = await r.json();
     const sel = document.getElementById('tpStatus');
     sel.innerHTML = tpSchema.filingStatuses.map(f => `<option value="${esc(f.key)}">${esc(f.label)}</option>`).join('');
+    document.getElementById('tpState').innerHTML = '<option value="">No state worksheet</option>' +
+      Object.values(tpSchema.states).map(st => `<option value="${esc(st.code)}"${tpSchema.stateLines[st.code] ? '' : ' disabled'}>${esc(st.name)}${tpSchema.stateLines[st.code] ? '' : ' — not built yet'}</option>`).join('');
+    document.getElementById('tpPaidBy').innerHTML = tpSchema.paidBy.map(p => `<option value="${esc(p.key)}">${esc(p.label)}</option>`).join('');
   }
   if (!tpLoaded) {
     const r = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -540,14 +571,61 @@ function tpRedraw() {
   tpRender(merged, typed);
 }
 
-function tpCollect() {
+// The entity-share box only means anything when the bill is split.
+function tpToggleEntityShare() {
+  const pb = document.getElementById('tpPaidBy');
+  const wrap = document.getElementById('tpEntityShareWrap');
+  if (pb && wrap) wrap.style.display = pb.value === 'split' ? 'block' : 'none';
+}
+
+function tpCollect(attr = 'data-tp') {
   const values = {};
-  document.querySelectorAll('[data-tp]').forEach(el => {
-    const k = el.dataset.tp, c = el.dataset.col;
+  document.querySelectorAll(`[${attr}]`).forEach(el => {
+    const k = el.getAttribute(attr), c = el.dataset.col;
     values[k] = values[k] || { prior: 0, diff: 0 };
     values[k][c] = Number(String(el.value).replace(/[$,\s]/g, '')) || 0;
   });
   return values;
+}
+
+// State worksheet. Rendered separately because it is downstream of the federal
+// sheet and because the payment recommendation depends on who remits.
+function tpRenderState(state) {
+  const block = document.getElementById('tpStateBlock');
+  if (!state) { block.style.display = 'none'; return; }
+  const defs = tpSchema.stateLines[state.state] || [];
+  const rows = [];
+  for (const line of defs) {
+    if (line.t === 'header') {
+      rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
+      continue;
+    }
+    const v = state.lines[line.k] || { prior: 0, diff: 0, baseline: 0 };
+    const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
+    const isTaxRule = line.t === 'taxrule';
+    const isLinked = line.t === 'linked';
+    const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : (isLinked ? 'background:#f0f9ff;' : ''));
+    const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'calc' ? 'font-weight:600;' : '');
+    const pad = 0.75 + (line.depth || 0) * 1.1;
+    const title = line.note ? ` title="${esc(line.note)}"` : '';
+    const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.68rem;font-weight:700;">▲ needs tax law</span>'
+      : (isLinked ? ' <span style="color:#0369a1;font-size:0.68rem;font-weight:700;">↳ from federal</span>' : '');
+    const cell = (col) => editable
+      ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tps="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
+      : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+    rows.push(`<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
+      `<td style="padding:0.45rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
+      cell('prior') + cell('diff') +
+      `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v.baseline)}</td></tr>`);
+  }
+  document.getElementById('tpStateBody').innerHTML = rows.join('');
+  document.getElementById('tpStateName').textContent = (tpSchema.states[state.state] || {}).name || state.state;
+  document.getElementById('tpStateNetTax').textContent = '$' + tpMoney(state.lines.net_tax_due?.baseline);
+  document.getElementById('tpStateRemaining').textContent = '$' + tpMoney(state.remaining);
+  document.getElementById('tpStateIndQ').textContent = '$' + tpMoney(state.quarterly.individual);
+  document.getElementById('tpStateEntQ').textContent = '$' + tpMoney(state.quarterly.entity);
+  document.getElementById('tpStateBasis').textContent = state.basis;
+  block.style.display = 'block';
 }
 
 let tpValues = {};
@@ -566,6 +644,7 @@ async function tpFetch() {
     const empty = { lines: {}, totals: { baseline: { totalTax: 0, balanceDue: 0 } }, projected: { quarterly: 0 }, safeHarbor: { quarterly: 0, basis: '' } };
     tpSchema.lines.forEach(l => { empty.lines[l.k] = { prior: 0, diff: 0, baseline: 0 }; });
     tpRender(empty, {});
+    tpRenderState(null);
     return;
   }
   tpValues = d.values || {}; tpGroups = d.groups || { w2: [], k1s: [] };
@@ -573,7 +652,12 @@ async function tpFetch() {
   document.getElementById('tpHdrPrior').textContent = `${d.priorYear} Actual`;
   document.getElementById('tpHdrBase').textContent = `${d.year} Baseline`;
   msg.textContent = `Loaded — ${d.status}, last saved ${new Date(d.updatedAt).toLocaleString()}`;
+  document.getElementById('tpState').value = d.state || '';
+  document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
+  document.getElementById('tpEntityShare').value = d.entityShare || 0;
+  tpToggleEntityShare();
   tpRender(d.computed, d.values);
+  tpRenderState(d.state);
 }
 
 async function tpSave() {
@@ -588,6 +672,10 @@ async function tpSave() {
     status: 'draft',
     values: tpCollect(),
     groups: tpGroups,
+    state: document.getElementById('tpState').value || null,
+    stateValues: tpCollect('data-tps'),
+    paidBy: document.getElementById('tpPaidBy').value,
+    entityShare: Number(document.getElementById('tpEntityShare').value) || 0,
   };
   const r = await fetch('/api/admin/tax-projection', {
     method: 'PUT',
@@ -598,6 +686,7 @@ async function tpSave() {
   if (!r.ok) { msg.textContent = d.error || 'Save failed.'; return; }
   msg.textContent = 'Saved as draft.';
   tpRender(d.computed, payload.values);
+  tpRenderState(d.state);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -612,6 +701,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Changing filing status re-draws so spouse rows appear or disappear.
   const st = document.getElementById('tpStatus');
   if (st) st.addEventListener('change', tpRedraw);
+  const pb = document.getElementById('tpPaidBy');
+  if (pb) pb.addEventListener('change', tpToggleEntityShare);
 });
 function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadKpis(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); loadRegulatory(); }
 
