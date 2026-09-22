@@ -758,14 +758,21 @@ async function handleFetch(request, env) {
         const file = fd.get('file');
         const clientEmail = (fd.get('email') || '').toLowerCase();
         if (!file || !clientEmail) return json(400, { error: 'File and client email required' });
+        const cleanClient = normalizeEmail(clientEmail);
+        if (!cleanClient) return json(400, { error: 'Valid client email required' });
         const id = crypto.randomUUID();
-        const key = `${clientEmail}/${id}`;
+        const key = `${cleanClient}/${id}`;
         const buf = await file.arrayBuffer();
-        await env.tideventure_documents.put(key, buf, {
-          httpMetadata: { contentType: file.type || 'application/octet-stream' },
-          customMetadata: { originalName: file.name, uploadedBy: clientEmail, source: 'firm', uploadedAt: new Date().toISOString() },
+        // Encrypt with the CLIENT's key, not the admin's — the client has to be
+        // able to open it in their own portal. A failure here must abort the
+        // upload: storing the plaintext instead is exactly the bug this fixes.
+        const encrypted = await encryptWithWorkerKey(env.DOC_ENC_KEY, cleanClient, buf);
+        const storedName = file.name.endsWith('.enc') ? file.name : `${file.name}.enc`;
+        await env.tideventure_documents.put(key, encrypted, {
+          httpMetadata: { contentType: 'application/octet-stream' },
+          customMetadata: { originalName: storedName, uploadedBy: cleanClient, source: 'firm', uploadedAt: new Date().toISOString() },
         });
-        await logAudit(env, 'UPLOAD', email, `${file.name} to ${clientEmail}`);
+        await logAudit(env, 'UPLOAD', email, `${file.name} to ${cleanClient} (encrypted)`);
         return json(200, { ok: true, id });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -3528,6 +3535,32 @@ async function deriveKeyMaterial(secret, userEmail) {
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(userEmail));
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Mirror of decryptWithWorkerKey. Used for documents the FIRM uploads into a
+// client's portal: the browser cannot do it there, because the admin page holds
+// the admin's key material and the file has to be readable by the client, whose
+// key is derived from their own address.
+//
+// The byte layout must stay identical to the portal's encryptFile — salt(16) ||
+// iv(12) || AES-GCM ciphertext, PBKDF2 at 100,000 iterations over the client's
+// key material — or a document encrypted here cannot be opened there.
+async function encryptWithWorkerKey(secret, ownerEmail, plaintext) {
+  const kmHex = await deriveKeyMaterial(secret, ownerEmail);
+  const km = hexToBytes(kmHex);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const baseKey = await crypto.subtle.importKey('raw', km, 'PBKDF2', false, ['deriveKey']);
+  const aesKey = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+  );
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, plaintext);
+  const out = new Uint8Array(16 + 12 + encrypted.byteLength);
+  out.set(salt, 0);
+  out.set(iv, 16);
+  out.set(new Uint8Array(encrypted), 28);
+  return out;
 }
 
 async function decryptWithWorkerKey(secret, uploaderEmail, ciphertext) {

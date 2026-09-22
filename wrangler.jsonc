@@ -14,7 +14,11 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "workers_dev": true,
+  // Off deliberately. The *.workers.dev hostname is not covered by the
+  // Cloudflare Access policy that protects tideventurecpa.com/admin, so leaving
+  // it on serves the admin panel with one layer of defence missing. The custom
+  // routes below are the only intended way in.
+  "workers_dev": false,
   "routes": [
     { "pattern": "portal.tideventurecpa.com/*", "zone_name": "tideventurecpa.com" },
     { "pattern": "tideventurecpa.com/portal*", "zone_name": "tideventurecpa.com" },
