@@ -755,7 +755,7 @@ async function handleFetch(request, env) {
 
     if (url.pathname === '/api/documents/upload' && method === 'POST') {
       if (!email) return json(401, { error: 'Unauthorized' });
-      return handleUploadDocument(request, env, email);
+      return handleUploadDocument(request, env, email, auditActor);
     }
     // Admin: upload document to a specific client's portal
     if (url.pathname === '/api/admin/documents/upload' && method === 'POST' && isAdmin(email)) {
@@ -1954,10 +1954,10 @@ async function handleFetch(request, env) {
       const docEmail = email;
       if (!docEmail) return json(401, { error: 'Unauthorized' });
       if (method === 'GET') {
-        try { return await handleDownloadDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.has('view')); } catch (e) { return json(500, { error: e.message }); }
+        try { return await handleDownloadDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.has('view'), auditActor); } catch (e) { return json(500, { error: e.message }); }
       }
       if (method === 'DELETE') {
-        try { return await handleDeleteDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.get('purge') === '1'); } catch (e) { return json(500, { error: e.message }); }
+        try { return await handleDeleteDocument(env, docId, docEmail, isAdmin(docEmail), url.searchParams.get('purge') === '1', auditActor); } catch (e) { return json(500, { error: e.message }); }
       }
     }
 
@@ -2964,7 +2964,7 @@ async function handleUpdateProfile(request, env, email, admin) {
   return json(200, profile);
 }
 
-async function handleUploadDocument(request, env, email) {
+async function handleUploadDocument(request, env, email, actor = email) {
   const formData = await request.formData();
   const file = formData.get('file');
   if (!file) return json(400, { error: 'No file provided' });
@@ -2974,7 +2974,7 @@ async function handleUploadDocument(request, env, email) {
     httpMetadata: { contentType: file.type },
     customMetadata: { originalName: file.name, uploadedBy: email, uploadedAt: new Date().toISOString() },
   });
-  await logAudit(env, 'UPLOAD', auditActor, `${file.name} (${file.size} bytes)`);
+  await logAudit(env, 'UPLOAD', actor, `${file.name} (${file.size} bytes)`);
   return json(201, { id, key, name: file.name });
 }
 
@@ -2987,7 +2987,7 @@ function isClientDocKey(key, docId) {
   return parts.length === 2 && parts[0].includes('@') && parts[1] === docId;
 }
 
-async function handleDownloadDocument(env, docId, email, admin, viewMode) {
+async function handleDownloadDocument(env, docId, email, admin, viewMode, actor = email) {
   // docId must be a UUID and the object must be a real client-document key
   // (exactly `<email>/<uuid>`). Without this, a docId of `victim@x.com` matched
   // `user/victim@x.com` / `profile/victim@x.com` on the suffix scan, turning this
@@ -3005,7 +3005,7 @@ async function handleDownloadDocument(env, docId, email, admin, viewMode) {
   if (!admin && uploader !== email) return json(403, { error: 'Forbidden' });
   const object = await env.tideventure_documents.get(found.key);
   if (!object) return json(404, { error: 'Document not found' });
-  await logAudit(env, 'DOWNLOAD', auditActor, found.customMetadata?.originalName || docId);
+  await logAudit(env, 'DOWNLOAD', actor, found.customMetadata?.originalName || docId);
   const origName = (found.customMetadata?.originalName || docId).replace(/\.enc$/, '');
   const EXT_MAP = { 'pdf':'application/pdf','jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png','gif':'image/gif','webp':'image/webp','mp4':'video/mp4','doc':'application/msword','docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','xls':'application/vnd.ms-excel','xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','txt':'text/plain','csv':'text/csv' };
   const fileExt = origName.split('.').pop().toLowerCase();
@@ -3059,7 +3059,7 @@ async function purgeFromBackups(env, keys) {
   return { purged, skipped };
 }
 
-async function handleDeleteDocument(env, docId, email, admin, purge = false) {
+async function handleDeleteDocument(env, docId, email, admin, purge = false, actor = email) {
   if (!isDocId(docId)) return json(404, { error: 'Document not found' });
   let found = null;
   const listResult = await listAll(env.tideventure_documents, { include: ['customMetadata', 'httpMetadata'] });
@@ -3080,9 +3080,9 @@ async function handleDeleteDocument(env, docId, email, admin, purge = false) {
   let purged = null;
   if (purge && admin) {
     purged = await purgeFromBackups(env, [found.key]);
-    await logAudit(env, 'PURGE', auditActor, `${name} removed from backups`);
+    await logAudit(env, 'PURGE', actor, `${name} removed from backups`);
   }
-  await logAudit(env, 'DELETE', auditActor, name);
+  await logAudit(env, 'DELETE', actor, name);
   return json(200, { success: true, purged });
 }
 
