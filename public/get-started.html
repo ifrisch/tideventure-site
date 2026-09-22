@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     body { background: var(--sand); }
@@ -107,7 +108,9 @@
         <textarea id="message" rows="3" placeholder="Questions, specific needs, timing — whatever you'd like me to know."></textarea>
       </div>
 
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAEIhEGFVQHkqQd7w" style="margin-bottom:1rem;"></div>
       <button type="submit" class="btn btn--primary" id="submitBtn">Send</button>
+      <div id="formError" role="alert" style="display:none;color:#b3261e;font-size:0.88rem;text-align:center;margin-top:0.75rem;"></div>
       <div class="note" style="text-align:center;margin-top:0.5rem;">No commitment. No spam. Just a real conversation.</div>
     </form>
   </div>
@@ -216,10 +219,23 @@ if (entityType || services.length) {
   if (!firstName || !lastName || !email) return;
 
   const btn = document.getElementById('submitBtn');
+  const errBox = document.getElementById('formError');
+  errBox.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Sending…';
 
+  // The submission must actually have succeeded before we thank anyone. Showing
+  // the confirmation regardless would quietly lose the lead — the visitor walks
+  // away believing they have been heard.
+  const fail = (msg) => {
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Send';
+    if (window.turnstile) { try { window.turnstile.reset(); } catch {} }
+  };
+
+  let res;
   try {
-    await fetch('/api/prospect', {
+    res = await fetch('/api/prospect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -236,9 +252,17 @@ if (entityType || services.length) {
         revenue,
         notes: message,
         source: 'pricing',
+        turnstileToken: (document.querySelector('[name="cf-turnstile-response"]') || {}).value || '',
       }),
     });
-  } catch {}
+  } catch {
+    return fail("Couldn't reach the server. Check your connection and try again — or email hello@tideventurecpa.com.");
+  }
+  if (!res.ok) {
+    let msg = 'Something went wrong sending that. Please try again, or email hello@tideventurecpa.com.';
+    try { const d = await res.json(); if (d && d.error) msg = d.error; } catch {}
+    return fail(msg);
+  }
 
   document.getElementById('sentName').textContent = firstName;
   document.getElementById('formView').style.display = 'none';

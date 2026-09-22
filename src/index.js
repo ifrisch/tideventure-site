@@ -6,7 +6,12 @@ const SEC_HEADERS = {
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'",
+  // Allowances beyond 'self', each for a resource the pages actually load:
+  // Google Fonts (stylesheet from fonts.googleapis.com, font files from
+  // fonts.gstatic.com), the Turnstile challenge widget, and the Cloudflare
+  // Web Analytics beacon. Without the font entries the pages silently fall
+  // back to system fonts; without the analytics entries no traffic is recorded.
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com; frame-ancestors 'none'; object-src 'none'",
 };
 
 function withSecurity(response) {
@@ -243,11 +248,11 @@ async function syncProspectToD1(env, p) {
   try {
     if (!p || !p.id) return;
     await env.DB.prepare(`INSERT OR REPLACE INTO prospects
-      (id,email,name,phone,city,state,entity_type,services,cfo_services,members,revenue,notes,source,stage,status,viewed,created_at,stage_updated_at,converted_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
-      p.id, p.email || null, p.name || null, p.phone || null, p.city || null, p.state || null,
+      (id,email,name,business_name,phone,city,state,entity_type,services,cfo_services,members,revenue,notes,source,verified,stage,status,viewed,created_at,stage_updated_at,converted_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+      p.id, p.email || null, p.name || null, p.businessName || null, p.phone || null, p.city || null, p.state || null,
       p.entityType || null, JSON.stringify(p.services || []), JSON.stringify(p.cfoServices || []),
-      p.members || 1, p.revenue || null, p.notes || null, p.source || null,
+      p.members || 1, p.revenue || null, p.notes || null, p.source || null, p.verified ? 1 : 0,
       p.stage || 'new', p.status || 'new', p.viewed ? 1 : 0,
       p.createdAt || null, p.stageUpdatedAt || null, p.convertedAt || null,
     ).run();
@@ -255,10 +260,10 @@ async function syncProspectToD1(env, p) {
 }
 function rowToProspect(r) {
   return {
-    id: r.id, email: r.email, name: r.name, phone: r.phone, city: r.city, state: r.state,
+    id: r.id, email: r.email, name: r.name, businessName: r.business_name, phone: r.phone, city: r.city, state: r.state,
     entityType: r.entity_type, services: r.services ? JSON.parse(r.services) : [],
     cfoServices: r.cfo_services ? JSON.parse(r.cfo_services) : [], members: r.members,
-    revenue: r.revenue, notes: r.notes, source: r.source, stage: r.stage, status: r.status,
+    revenue: r.revenue, notes: r.notes, source: r.source, verified: !!r.verified, stage: r.stage, status: r.status,
     viewed: !!r.viewed, createdAt: r.created_at, stageUpdatedAt: r.stage_updated_at, convertedAt: r.converted_at,
   };
 }
@@ -738,11 +743,32 @@ async function handleFetch(request, env) {
         // IP-keyed rate limit: cap prospect submissions so the public form
         // can't be used to flood R2/D1 with junk rows. 10 per rolling hour.
         const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+        // Human-verification challenge, same widget as the login form. Unlike the
+        // login, a failure here does NOT reject the request: the cost of turning
+        // away one real prospect (ad blocker, privacy browser, flaky network —
+        // all of which break the widget) outweighs the cost of storing a spam
+        // row. Instead the lead is recorded and flagged, and the flag rides along
+        // into the notification email so a junk entry is obvious at a glance.
+        let verified = false;
+        if (env.TURNSTILE_SECRET_KEY && body.turnstileToken) {
+          try {
+            const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: body.turnstileToken, remoteip: ip }),
+            });
+            const verifyData = await verify.json();
+            verified = !!verifyData.success;
+          } catch { verified = false; }
+        }
         const rlKey = `prospect/${ip}`;
         const rl = await rateGet(env, rlKey);
         let subs = 0, windowStart = Date.now();
         if (rl && rl.windowStart && Date.now() - rl.windowStart < 3600000) { subs = rl.count; windowStart = rl.windowStart; }
-        if (subs >= 10) return json(429, { error: 'Too many submissions. Please try again later.' });
+        // Verified humans get the full allowance; unverified ones get a tighter
+        // cap, so a bot that simply omits the token can't flood the table even
+        // though a single unverified submission is still accepted.
+        if (subs >= (verified ? 10 : 3)) return json(429, { error: 'Too many submissions. Please try again later.' });
         await ratePut(env, rlKey, subs + 1, windowStart, 3600000);
         const id = crypto.randomUUID();
         // Allowlist service values so a hostile string can't be stored and later
@@ -750,9 +776,22 @@ async function handleFetch(request, env) {
         const SERVICE_KEYS = ['tax', 'quarterly', 'monthly', 'cfo', 'bookkeeping'];
         const svcs = Array.isArray(body.services) ? body.services.filter(s => SERVICE_KEYS.includes(s)) : [];
         const cfoSvcs = Array.isArray(body.cfoServices) ? body.cfoServices.filter(s => typeof s === 'string' && s.length < 40).slice(0, 10) : [];
-        const prospect = { id, email: cleanEmail, name: body.name || '', phone: body.phone || '', city: body.city || '', state: body.state || '', entityType: body.entityType || '', services: svcs, cfoServices: cfoSvcs, members: body.members || 1, revenue: body.revenue || '', notes: body.notes || '', source: body.source || 'pricing', createdAt: new Date().toISOString(), status: 'new' };
+        // Free-text fields are length-capped here: they are stored and later
+        // rendered in the admin Prospects tab, so an unbounded string from the
+        // public form has no business reaching either.
+        const txt = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+        const prospect = { id, email: cleanEmail, name: txt(body.name, 120), businessName: txt(body.businessName, 160), phone: txt(body.phone, 40), city: txt(body.city, 80), state: txt(body.state, 2), entityType: txt(body.entityType, 40), services: svcs, cfoServices: cfoSvcs, members: body.members || 1, revenue: txt(body.revenue, 40), notes: txt(body.notes, 4000), source: txt(body.source, 40) || 'pricing', verified, createdAt: new Date().toISOString(), status: 'new' };
         await env.tideventure_documents.put(`prospect/${id}`, JSON.stringify(prospect), { httpMetadata: { contentType: 'application/json' } });
         await syncProspectToD1(env, prospect);
+        // A new lead is worthless if nobody is told about it. Log it, then email
+        // the firm. Both are best-effort: the visitor already gave us their
+        // details, so a mail failure must never turn into an error for them.
+        try { await logAudit(env, 'PROSPECT', cleanEmail, `New lead: ${prospect.name || cleanEmail}${prospect.businessName ? ' (' + prospect.businessName + ')' : ''}`); } catch {}
+        try {
+          await sendProspectNotification(env, prospect);
+        } catch (e) {
+          try { await logAudit(env, 'ERROR', cleanEmail, `Lead notification email failed: ${String(e.message).slice(0, 120)}`); } catch {}
+        }
         return json(200, { ok: true, id });
       } catch (e) { return json(500, { error: e.message }); }
     }
@@ -2276,6 +2315,45 @@ function escapeHtml(str) {
 
 // Renders admin-edited plain text into the branded email shell (header + logo
 // signature + footer are fixed; only the message body is caller-supplied).
+// Labels for the machine-readable values the pricing tool stores on a lead, so
+// the notification email reads like the admin panel rather than like a database row.
+const ENTITY_LABELS = { scorp: 'S-Corp', ccorp: 'C-Corp', partnership: 'Partnership', mmllc: 'Multi-Member LLC', smllc: 'Single-Member LLC', soleprop: 'Sole Proprietor' };
+const SERVICE_LABELS = { tax: 'Business Tax Return', quarterly: 'Quarterly Planning & Estimated Payments', cfo: 'Fractional CFO', bookkeeping: 'Bookkeeping & Financial Statements', monthly: 'Monthly Financial Review', other: 'Other / Custom' };
+const REVENUE_LABELS = { under500k: 'Under $500,000', '500k1m': '$500,000 – $1,000,000', '1m5m': '$1,000,000 – $5,000,000', over5m: 'Over $5,000,000' };
+
+// Email the firm when a lead comes in through the public form. Without this a
+// submission lands in R2/D1 and nothing surfaces it until someone happens to
+// open the Prospects tab — which is how a lead goes cold over a weekend.
+async function sendProspectNotification(env, p) {
+  const to = (env.NOTIFY_EMAIL || (env.ADMIN_EMAILS || 'isaac@tideventurecpa.com').split(',')[0] || '').trim();
+  if (!to) return;
+  const line = (label, value) => (value ? `${label}: ${value}\n` : '');
+  const services = (p.services || []).map(s => SERVICE_LABELS[s] || s).join(', ');
+  const cfo = (p.cfoServices || []).join(', ');
+  const where = [p.city, p.state].filter(Boolean).join(', ');
+  const text =
+    `New lead from the website.\n\n` +
+    (p.verified ? '' : 'NOTE: this submission did not pass the automated human check. It may be spam, or the visitor may simply have an ad blocker or privacy browser. Worth a look before you reply.\n\n') +
+    line('Name', p.name) +
+    line('Business', p.businessName) +
+    line('Email', p.email) +
+    line('Phone', p.phone) +
+    line('Location', where) +
+    line('Entity', ENTITY_LABELS[p.entityType] || p.entityType) +
+    line('Revenue', REVENUE_LABELS[p.revenue] || p.revenue) +
+    line('Owners/members', p.members) +
+    line('Services', services) +
+    line('CFO focus', cfo) +
+    (p.notes ? `\nWhat they wrote:\n${p.notes}\n` : '') +
+    `\nOpen the Prospects tab to respond:\nhttps://tideventurecpa.com/admin`;
+  await sendGmailEmail(env, {
+    to,
+    subject: `${p.verified ? '' : '[unverified] '}New lead: ${p.name || p.email}${p.businessName ? ' — ' + p.businessName : ''}`,
+    text: `${text}\n\nTideVenture CPA\ntideventurecpa.com`,
+    html: renderWelcomeEmailHtml(text, to, 'You are receiving this because a visitor submitted the Get Started form on tideventurecpa.com.'),
+  });
+}
+
 function renderWelcomeEmailHtml(messageText, toEmail, footerNote) {
   const bodyHtml = messageText.split(/\n\s*\n/).map(para => {
     const linked = escapeHtml(para).replace(/\n/g, '<br/>').replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#167f9e;">$1</a>');
