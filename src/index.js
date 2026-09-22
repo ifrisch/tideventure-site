@@ -1158,7 +1158,7 @@ async function handleFetch(request, env) {
       const saved = JSON.parse(await obj.text());
       const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus);
       const state = saved.state && STATE_LINES[saved.state]
-        ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy, entityShare: saved.entityShare })
+        ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy })
         : null;
       return json(200, { exists: true, ...saved, computed, state });
     }
@@ -1205,15 +1205,16 @@ async function handleFetch(request, env) {
         stateValues,
         // Who actually remits the state estimates. This changes what we tell
         // them to pay, never what the tax computes to.
+        // What the entity pays is the PTE credit line on the state worksheet,
+        // not a second field here — one number, one place.
         paidBy: PAID_BY.some(p => p.key === body.paidBy) ? body.paidBy : 'individual',
-        entityShare: Number(body.entityShare) || 0,
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };
       await env.tideventure_documents.put(`taxproj/${client}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
       const computed = computeWorksheet(values, groups, record.filingStatus);
       const state = stateCode
-        ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy, entityShare: record.entityShare })
+        ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy })
         : null;
       await syncTaxProjectionToD1(env, record, computed);
       await logAudit(env, 'TAXPROJ', email, `Saved ${year} projection for ${client} (${record.status})`);

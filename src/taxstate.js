@@ -27,11 +27,22 @@ export const STATES = {
 };
 
 // Who actually remits the state estimated payments.
+//
+// This is NOT a branch through the arithmetic, and it deliberately has no
+// "amount the entity covers" field of its own. That amount is already on the
+// worksheet as the pass-through entity tax credit, which sits inside total
+// payments — so entering it there reduces what the individual still owes by
+// exactly the right amount, with no second figure that could disagree with it.
+// The setting below only controls whether an entity payment schedule is shown
+// alongside the individual's.
 export const PAID_BY = [
-  { key: 'individual', label: 'The individual' },
-  { key: 'entity', label: 'A pass-through entity, on their behalf' },
-  { key: 'split', label: 'Split between entity and individual' },
+  { key: 'individual', label: 'The individual only' },
+  { key: 'entity', label: 'An entity pays the pass-through portion' },
 ];
+
+// Income lines whose tax an electing entity would typically cover — used only
+// to offer a proportional cross-check against the entity's own PTE computation.
+const PASSTHROUGH_INCOME_KEYS = ['scorp_income', 'partnership_income'];
 
 export const MN_LINES = [
   { k: 'hdr_mnti', l: 'Minnesota taxable income', t: 'header' },
@@ -131,21 +142,32 @@ export function computeStateWorksheet(stateCode, values = {}, federal = null, op
   const at = (k, c) => (out[k] ? out[k][c] : 0);
   // What still has to be paid in, excluding penalty and late charges — those are
   // consequences of a past shortfall, not part of a forward payment schedule.
+  // The entity's PTE payment is already inside total payments, so what is left
+  // here is the individual's own obligation with no further adjustment.
   const remaining = round(at('net_tax_due', 'baseline') - at('total_payments', 'baseline'));
-  const paidBy = opts.paidBy || 'individual';
-  const entityShare = round(n(opts.entityShare));
+  const paidBy = opts.paidBy === 'entity' ? 'entity' : 'individual';
+  const pteAnnual = round(at('pte_credit', 'baseline'));
 
-  let individualQuarterly, entityQuarterly;
-  if (paidBy === 'entity') {
-    individualQuarterly = 0;
-    entityQuarterly = round(Math.max(0, remaining) / 4);
-  } else if (paidBy === 'split') {
-    const entityAnnual = Math.min(Math.max(0, entityShare), Math.max(0, remaining));
-    entityQuarterly = round(entityAnnual / 4);
-    individualQuarterly = round(Math.max(0, remaining - entityAnnual) / 4);
-  } else {
-    individualQuarterly = round(Math.max(0, remaining) / 4);
-    entityQuarterly = 0;
+  const individualQuarterly = round(Math.max(0, remaining) / 4);
+  const entityQuarterly = paidBy === 'entity' ? round(Math.max(0, pteAnnual) / 4) : 0;
+
+  // A proportional cross-check, NOT a computation of the entity's PTE tax. The
+  // entity computes that on its own return under its own rules; this only says
+  // what share of the individual's state liability the pass-through income
+  // represents, so an entered figure that is wildly off is easy to spot.
+  let allocation = null;
+  if (paidBy === 'entity' && federal?.lines) {
+    const totalIncome = federal.lines.total_income?.baseline || 0;
+    const ptIncome = PASSTHROUGH_INCOME_KEYS.reduce((s, k) => s + (federal.lines[k]?.baseline || 0), 0);
+    if (totalIncome > 0 && ptIncome > 0) {
+      const share = Math.min(1, ptIncome / totalIncome);
+      allocation = {
+        passthroughIncome: round(ptIncome),
+        totalIncome: round(totalIncome),
+        sharePercent: round(share * 100),
+        impliedEntityTax: round(at('net_tax_due', 'baseline') * share),
+      };
+    }
   }
 
   return {
@@ -153,12 +175,12 @@ export function computeStateWorksheet(stateCode, values = {}, federal = null, op
     lines: out,
     remaining: Math.max(0, remaining),
     paidBy,
+    pteAnnual,
+    allocation,
     quarterly: { individual: individualQuarterly, entity: entityQuarterly },
     // Stated in words so the recommendation can be audited rather than trusted.
     basis: paidBy === 'entity'
-      ? `The electing entity remits these payments. The individual is not scheduled to pay ${stateCode} estimates; their credit appears on the pass-through entity tax credit line.`
-      : paidBy === 'split'
-        ? `Entity remits ${entityQuarterly.toLocaleString()} per quarter; the individual remits the remaining ${individualQuarterly.toLocaleString()}.`
-        : `The individual remits these payments directly.`,
+      ? `The entity remits ${pteAnnual.toLocaleString()} for the year (${entityQuarterly.toLocaleString()} per quarter) as pass-through entity tax. That credit is already counted in total payments, so the individual's own ${individualQuarterly.toLocaleString()} per quarter covers only what is left — their non-pass-through income.`
+      : `The individual remits these payments directly.`,
   };
 }

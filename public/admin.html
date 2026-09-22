@@ -256,8 +256,6 @@
             <select id="tpState" style="padding:0.45rem;min-width:150px;"></select></div>
           <div><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">State estimates paid by</label>
             <select id="tpPaidBy" style="padding:0.45rem;min-width:250px;"></select></div>
-          <div id="tpEntityShareWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity covers (annual)</label>
-            <input id="tpEntityShare" type="number" value="0" style="padding:0.45rem;width:130px;"></div>
           <button id="tpLoad" class="btn-sm">Load</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
@@ -571,13 +569,6 @@ function tpRedraw() {
   tpRender(merged, typed);
 }
 
-// The entity-share box only means anything when the bill is split.
-function tpToggleEntityShare() {
-  const pb = document.getElementById('tpPaidBy');
-  const wrap = document.getElementById('tpEntityShareWrap');
-  if (pb && wrap) wrap.style.display = pb.value === 'split' ? 'block' : 'none';
-}
-
 function tpCollect(attr = 'data-tp') {
   const values = {};
   document.querySelectorAll(`[${attr}]`).forEach(el => {
@@ -624,7 +615,15 @@ function tpRenderState(state) {
   document.getElementById('tpStateRemaining').textContent = '$' + tpMoney(state.remaining);
   document.getElementById('tpStateIndQ').textContent = '$' + tpMoney(state.quarterly.individual);
   document.getElementById('tpStateEntQ').textContent = '$' + tpMoney(state.quarterly.entity);
-  document.getElementById('tpStateBasis').textContent = state.basis;
+  const basisEl = document.getElementById('tpStateBasis');
+  basisEl.textContent = state.basis;
+  if (state.allocation) {
+    const a = state.allocation;
+    const note = document.createElement('div');
+    note.style.cssText = 'margin-top:0.5rem;padding:0.5rem 0.65rem;background:#f0f9ff;border-left:3px solid #0369a1;font-size:0.78rem;color:#334155;line-height:1.6;';
+    note.textContent = `Cross-check only: pass-through income of ${a.passthroughIncome.toLocaleString()} is ${a.sharePercent}% of total income of ${a.totalIncome.toLocaleString()}, which would put roughly ${a.impliedEntityTax.toLocaleString()} of the state liability on the entity. This is a proportional sanity check, not a computation of the entity's PTE tax — that is figured on the entity's own return.`;
+    basisEl.appendChild(note);
+  }
   block.style.display = 'block';
 }
 
@@ -654,8 +653,6 @@ async function tpFetch() {
   msg.textContent = `Loaded — ${d.status}, last saved ${new Date(d.updatedAt).toLocaleString()}`;
   document.getElementById('tpState').value = d.state || '';
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
-  document.getElementById('tpEntityShare').value = d.entityShare || 0;
-  tpToggleEntityShare();
   tpRender(d.computed, d.values);
   tpRenderState(d.state);
 }
@@ -675,7 +672,6 @@ async function tpSave() {
     state: document.getElementById('tpState').value || null,
     stateValues: tpCollect('data-tps'),
     paidBy: document.getElementById('tpPaidBy').value,
-    entityShare: Number(document.getElementById('tpEntityShare').value) || 0,
   };
   const r = await fetch('/api/admin/tax-projection', {
     method: 'PUT',
@@ -701,8 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Changing filing status re-draws so spouse rows appear or disappear.
   const st = document.getElementById('tpStatus');
   if (st) st.addEventListener('change', tpRedraw);
-  const pb = document.getElementById('tpPaidBy');
-  if (pb) pb.addEventListener('change', tpToggleEntityShare);
+
 });
 function showAdmin() { document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='flex'; loadDashboard(); loadKpis(); loadProspects(); loadDocs(); loadAudit(); loadTQSchema(); loadRegulatory(); }
 
