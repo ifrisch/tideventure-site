@@ -2777,13 +2777,19 @@ function prettifyDocName(name) {
 async function handleListDocuments(env, email, admin) {
   const objects = [];
   const result = await listAll(env.tideventure_documents, { include: ['customMetadata', 'httpMetadata'] });
-  const SKIP_PREFIXES = ['audit/', 'qbo/', 'profile/', 'user/', 'setup/', 'questionnaire/', 'ratelimit/', 'prospect/', 'regulatory/', 'signing/', 'signing-copy/', 'pandadoc/', 'settings/', 'engagement/', 'gmail/', 'reset/', 'message/', 'savings/', 'docrequest/'];
   for (const obj of result.objects) {
-    if (SKIP_PREFIXES.some(p => obj.key.startsWith(p))) continue;
+    // A client document is EXACTLY `<email>/<uuid>`. This used to be a blocklist
+    // of internal prefixes, which meant every new record type leaked into the
+    // documents list until someone remembered to add it — taxproj/ and
+    // taxentity/ both did. Testing the shape instead excludes anything new by
+    // default, which is the right way round for a list of client files.
+    const parts = obj.key.split('/');
+    if (!(parts.length === 2 && parts[0].includes('@') && isDocId(parts[1]))) continue;
     if (admin || obj.customMetadata?.uploadedBy === email) {
-      const name = (obj.customMetadata?.originalName || obj.key).replace(/\.enc$/, '');
+      const storedName = obj.customMetadata?.originalName || obj.key;
+      const name = storedName.replace(/\.enc$/, '');
       objects.push({
-        id: obj.key.split('/').pop(),
+        id: parts[1],
         name,                              // real filename — used for downloads
         displayName: prettifyDocName(name), // clean label — used for display
         size: obj.size,
@@ -2791,6 +2797,12 @@ async function handleListDocuments(env, email, admin) {
         uploadedBy: obj.customMetadata?.uploadedBy,
         source: obj.customMetadata?.source || 'client',
         contentType: obj.httpMetadata?.contentType || 'application/octet-stream',
+        // Stated by the server from what is actually stored. The browser used to
+        // infer this from the filename, but the name is stripped of .enc before
+        // it is sent — so the check could never be true and every document was
+        // labelled unencrypted, including the ones that had just been encrypted.
+        encrypted: obj.customMetadata?.encrypted === 'true' || storedName.endsWith('.enc'),
+        key: admin ? obj.key : undefined,
       });
     }
   }

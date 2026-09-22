@@ -1361,9 +1361,10 @@ async function loadDocs() {
       + docs.slice(0,30).map(d => {
         // Documents stored before firm uploads were encrypted are flagged, since
         // the only way to fix one is to delete it and upload it again.
-        const enc = (d.name || '').endsWith('.enc');
-        const warn = enc ? '' : ' <span title="Stored unencrypted — delete and re-upload to fix" style="color:#b45309;font-size:0.7rem;font-weight:700;">&#9650; unencrypted</span>';
-        return `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.displayName || d.name)}${warn}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">Download</a><button data-deldoc="${esc(d.id)}" data-delname="${esc(d.displayName || d.name)}" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:0.76rem;padding:0;">Delete</button></span></div>`;
+        // Trust the server's stored fact, not a guess from the filename.
+        const warn = d.encrypted ? '' : ' <span title="Stored unencrypted — delete and re-upload to fix" style="color:#b45309;font-size:0.7rem;font-weight:700;">&#9650; unencrypted</span>';
+        const keyHint = d.key ? `<div style="font-size:0.68rem;color:#9ca3af;font-family:ui-monospace,monospace;">${esc(d.key)}</div>` : '';
+        return `<div class="doc-row"><span style="font-weight:600;">${esc(d.uploadedBy||'Unknown')}</span><span style="color:#374151;">${esc(d.displayName || d.name)}${warn}${keyHint}</span><span style="color:#9ca3af;">${new Date(d.uploaded).toLocaleDateString()}</span><span><a href="/api/documents/${esc(d.id)}?view=1" target="_blank" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">View</a><a href="/api/documents/${esc(d.id)}" style="color:#1a7fa0;font-size:0.76rem;text-decoration:none;margin-right:0.5rem;">Download</a><button data-deldoc="${esc(d.id)}" data-delname="${esc(d.displayName || d.name)}" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:0.76rem;padding:0;">Delete</button></span></div>`;
       }).join('');
     el.querySelectorAll('[data-deldoc]').forEach(b => b.addEventListener('click', () => deleteAdminDoc(b.dataset.deldoc, b.dataset.delname)));
   } catch (e) {
