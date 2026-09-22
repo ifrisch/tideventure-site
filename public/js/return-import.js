@@ -68,24 +68,27 @@ function lastAmount(line) {
 // the K-1-driven lines in particular cannot come from a 1040 at all, since the
 // form shows only the combined figure.
 const FORM_1040 = [
-  { key: 'w2_group',            re: /\b1z\b.*total amount|wages.*salaries.*tips/i,          label: 'Wages (1z)' },
-  { key: 'interest_income_own', re: /\b2b\b.*taxable interest|taxable interest/i,            label: 'Taxable interest (2b)' },
-  { key: 'ordinary_dividends',  re: /\b3b\b.*ordinary dividends|ordinary dividends/i,        label: 'Ordinary dividends (3b)' },
-  { key: 'qualified_dividends', re: /\b3a\b.*qualified dividends|qualified dividends/i,      label: 'Qualified dividends (3a)' },
-  { key: 'pension_ira',         re: /\b(4b|5b)\b.*taxable amount|pensions and annuities/i,   label: 'IRA / pension taxable (4b, 5b)' },
-  { key: 'ss_income',           re: /\b6b\b.*taxable amount|social security benefits/i,      label: 'Taxable Social Security (6b)' },
-  { key: 'capital_gain_1040',   re: /\b7\b.*capital gain|capital gain or \(?loss\)?/i,       label: 'Capital gain or loss (7)' },
-  { key: 'total_income',        re: /\b9\b.*total income|^total income/i,                    label: 'Total income (9)' },
-  { key: 'adjustments_to_income', re: /\b10\b.*adjustments to income|adjustments to income/i, label: 'Adjustments to income (10)' },
-  { key: 'agi',                 re: /\b11\b.*adjusted gross income|adjusted gross income/i,  label: 'Adjusted gross income (11)' },
-  { key: 'deductions',          re: /\b12\b.*standard deduction|itemized deductions or/i,    label: 'Standard or itemized deduction (12)' },
-  { key: 'qbi_deduction',       re: /\b13\b.*qualified business income|qualified business income deduction/i, label: 'QBI deduction (13)' },
-  { key: 'taxable_income',      re: /\b15\b.*taxable income|^taxable income/i,               label: 'Taxable income (15)' },
-  { key: 'federal_tax',         re: /\b16\b.*tax \(see|^tax\b(?!able)/i,                     label: 'Tax (16)' },
-  { key: 'total_tax_1040',      re: /\b24\b.*total tax|this is your total tax/i,             label: 'Total tax (24)' },
-  { key: 'total_withholding',   re: /\b25d\b|federal income tax withheld/i,                  label: 'Total withholding (25d)' },
-  { key: 'estimated_payments',  re: /\b26\b.*estimated tax payments|estimated tax payments/i, label: 'Estimated tax payments (26)' },
-  { key: 'payments_total_1040', re: /\b33\b.*total payments|these are your total payments/i, label: 'Total payments (33)' },
+  { key: 'w2_group',            worksheet: 'total_wages',        re: /\b1z\b.*total amount|wages.*salaries.*tips/i,          label: 'Wages (1z)' },
+  { key: 'interest_income_own', worksheet: 'interest_income',    re: /\b2b\b.*taxable interest|taxable interest/i,            label: 'Taxable interest (2b)' },
+  { key: 'ordinary_dividends',  worksheet: 'dividend_income',    re: /\b3b\b.*ordinary dividends|ordinary dividends/i,        label: 'Ordinary dividends (3b)' },
+  { key: 'qualified_dividends', worksheet: 'qualified_dividends', re: /\b3a\b.*qualified dividends|qualified dividends/i,     label: 'Qualified dividends (3a)' },
+  { key: 'pension_ira',         worksheet: 'pension_ira',        re: /\b(4b|5b)\b.*taxable amount|pensions and annuities/i,   label: 'IRA / pension taxable (4b, 5b)' },
+  { key: 'ss_income',           worksheet: 'ss_income',          re: /\b6b\b.*taxable amount|social security benefits/i,      label: 'Taxable Social Security (6b)' },
+  { key: 'capital_gain_1040',   worksheet: 'capital_gain_income', re: /\b7\b.*capital gain|capital gain or \(?loss\)?/i,    label: 'Capital gain or loss (7)' },
+  { key: 'sched1_income',       worksheet: 'other_income',       re: /\b8\b.*additional income from schedule 1|additional income from schedule 1/i, label: 'Additional income, Sch 1 (8)' },
+  { key: 'total_income',        worksheet: 'total_income',       re: /\b9\b.*total income|^total income/i,                    label: 'Total income (9)' },
+  { key: 'adjustments_to_income', worksheet: 'adjustments_to_income', re: /\b10\b.*adjustments to income|adjustments to income/i, label: 'Adjustments to income (10)' },
+  { key: 'agi',                 worksheet: 'agi',                re: /\b11\b.*adjusted gross income|adjusted gross income/i,  label: 'Adjusted gross income (11)' },
+  { key: 'deductions',          worksheet: 'deductions',         re: /\b12\b.*standard deduction|itemized deductions or/i,    label: 'Standard or itemized deduction (12)' },
+  { key: 'qbi_deduction',       worksheet: 'qbi_deduction',      re: /\b13\b.*qualified business income|qualified business income deduction/i, label: 'QBI deduction (13)' },
+  { key: 'taxable_income',      worksheet: 'taxable_income',     re: /\b15\b.*taxable income|^taxable income/i,               label: 'Taxable income (15)' },
+  { key: 'federal_tax',         worksheet: 'federal_tax',        re: /\b16\b.*tax \(see|^tax\b(?!able)/i,                   label: 'Tax (16)' },
+  { key: 'credits_nonrefundable', worksheet: 'credits_nonrefundable', re: /\b21\b.*add lines 19 and 20|total credits/i,       label: 'Nonrefundable credits (21)' },
+  { key: 'other_taxes',         worksheet: 'other_taxes',        re: /\b23\b.*other taxes.*schedule 2|other taxes, including/i, label: 'Other taxes (23)' },
+  { key: 'total_tax_1040',      worksheet: null,                 re: /\b24\b.*total tax|this is your total tax/i,             label: 'Total tax (24)' },
+  { key: 'total_withholding',   worksheet: 'total_withholding',  re: /\b25d\b|federal income tax withheld/i,                  label: 'Total withholding (25d)' },
+  { key: 'estimated_payments',  worksheet: null,                 re: /\b26\b.*estimated tax payments|estimated tax payments/i, label: 'Estimated tax payments (26)' },
+  { key: 'payments_total_1040', worksheet: 'payments',           re: /\b33\b.*total payments|these are your total payments/i,  label: 'Total payments (33)' },
 ];
 
 // Keys that are informational only: the worksheet computes them from their
@@ -106,10 +109,18 @@ export function matchForm1040(pages) {
         const amount = lastAmount(line);
         if (amount === null) continue;
         seen.add(rule.key);
-        found.push({ key: rule.key, label: rule.label, amount, page, source: line.slice(0, 160),
-                     appliesToWorksheet: !READ_ONLY_KEYS.has(rule.key) });
+        found.push({ key: rule.key, worksheet: rule.worksheet, label: rule.label, amount, page,
+                     source: line.slice(0, 160), appliesToWorksheet: !READ_ONLY_KEYS.has(rule.key) });
       }
     }
   }
-  return found;
+  const missed = FORM_1040.filter(r => !seen.has(r.key)).map(r => ({ key: r.key, label: r.label }));
+  return { found, missed };
+}
+
+// Every digit replaced, so a line can be shared to fix a pattern without
+// carrying the figure on it. The wording is what a pattern matches on; the
+// amount is never what needs to be seen to repair one.
+export function maskAmounts(line) {
+  return line.replace(/\d/g, '#');
 }

@@ -757,47 +757,73 @@ async function tpImportRead(id, name) {
     if (!res.ok) throw new Error('Could not fetch the document');
     const buf = await res.arrayBuffer();
     const pages = await tpImportMod.extractLines(buf);
-    const findings = tpImportMod.matchForm1040(pages);
-    tpImportFindings = findings;
-    tpImportRender(name, pages, findings);
+    const { found, missed } = tpImportMod.matchForm1040(pages);
+    tpImportFindings = found;
+    tpImportRender(name, pages, found, missed);
   } catch (e) {
     result.innerHTML = `<div style="padding:1rem;color:#b91c1c;font-size:0.84rem;">Could not read that PDF: ${esc(e.message)}<br><br>If it is a scan rather than a generated PDF there is no text layer to read, and the figures have to be entered by hand.</div>`;
   }
 }
 
-function tpImportRender(name, pages, findings) {
+function tpImportRender(name, pages, findings, missed) {
   const result = document.getElementById('tpImportResult');
-  const usable = findings.filter(f => f.appliesToWorksheet);
-  const crossCheck = findings.filter(f => !f.appliesToWorksheet);
   const lineCount = pages.reduce((s, p) => s + p.lines.length, 0);
 
-  const rows = usable.map((f, i) => `<tr style="border-bottom:1px solid #f1f5f9;">
-      <td style="padding:0.4rem 0.75rem;"><input type="checkbox" data-acc="${i}" checked></td>
+  // The prior-year column already holds figures taken from this same return, so
+  // the parser can be checked against them rather than by eye. A disagreement is
+  // the useful output here: either the pattern grabbed the wrong number, or the
+  // worksheet is wrong — and both are worth knowing before this is trusted.
+  const priorOf = (key) => {
+    if (!key) return null;
+    const el = document.querySelector(`[data-tp="${key}"][data-col="prior"]`);
+    if (el) return Number(String(el.value).replace(/[$,\s]/g, '')) || 0;
+    if (tpLastComputed && tpLastComputed.lines[key]) return tpLastComputed.lines[key].prior;
+    return null;
+  };
+
+  const rows = findings.map((f, i) => {
+    const current = priorOf(f.worksheet);
+    const has = current !== null;
+    const agrees = has && Math.abs(current - f.amount) < 1;
+    const status = !has ? '<span style="color:#9ca3af;">nothing to compare</span>'
+      : agrees ? '<span style="color:#166534;font-weight:600;">matches</span>'
+      : `<span style="color:#b91c1c;font-weight:600;">differs by ${tpMoney(f.amount - current)}</span>`;
+    const canImport = f.appliesToWorksheet && f.worksheet;
+    return `<tr style="border-bottom:1px solid #f1f5f9;${agrees ? '' : 'background:#fffbfa;'}">
+      <td style="padding:0.4rem 0.75rem;">${canImport ? `<input type="checkbox" data-acc="${i}" ${agrees ? '' : 'checked'}>` : ''}</td>
       <td style="padding:0.4rem 0.75rem;">${esc(f.label)}</td>
       <td style="padding:0.4rem 0.75rem;text-align:right;font-weight:600;">${tpMoney(f.amount)}</td>
-      <td style="padding:0.4rem 0.75rem;color:#9ca3af;font-size:0.72rem;">p${f.page}: ${esc(f.source.slice(0, 70))}</td>
-    </tr>`).join('');
+      <td style="padding:0.4rem 0.75rem;text-align:right;color:#6b7280;">${has ? tpMoney(current) : '—'}</td>
+      <td style="padding:0.4rem 0.75rem;">${status}</td>
+    </tr>`;
+  }).join('');
+
+  const agreeCount = findings.filter(f => { const c = priorOf(f.worksheet); return c !== null && Math.abs(c - f.amount) < 1; }).length;
+  const comparable = findings.filter(f => priorOf(f.worksheet) !== null).length;
 
   result.innerHTML = `
     <div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;font-size:0.82rem;color:#374151;">
-      Read <strong>${esc(name)}</strong> — ${pages.length} page${pages.length === 1 ? '' : 's'}, ${lineCount} text lines, ${findings.length} figure${findings.length === 1 ? '' : 's'} recognised.
+      Read <strong>${esc(name)}</strong> — ${pages.length} page${pages.length === 1 ? '' : 's'}, ${lineCount} text lines.
+      <strong>${findings.length}</strong> figure${findings.length === 1 ? '' : 's'} recognised;
+      <strong style="color:${agreeCount === comparable && comparable ? '#166534' : '#b45309'};">${agreeCount} of ${comparable}</strong> agree with the worksheet's prior-year column.
     </div>
-    ${usable.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+    ${findings.length ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
       <thead><tr style="background:#f8fafc;">
         <th style="padding:0.45rem 0.75rem;width:40px;"></th>
         <th style="text-align:left;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Form line</th>
-        <th style="text-align:right;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Amount</th>
-        <th style="text-align:left;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Where it came from</th>
+        <th style="text-align:right;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">From PDF</th>
+        <th style="text-align:right;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">In worksheet</th>
+        <th style="text-align:left;padding:0.45rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#6b7280;">Check</th>
       </tr></thead><tbody>${rows}</tbody></table></div>
       <div style="padding:0.75rem 1rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button id="tpImportAccept" class="btn-sm" style="background:#0d3f5e;color:#fff;">Fill prior-year column</button>
-        <span style="font-size:0.78rem;color:#6b7280;">Fills the prior column only. Review, then Save draft.</span>
-      </div>`
-      : '<div style="padding:1rem;color:#b45309;font-size:0.84rem;">No Form 1040 lines were recognised. The extracted text is below — send me a few of those lines and I will correct the patterns.</div>'}
-    ${crossCheck.length ? `<div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
-      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.4rem;">Cross-check only — not imported</div>
-      <div style="font-size:0.8rem;color:#374151;line-height:1.8;">${crossCheck.map(f => `${esc(f.label)}: <strong>${tpMoney(f.amount)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
-      <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.4rem;">These are totals the worksheet computes from its own parts. Compare them against what the worksheet produces — a mismatch means something upstream is wrong.</div>
+        <button id="tpImportAccept" class="btn-sm" style="background:#0d3f5e;color:#fff;">Fill checked lines into prior year</button>
+        <span style="font-size:0.78rem;color:#6b7280;">Rows that already agree are unticked — there is nothing to change.</span>
+      </div>` : '<div style="padding:1rem;color:#b45309;font-size:0.84rem;">No Form 1040 lines were recognised at all.</div>'}
+    ${missed && missed.length ? `<div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#b45309;margin-bottom:0.4rem;">Not found (${missed.length})</div>
+      <div style="font-size:0.8rem;color:#374151;line-height:1.7;">${missed.map(m => esc(m.label)).join(' &nbsp;·&nbsp; ')}</div>
+      <button id="tpCopyMasked" class="btn-sm" style="margin-top:0.6rem;">Copy the form's wording (numbers hidden)</button>
+      <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.4rem;line-height:1.6;">Copies the text of every line in the PDF with each digit replaced by #. That is enough to repair a pattern &mdash; matching keys off the wording, never the amount &mdash; without the figures leaving this machine.</div>
     </div>` : ''}
     <details style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
       <summary style="cursor:pointer;font-size:0.8rem;color:#6b7280;">Show the raw extracted text</summary>
@@ -805,7 +831,13 @@ function tpImportRender(name, pages, findings) {
     </details>`;
 
   const accept = document.getElementById('tpImportAccept');
-  if (accept) accept.addEventListener('click', () => tpImportApply(usable));
+  if (accept) accept.addEventListener('click', () => tpImportApply(findings));
+  const copyBtn = document.getElementById('tpCopyMasked');
+  if (copyBtn) copyBtn.addEventListener('click', async () => {
+    const masked = pages.map(p => `— page ${p.page} —\n` + p.lines.map(tpImportMod.maskAmounts).join('\n')).join('\n\n');
+    try { await navigator.clipboard.writeText(masked); copyBtn.textContent = 'Copied — numbers replaced with #'; }
+    catch { copyBtn.textContent = 'Could not copy — open the raw text below instead'; }
+  });
 }
 
 // Writes into the prior-year inputs only, and leaves the current-year column
@@ -816,7 +848,7 @@ function tpImportApply(usable) {
     if (!cb.checked) return;
     const f = usable[Number(cb.dataset.acc)];
     if (!f) return;
-    const el = document.querySelector(`[data-tp="${f.key}"][data-col="prior"]`);
+    const el = document.querySelector(`[data-tp="${f.worksheet}"][data-col="prior"]`);
     if (!el) { skipped.push(f.label); return; }
     el.value = f.amount;
     filled++;
