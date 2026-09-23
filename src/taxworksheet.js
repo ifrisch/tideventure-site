@@ -34,6 +34,7 @@
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
 import { aggregateK1s } from './taxk1.js';
+import { federalTax } from './taxrates.js';
 
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
@@ -59,7 +60,7 @@ export const GROUPS = [
 // sum/net is built from.
 export const LINES = [
   // ── Income ──
-  { k: 'w2_wages', l: 'W-2 Wages', t: 'category', group: 'w2', group: 'w2', depth: 0 },
+  { k: 'w2_wages', l: 'W-2 Wages', t: 'category', group: 'w2', depth: 0 },
   { k: 'household_wages', l: 'Household employee wages not on W-2', t: 'input', depth: 1 },
   { k: 'tips_not_reported', l: 'Tips not reported on Form W-2', t: 'input', depth: 1 },
   { k: 'medicare_waiver', l: 'Medicare waiver payments', t: 'input', depth: 1 },
@@ -76,7 +77,7 @@ export const LINES = [
   { k: 'rental_income', l: 'Rental Income', t: 'input', depth: 0 },
   { k: 'farm_income', l: 'Farm Income', t: 'input', depth: 0 },
   { k: 'partnership_income', l: 'Partnership Income', t: 'input', depth: 0 },
-  { k: 'scorp_income', l: 'S Corporation Income', t: 'category', group: 'k1s', group: 'k1s', depth: 0 },
+  { k: 'scorp_income', l: 'S Corporation Income', t: 'category', group: 'k1s', depth: 0 },
   { k: 'estate_trust_income', l: 'Estate / Trust Income', t: 'input', depth: 0 },
 
   // Capital gains. These DO tie out in the reference worksheet, so they compute.
@@ -349,7 +350,11 @@ const enteredColumns = (entered = {}) => {
   return { prior, baseline };
 };
 
-export function computeWorksheet(values = {}, groups = {}, filingStatus = 'single') {
+// `opts.calcTax` turns the bracket calculation on for this worksheet, and
+// `opts.year` says which year's rates to use. Off by default: a typed figure is
+// testimony and cannot be wrong about tax law, so nothing starts computing tax
+// unless it is asked to.
+export function computeWorksheet(values = {}, groups = {}, filingStatus = 'single', opts = {}) {
   const out = {};
   const col = ['prior', 'baseline'];
 
@@ -415,6 +420,33 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     resolve(line.k);
   }
 
+  // Bracket calculation, when switched on. It replaces only the tax category —
+  // everything else stays as entered — and it reports itself so the figure on
+  // screen can be traced to a year's rate table rather than appearing by magic.
+  let taxCalc = null;
+  if (opts.calcTax) {
+    const prefOf = (c) => round(Math.max(0, (out.net_lt_gain ? out.net_lt_gain[c] : 0))
+                              + Math.max(0, (out.qualified_dividends ? out.qualified_dividends[c] : 0)));
+    const result = {};
+    for (const c of ['prior', 'baseline']) {
+      result[c] = federalTax({
+        taxableIncome: out.taxable_income ? out.taxable_income[c] : 0,
+        filingStatus,
+        year: c === 'prior' ? (opts.priorYear || (opts.year ? opts.year - 1 : undefined)) : opts.year,
+        preferentialIncome: prefOf(c),
+      });
+    }
+    taxCalc = result;
+    if (result.baseline.available || result.prior.available) {
+      const t = out.federal_tax_before_credits;
+      if (t) {
+        if (result.prior.available) t.prior = result.prior.tax;
+        if (result.baseline.available) t.baseline = result.baseline.tax;
+        t.diff = round(t.baseline - t.prior);
+      }
+    }
+  }
+
   // What the supporting detail adds up to, for every category line. Offered as a
   // cross-check beside the typed figure, never written into it.
   const reference = {};
@@ -453,6 +485,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
 
   return {
     lines: out,
+    taxCalc,
     reference,
     k1: k1.perK1,
     totals,

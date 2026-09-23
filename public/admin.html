@@ -268,6 +268,9 @@
           <div id="tpEntityTypeWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity type</label>
             <select id="tpEntityType" style="padding:0.45rem;min-width:170px;"></select></div>
           <button id="tpLoad" class="btn-sm">Load</button>
+          <label style="font-size:0.78rem;color:#374151;display:flex;align-items:center;gap:0.35rem;cursor:pointer;" title="Work the federal tax out from taxable income using that year's brackets, instead of typing it">
+            <input type="checkbox" id="tpCalcTax"> Calculate federal tax
+          </label>
           <button id="tpRollover" class="btn-sm" title="Copy every prior-year figure into the current-year column as a starting point">Roll prior &rarr; current</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
@@ -284,6 +287,7 @@
             <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Safe harbor quarterly</div><div id="tpSafeHarbor" style="font-size:1.5rem;font-weight:700;color:#166534;">—</div>
               <div id="tpSafeHarborBasis" style="font-size:0.72rem;color:#6b7280;margin-top:0.25rem;line-height:1.5;"></div></div>
           </div>
+          <div id="tpTaxCalcNote" style="display:none;"></div>
           <div style="padding:0 1rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
             The projected figure is what this worksheet says they will owe. The safe harbor figure is the minimum pay-in that avoids an underpayment penalty regardless of how the projection turns out. They are different numbers and both matter.
           </div>
@@ -1167,6 +1171,23 @@ function tpRender(computed, values) {
   document.getElementById('tpQuarterly').textContent = '$' + tpMoney(computed.projected.quarterly);
   document.getElementById('tpSafeHarbor').textContent = '$' + tpMoney(computed.safeHarbor.quarterly);
   document.getElementById('tpSafeHarborBasis').textContent = computed.safeHarbor.basis;
+  const tc = document.getElementById('tpTaxCalcNote');
+  if (tc) {
+    const r = computed.taxCalc && computed.taxCalc.baseline;
+    if (!r) { tc.style.display = 'none'; }
+    else if (!r.available) {
+      tc.style.display = 'block';
+      tc.style.cssText = 'display:block;margin:0 1rem 1rem;padding:0.6rem 0.75rem;background:#fef2f2;border-left:3px solid #b91c1c;font-size:0.8rem;color:#7f1d1d;line-height:1.6;';
+      tc.textContent = r.reason;
+    } else {
+      tc.style.display = 'block';
+      tc.style.cssText = 'display:block;margin:0 1rem 1rem;padding:0.6rem 0.75rem;background:' + (r.reviewed ? '#f0fdf4' : '#fffbeb') + ';border-left:3px solid ' + (r.reviewed ? '#166534' : '#b45309') + ';font-size:0.8rem;color:#374151;line-height:1.6;';
+      tc.textContent = `Federal tax calculated from ${r.year} brackets: ${tpMoney(r.ordinaryTax)} on ${tpMoney(r.ordinaryIncome)} of ordinary income`
+        + (r.preferentialIncome ? `, plus ${tpMoney(r.preferentialTax)} on ${tpMoney(r.preferentialIncome)} of long-term gains and qualified dividends` : '')
+        + `. Marginal ${(r.marginalRate * 100).toFixed(0)}%, effective ${r.effectiveRate}%.`
+        + (r.reviewed ? '' : ' These rate figures have NOT been reviewed by a CPA — check them before relying on this.');
+    }
+  }
   document.getElementById('tpResults').style.display = 'block';
 }
 
@@ -1206,6 +1227,9 @@ async function tpRecalcNow() {
     state: document.getElementById('tpState').value || null,
     stateValues: tpCollect('data-tps'),
     paidBy: document.getElementById('tpPaidBy').value,
+    calcTax: document.getElementById('tpCalcTax').checked,
+    year: Number(document.getElementById('tpYear').value),
+    priorYear: Number(document.getElementById('tpYear').value) - 1,
   };
   try {
     const res = await fetch('/api/admin/tax-projection/compute', {
@@ -1307,6 +1331,7 @@ async function tpFetch() {
   msg.textContent = `Loaded — ${d.status}, last saved ${new Date(d.updatedAt).toLocaleString()}`;
   document.getElementById('tpState').value = d.state || '';
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
+  document.getElementById('tpCalcTax').checked = !!d.calcTax;
   tpRender(d.computed, d.values);
   tpRenderK1s(d.computed.k1);
   tpRenderState(d.state);
@@ -1330,6 +1355,7 @@ async function tpSave() {
     state: document.getElementById('tpState').value || null,
     stateValues: tpCollect('data-tps'),
     paidBy: document.getElementById('tpPaidBy').value,
+    calcTax: document.getElementById('tpCalcTax').checked,
   };
   const r = await fetch('/api/admin/tax-projection', {
     method: 'PUT',
@@ -1360,6 +1386,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const ro = document.getElementById('refreshOrphans');
   if (ro) ro.addEventListener('click', loadBackupOrphans);
+  const ct = document.getElementById('tpCalcTax');
+  if (ct) ct.addEventListener('change', tpScheduleRecalc);
   const roll = document.getElementById('tpRollover');
   if (roll) roll.addEventListener('click', tpRollover);
   const kind = document.getElementById('tpKind');

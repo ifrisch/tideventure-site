@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS, SECTIONS } from './taxworksheet.js';
 import { K1_LINES, K1_LINE_BY_KEY } from './taxk1.js';
 import { STATES, PAID_BY, STATE_LINES, computeStateWorksheet } from './taxstate.js';
+import { availableTaxYears } from './taxrates.js';
 import { ENTITY_TYPES, ENTITY_STATES, ENTITY_LINES, computeEntityWorksheet } from './taxentity.js';
 
 const SEC_HEADERS = {
@@ -1243,7 +1244,7 @@ async function handleFetch(request, env) {
       return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS,
         states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES,
         entityTypes: ENTITY_TYPES, entityStates: ENTITY_STATES, entityLines: ENTITY_LINES,
-        k1Lines: K1_LINES, sections: SECTIONS });
+        k1Lines: K1_LINES, sections: SECTIONS, taxYears: availableTaxYears() });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
@@ -1253,7 +1254,8 @@ async function handleFetch(request, env) {
       const obj = await env.tideventure_documents.get(`taxproj/${client}/${year}`);
       if (!obj) return json(200, { exists: false });
       const saved = JSON.parse(await obj.text());
-      const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus);
+      const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus,
+        { calcTax: !!saved.calcTax, year: saved.year, priorYear: saved.priorYear });
       const state = saved.state && STATE_LINES[saved.state]
         ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy })
         : null;
@@ -1278,7 +1280,8 @@ async function handleFetch(request, env) {
         for (const g of GROUPS) {
           groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : []).slice(0, 50);
         }
-        const computed = computeWorksheet(values, groups, body.filingStatus);
+        const computed = computeWorksheet(values, groups, body.filingStatus,
+          { calcTax: !!body.calcTax, year: parseInt(body.year, 10) || undefined, priorYear: parseInt(body.priorYear, 10) || undefined });
         const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;
         const stateValues = {};
         if (stateCode) {
@@ -1360,11 +1363,13 @@ async function handleFetch(request, env) {
         // What the entity pays is the PTE credit line on the state worksheet,
         // not a second field here — one number, one place.
         paidBy: PAID_BY.some(p => p.key === body.paidBy) ? body.paidBy : 'individual',
+        calcTax: !!body.calcTax,
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };
       await env.tideventure_documents.put(`taxproj/${client}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
-      const computed = computeWorksheet(values, groups, record.filingStatus);
+      const computed = computeWorksheet(values, groups, record.filingStatus,
+        { calcTax: record.calcTax, year: record.year, priorYear: record.priorYear });
       const state = stateCode
         ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy })
         : null;
