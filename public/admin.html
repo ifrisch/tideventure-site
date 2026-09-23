@@ -781,6 +781,19 @@ function tpImportRender(name, pages, findings, missed) {
     return null;
   };
 
+  // Whether a figure can be imported depends on whether its worksheet line is
+  // one you type into. Six rules pointed at computed rows — interest, dividends,
+  // adjustments, credits, other taxes, Schedule 1 income — and would have been
+  // offered as importable, ticked, then silently skipped on accept. Asking the
+  // schema what kind of line it is settles that from the real definition rather
+  // than a list that has to be kept in step by hand.
+  const TYPED = new Set(['input', 'memo', 'taxrule']);
+  const isTyped = (key) => {
+    if (!key) return false;
+    const line = (tpSchema.lines || []).find(l => l.k === key);
+    return !!line && TYPED.has(line.t);
+  };
+
   const rows = findings.map((f, i) => {
     const current = priorOf(f.worksheet);
     const has = current !== null;
@@ -788,10 +801,10 @@ function tpImportRender(name, pages, findings, missed) {
     const status = !has ? '<span style="color:#9ca3af;">nothing to compare</span>'
       : agrees ? '<span style="color:#166534;font-weight:600;">matches</span>'
       : `<span style="color:#b91c1c;font-weight:600;">differs by ${tpMoney(f.amount - current)}</span>`;
-    const canImport = f.appliesToWorksheet && f.worksheet;
+    const canImport = isTyped(f.worksheet);
     return `<tr style="border-bottom:1px solid #f1f5f9;${agrees ? '' : 'background:#fffbfa;'}">
       <td style="padding:0.4rem 0.75rem;">${canImport ? `<input type="checkbox" data-acc="${i}" ${agrees ? '' : 'checked'}>` : ''}</td>
-      <td style="padding:0.4rem 0.75rem;">${esc(f.label)}</td>
+      <td style="padding:0.4rem 0.75rem;">${esc(f.label)}${canImport ? '' : ' <span style="color:#9ca3af;font-size:0.7rem;">check only — the worksheet computes this</span>'}</td>
       <td style="padding:0.4rem 0.75rem;text-align:right;font-weight:600;">${tpMoney(f.amount)}</td>
       <td style="padding:0.4rem 0.75rem;text-align:right;color:#6b7280;">${has ? tpMoney(current) : '—'}</td>
       <td style="padding:0.4rem 0.75rem;">${status}</td>
@@ -818,6 +831,7 @@ function tpImportRender(name, pages, findings, missed) {
       <div style="padding:0.75rem 1rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
         <button id="tpImportAccept" class="btn-sm" style="background:#0d3f5e;color:#fff;">Fill checked lines into prior year</button>
         <span style="font-size:0.78rem;color:#6b7280;">Rows that already agree are unticked — there is nothing to change.</span>
+        <div id="tpImportCoverage" style="width:100%;font-size:0.78rem;color:#6b7280;"></div>
       </div>` : '<div style="padding:1rem;color:#b45309;font-size:0.84rem;">No Form 1040 lines were recognised at all.</div>'}
     ${missed && missed.length ? `<div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
       <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#b45309;margin-bottom:0.4rem;">Not found (${missed.length})</div>
@@ -832,6 +846,9 @@ function tpImportRender(name, pages, findings, missed) {
 
   const accept = document.getElementById('tpImportAccept');
   if (accept) accept.addEventListener('click', () => tpImportApply(findings));
+  const importable = findings.filter(f => isTyped(f.worksheet)).length;
+  const note = document.getElementById('tpImportCoverage');
+  if (note) note.textContent = `${importable} of ${findings.length} recognised figures can be written to the worksheet; the rest are totals it works out for itself.`;
   const copyBtn = document.getElementById('tpCopyMasked');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
     const masked = pages.map(p => `— page ${p.page} —\n` + p.lines.map(tpImportMod.maskAmounts).join('\n')).join('\n\n');
