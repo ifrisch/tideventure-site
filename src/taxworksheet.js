@@ -13,6 +13,15 @@
 //   memo     the CPA types it, and it feeds NO total. State-only and breakdown
 //            rows live here so they can be recorded without affecting federal math.
 //   sum      adds up other lines. Pure arithmetic; correct in every tax year.
+//   category a HEADING FIGURE YOU TYPE. The rows beneath it are supporting
+//            detail — where that income came from — not addends. A projection is
+//            revised at this level: a client mentions a pay rise, or you form a
+//            view on the company's year, and the figure changes without any
+//            detail changing. Treating these as sums made the lines that most
+//            need editing the only ones that could not be edited. Their old
+//            addend list is kept as a REFERENCE total, shown beside the figure so
+//            a disagreement with the detail is visible and adoptable in a click,
+//            but never imposed.
 //   net      first line minus the rest. Pure arithmetic.
 //   taxrule  REQUIRES KNOWLEDGE OF TAX LAW (brackets, floors, caps, phaseouts).
 //            These are the only risky lines. Today every one of them is entered
@@ -50,7 +59,7 @@ export const GROUPS = [
 // sum/net is built from.
 export const LINES = [
   // ── Income ──
-  { k: 'w2_wages', l: 'W-2 Wages', t: 'group', group: 'w2', depth: 0 },
+  { k: 'w2_wages', l: 'W-2 Wages', t: 'category', group: 'w2', group: 'w2', depth: 0 },
   { k: 'household_wages', l: 'Household employee wages not on W-2', t: 'input', depth: 1 },
   { k: 'tips_not_reported', l: 'Tips not reported on Form W-2', t: 'input', depth: 1 },
   { k: 'medicare_waiver', l: 'Medicare waiver payments', t: 'input', depth: 1 },
@@ -60,14 +69,14 @@ export const LINES = [
   { k: 'other_earned_wage', l: 'Other earned wage income', t: 'input', depth: 1 },
   { k: 'combat_pay', l: 'Nontaxable combat pay', t: 'memo', depth: 1, note: 'Not included in total wages — excluded from income.' },
   { k: 'foreign_wages', l: 'Foreign wages', t: 'memo', depth: 1, note: 'Memo. Confirm treatment before relying on it.' },
-  { k: 'total_wages', l: 'Total Wages', t: 'sum', depth: 0, bold: true,
+  { k: 'total_wages', l: 'Total Wages', t: 'category', depth: 0, bold: true,
     of: ['w2_wages', 'household_wages', 'tips_not_reported', 'medicare_waiver', 'dependent_care_taxable', 'adoption_benefits', 'wages_8919', 'other_earned_wage'] },
 
   { k: 'business_income', l: 'Business Income', t: 'input', depth: 0 },
   { k: 'rental_income', l: 'Rental Income', t: 'input', depth: 0 },
   { k: 'farm_income', l: 'Farm Income', t: 'input', depth: 0 },
   { k: 'partnership_income', l: 'Partnership Income', t: 'input', depth: 0 },
-  { k: 'scorp_income', l: 'S Corporation Income', t: 'group', group: 'k1s', depth: 0 },
+  { k: 'scorp_income', l: 'S Corporation Income', t: 'category', group: 'k1s', group: 'k1s', depth: 0 },
   { k: 'estate_trust_income', l: 'Estate / Trust Income', t: 'input', depth: 0 },
 
   // Capital gains. These DO tie out in the reference worksheet, so they compute.
@@ -75,7 +84,7 @@ export const LINES = [
   { k: 'st_gain_state', l: 'State short-term capital gain (loss)', t: 'memo', depth: 2 },
   { k: 'st_gain_passthrough', l: 'Short-term capital gain (loss) from passthrough', t: 'k1agg', k1: 'stGain', depth: 1 },
   { k: 'st_loss_carryover', l: 'Short-term capital loss carryover', t: 'input', depth: 1 },
-  { k: 'net_st_gain', l: 'Net short-term capital gain (loss)', t: 'sum', depth: 1,
+  { k: 'net_st_gain', l: 'Net short-term capital gain (loss)', t: 'category', depth: 1,
     of: ['st_gain', 'st_gain_passthrough', 'st_loss_carryover'] },
   { k: 'lt_gain', l: 'Long-term capital gain (loss)', t: 'input', depth: 1 },
   { k: 'lt_gain_state', l: 'State long-term capital gain (loss)', t: 'memo', depth: 2 },
@@ -86,17 +95,17 @@ export const LINES = [
   { k: 'sec1231_gain_state', l: 'State Section 1231 capital gain', t: 'memo', depth: 2 },
   { k: 'gain_28pct', l: '28% long-term gain', t: 'memo', depth: 1, note: 'Rate bucket — already inside the long-term total. Not added again.' },
   { k: 'unrecaptured_1250', l: 'Unrecaptured Section 1250 gain', t: 'memo', depth: 1, note: 'Rate bucket — already inside the long-term total. Not added again.' },
-  { k: 'net_lt_gain', l: 'Net long-term capital gain (loss)', t: 'sum', depth: 1,
+  { k: 'net_lt_gain', l: 'Net long-term capital gain (loss)', t: 'category', depth: 1,
     of: ['lt_gain', 'lt_gain_passthrough', 'cap_gain_distributions', 'lt_loss_carryover', 'sec1231_gain'] },
-  { k: 'capital_gain_income', l: 'Capital Gain Income', t: 'sum', depth: 0, of: ['net_st_gain', 'net_lt_gain'] },
+  { k: 'capital_gain_income', l: 'Capital Gain Income', t: 'category', depth: 0, of: ['net_st_gain', 'net_lt_gain'] },
 
   { k: 'ordinary_gain_loss', l: 'Ordinary gain (loss)', t: 'input', depth: 1 },
   { k: 'ordinary_gain_k1', l: 'Section 1231 and ordinary gains from K-1s', t: 'k1agg', k1: 'ordinaryGain', depth: 1 },
-  { k: 'other_gains_losses', l: 'Other Gains or Losses', t: 'sum', depth: 0, of: ['ordinary_gain_loss', 'ordinary_gain_k1'] },
+  { k: 'other_gains_losses', l: 'Other Gains or Losses', t: 'category', depth: 0, of: ['ordinary_gain_loss', 'ordinary_gain_k1'] },
 
   // Interest / dividends: detail does NOT tie to the category, so the category
   // is entered directly and the detail rows are recorded as breakdown only.
-  { k: 'interest_income', l: 'Interest Income', t: 'sum', depth: 0,
+  { k: 'interest_income', l: 'Interest Income', t: 'category', depth: 0,
     of: ['interest_income_own', 'interest_k1'] },
   { k: 'interest_income_own', l: 'Interest income', t: 'input', depth: 1 },
   { k: 'interest_k1', l: 'Interest income from Sch K-1', t: 'k1agg', k1: 'interest', depth: 1 },
@@ -107,7 +116,7 @@ export const LINES = [
   { k: 'muni_k1', l: 'Total municipal bonds from Sch K-1', t: 'memo', depth: 1 },
   { k: 'muni_instate_k1', l: 'In-state bonds from Sch K-1', t: 'memo', depth: 1 },
 
-  { k: 'dividend_income', l: 'Dividend Income', t: 'sum', depth: 0,
+  { k: 'dividend_income', l: 'Dividend Income', t: 'category', depth: 0,
     of: ['ordinary_dividends', 'dividends_k1', 'ordinary_dividends_adj'] },
   { k: 'ordinary_dividends', l: 'Ordinary dividends', t: 'input', depth: 1 },
   { k: 'dividends_k1', l: 'Ordinary dividends from Sch K-1', t: 'k1agg', k1: 'dividends', depth: 1 },
@@ -148,7 +157,7 @@ export const LINES = [
   { k: 'other_nonse_s', l: 'Spouse other income not subject to SE tax', t: 'input', depth: 1, spouse: true },
   { k: 'excess_business_loss', l: 'Excess business loss adjustment', t: 'taxrule', depth: 1,
     note: 'Section 461(l) limitation — enter the adjustment.' },
-  { k: 'other_income', l: 'Other Income', t: 'sum', depth: 0,
+  { k: 'other_income', l: 'Other Income', t: 'category', depth: 0,
     of: ['refunds_t', 'refunds_s', 'alimony_t', 'alimony_s', 'unemployment_t', 'unemployment_s', 'gambling_t', 'gambling_s',
          'lottery_t', 'lottery_s', 'education_dist_t', 'education_dist_s', 'property_refund_t', 'property_refund_s',
          'other_se_t', 'other_se_s', 'other_nonse_t', 'other_nonse_s', 'excess_business_loss'] },
@@ -194,7 +203,7 @@ export const LINES = [
   { k: 'other_adj_t', l: 'Taxpayer other adjustments', t: 'input', depth: 2 },
   { k: 'other_adj_s', l: 'Spouse other adjustments', t: 'input', depth: 2, spouse: true },
   { k: 'half_se_tax', l: 'One half SE tax deduction', t: 'taxrule', depth: 2, note: 'Derived from self-employment tax.' },
-  { k: 'adjustments_to_income', l: 'Adjustments to Income', t: 'sum', depth: 0,
+  { k: 'adjustments_to_income', l: 'Adjustments to Income', t: 'category', depth: 0,
     of: ['ira_t', 'ira_s', 'qual_plan_t', 'qual_plan_s', 'solo401k_t', 'solo401k_s', 'sep_t', 'sep_s',
          'money_purchase_t', 'money_purchase_s', 'simple_t', 'simple_match_t', 'simple_s', 'simple_match_s',
          'hsa_t', 'hsa_s', 'educator_allowed_t', 'educator_allowed_s', 'emp_bus_exp_t', 'emp_bus_exp_s',
@@ -238,7 +247,7 @@ export const LINES = [
   { k: 'federal_tax', l: 'Federal tax', t: 'taxrule', depth: 1, note: 'Bracket and capital-gain rate computation.' },
   { k: 'amt', l: 'Alternative minimum tax', t: 'taxrule', depth: 1 },
   { k: 'other_taxes_sch2', l: 'Other taxes', t: 'input', depth: 1 },
-  { k: 'federal_tax_before_credits', l: 'Federal Tax Before Credits', t: 'sum', depth: 0, major: true,
+  { k: 'federal_tax_before_credits', l: 'Federal Tax Before Credits', t: 'category', depth: 0, major: true,
     of: ['federal_tax', 'amt', 'other_taxes_sch2'] },
 
   { k: 'child_tax_credit', l: 'Child tax credit or credit for other dependents', t: 'taxrule', depth: 1, note: 'Income phaseout.' },
@@ -253,7 +262,7 @@ export const LINES = [
   { k: 'general_business_credit', l: 'General business credit', t: 'input', depth: 1 },
   { k: 'other_credits', l: 'Other credits', t: 'input', depth: 1 },
   { k: 'nonrefundable_credit_adj', l: 'Nonrefundable credit adjustment', t: 'input', depth: 1 },
-  { k: 'credits_nonrefundable', l: 'Credits (non-refundable)', t: 'sum', depth: 0, major: true,
+  { k: 'credits_nonrefundable', l: 'Credits (non-refundable)', t: 'category', depth: 0, major: true,
     of: ['child_tax_credit', 'foreign_tax_credit', 'allowed_residential_energy', 'education_credit', 'adoption_credit',
          'minimum_tax_credit', 'allowed_dependent_care', 'general_business_credit', 'other_credits', 'nonrefundable_credit_adj'] },
 
@@ -265,7 +274,7 @@ export const LINES = [
   { k: 'homebuyer_repayment', l: 'Repayment of first-time homebuyer credit', t: 'input', depth: 1 },
   { k: 'additional_medicare', l: 'Additional Medicare tax', t: 'taxrule', depth: 1, note: '0.9% above a filing-status threshold.' },
   { k: 'other_taxes_schedule2', l: 'Other taxes from Schedule 2', t: 'input', depth: 1 },
-  { k: 'other_taxes', l: 'Other Taxes', t: 'sum', depth: 0, major: true,
+  { k: 'other_taxes', l: 'Other Taxes', t: 'category', depth: 0, major: true,
     of: ['se_tax', 'niit', 'additional_ss_medicare', 'ira_penalty_tax', 'household_employment_tax',
          'homebuyer_repayment', 'additional_medicare', 'other_taxes_schedule2'] },
 
@@ -283,7 +292,7 @@ export const LINES = [
   { k: 'withholding_adj', l: 'Withholding adjustment', t: 'input', depth: 1 },
   { k: 'total_withholding', l: 'Total withholding', t: 'input', depth: 1 },
   { k: 'payments_adj', l: 'Payments adjustment', t: 'input', depth: 1 },
-  { k: 'payments', l: 'Payments', t: 'sum', depth: 0, major: true,
+  { k: 'payments', l: 'Payments', t: 'category', depth: 0, major: true,
     of: ['overpayment_applied', 'q1_payment', 'q2_payment', 'q3_payment', 'q4_payment',
          'additional_payment_1', 'additional_payment_2', 'additional_payment_3', 'additional_payment_4',
          'extension_payment', 'withholding_adj', 'total_withholding', 'payments_adj'] },
@@ -294,7 +303,7 @@ export const LINES = [
   { k: 'eitc', l: 'Earned income tax credit', t: 'taxrule', depth: 1 },
   { k: 'other_refundable', l: 'Other refundable credits and payments', t: 'input', depth: 1 },
   { k: 'net_premium_tax_credit', l: 'Net premium tax credit', t: 'taxrule', depth: 1 },
-  { k: 'refundable_credits', l: 'Refundable Credits', t: 'sum', depth: 0, major: true,
+  { k: 'refundable_credits', l: 'Refundable Credits', t: 'category', depth: 0, major: true,
     of: ['refundable_ctc', 'refundable_dependent_care', 'refundable_education', 'eitc', 'other_refundable', 'net_premium_tax_credit'] },
 
   { k: 'underpayment_penalty', l: 'Underpayment penalty', t: 'taxrule', depth: 0, note: 'Form 2210.' },
@@ -382,6 +391,9 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
       // Comes from the K-1 detail, never typed here.
       const t = k1.totals[line.k1] || { prior: 0, baseline: 0 };
       v.prior = t.prior; v.baseline = t.baseline;
+    } else if (line.t === 'category') {
+      const e = enteredColumns(values[line.k]);
+      v.prior = e.prior; v.baseline = e.baseline;
     } else if (line.t === 'sum') {
       for (const c of col) v[c] = round((line.of || []).reduce((s, k) => s + resolve(k)[c], 0));
     } else if (line.t === 'net') {
@@ -401,6 +413,20 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   for (const line of LINES) {
     if (line.t === 'header') continue;
     resolve(line.k);
+  }
+
+  // What the supporting detail adds up to, for every category line. Offered as a
+  // cross-check beside the typed figure, never written into it.
+  const reference = {};
+  for (const line of LINES) {
+    if (line.t !== 'category') continue;
+    const fromK1 = line.group === 'k1s' ? k1.totals.scorp : (line.group === 'w2' ? groupTotals.w2_wages : null);
+    if (fromK1) { reference[line.k] = { prior: fromK1.prior, baseline: fromK1.baseline }; continue; }
+    if (!line.of) continue;
+    reference[line.k] = {
+      prior: round(line.of.reduce((s, k) => s + (out[k] ? out[k].prior : 0), 0)),
+      baseline: round(line.of.reduce((s, k) => s + (out[k] ? out[k].baseline : 0), 0)),
+    };
   }
 
   // Totals and the numbers the whole worksheet exists to produce.
@@ -427,6 +453,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
 
   return {
     lines: out,
+    reference,
     k1: k1.perK1,
     totals,
     projected: { annualNeeded: Math.max(0, needed), quarterly },

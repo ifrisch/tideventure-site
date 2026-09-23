@@ -1114,16 +1114,26 @@ function tpRender(computed, values) {
         rows.push(`<tr><td colspan="4" style="padding:0.5rem 0.75rem;padding-left:${0.75 + line.depth * 1.1}rem;font-size:0.66rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
         continue;
       }
-      const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
+      const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule' || line.t === 'category';
       const isTaxRule = line.t === 'taxrule';
       const fromK1 = line.t === 'k1agg';
       const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : (fromK1 ? 'background:#f0f9ff;' : ''));
       const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'net' || line.t === 'group' ? 'font-weight:600;' : '');
       const pad = 0.75 + (line.depth || 0) * 1.1;
       const title = line.note ? ` title="${esc(line.note)}"` : '';
-      const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.66rem;font-weight:700;">&#9650; needs tax law</span>'
-        : (fromK1 ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&#8627; from K-1</span>'
-        : (line.t === 'group' ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&#8627; per entity below</span>' : ''));
+      // A category carries a quiet note when its supporting detail totals
+      // something else. It is information, not a correction — the typed figure
+      // is the projection and is meant to diverge — with one click to adopt the
+      // detail's total when that is what was wanted.
+      let marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.66rem;font-weight:700;">&#9650; needs tax law</span>'
+        : (fromK1 ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&#8627; from K-1</span>' : '');
+      if (line.t === 'category') {
+        const ref = (computed.reference || {})[line.k];
+        if (ref && Math.abs(ref.baseline - v.baseline) >= 1) {
+          marker += ` <span style="color:#6b7280;font-size:0.68rem;">detail totals ${tpMoney(ref.baseline)}</span>` +
+            ` <button data-useref="${esc(line.k)}" data-refval="${ref.baseline}" style="border:1px solid #d1d5db;background:#fff;border-radius:3px;font-size:0.64rem;padding:0 0.3rem;cursor:pointer;">use</button>`;
+        }
+      }
       const cell = (col) => editable
         ? `<td style="text-align:right;padding:0.25rem 0.5rem;"><input data-tp="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
         : `<td style="text-align:right;padding:0.4rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
@@ -1136,6 +1146,11 @@ function tpRender(computed, values) {
   }
   body.innerHTML = rows.join('');
 
+  body.querySelectorAll('[data-useref]').forEach(b => b.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const el = body.querySelector(`[data-tp="${b.dataset.useref}"][data-col="baseline"]`);
+    if (el) { el.value = b.dataset.refval; tpScheduleRecalc(); }
+  }));
   body.querySelectorAll('[data-sectoggle]').forEach(tr => tr.addEventListener('click', () => {
     const id = tr.dataset.sectoggle;
     tpOpenSections.has(id) ? tpOpenSections.delete(id) : tpOpenSections.add(id);
