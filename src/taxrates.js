@@ -11,15 +11,20 @@
 // the whole worksheet is built to avoid. `federalTax` returns { available:false }
 // for a year that is not here, and the caller keeps the typed figure.
 //
-// Each year records who checked it and when. An unreviewed year should be
-// treated as absent.
+// Each year records where its figures came from and who checked them.
+//   sourced   transcribed from the IRS Revenue Procedure named in `source`
+//   reviewed  a CPA has checked them against their own copy
+// Both matter and they are not the same thing. Transcription can still mis-key a
+// digit, so `reviewed` stays false until a human with professional
+// responsibility has actually looked.
 
 export const TAX_YEARS = {
   2025: {
-    reviewed: false,          // ← set true only once a CPA has checked every figure
+    sourced: false,           // ← NOT taken from the Revenue Procedure; see below
+    reviewed: false,
     reviewedBy: null,
     reviewedOn: null,
-    source: 'IRS annual inflation adjustments for tax year 2025',
+    source: 'Reconstructed, not transcribed from Rev. Proc. 2024-40. Weaker than the 2026 table below — verify before use.',
     // [upTo, rate] — the last band uses Infinity.
     ordinary: {
       single: [[11925,0.10],[48475,0.12],[103350,0.22],[197300,0.24],[250525,0.32],[626350,0.35],[Infinity,0.37]],
@@ -36,8 +41,36 @@ export const TAX_YEARS = {
       hoh:    [64750, 566700],
     },
   },
-  // 2026 is deliberately absent. Its figures were not confirmed, and a tax tool
-  // that guesses a bracket is worse than one that admits it does not know.
+  2026: {
+    sourced: true,
+    reviewed: false,
+    reviewedBy: null,
+    reviewedOn: null,
+    source: 'Rev. Proc. 2025-32, section 4.01 tables 1-4 (pages 10-12) and section 4.03 (page 13). https://www.irs.gov/pub/irs-drop/rp-25-32.pdf',
+    // Transcribed from the Revenue Procedure itself, which states each band as a
+    // base amount plus a rate on the excess. Stored here as the ceiling of each
+    // band, which is the same schedule expressed the other way round.
+    ordinary: {
+      // Table 3 — Unmarried Individuals (other than Surviving Spouses and Heads of Households)
+      single: [[12400,0.10],[50400,0.12],[105700,0.22],[201775,0.24],[256225,0.32],[640600,0.35],[Infinity,0.37]],
+      // Table 1 — Married Individuals Filing Joint Returns and Surviving Spouses
+      mfj:    [[24800,0.10],[100800,0.12],[211400,0.22],[403550,0.24],[512450,0.32],[768700,0.35],[Infinity,0.37]],
+      // Table 4 — Married Individuals Filing Separate Returns
+      mfs:    [[12400,0.10],[50400,0.12],[105700,0.22],[201775,0.24],[256225,0.32],[384350,0.35],[Infinity,0.37]],
+      // Table 2 — Heads of Households
+      hoh:    [[17700,0.10],[67450,0.12],[105700,0.22],[201750,0.24],[256200,0.32],[640600,0.35],[Infinity,0.37]],
+    },
+    // Section 4.03 — maximum zero rate and maximum 15 percent rate amounts.
+    capitalGains: {
+      single: [49450, 545500],   // "All Other Individuals"
+      mfj:    [98900, 613700],
+      mfs:    [49450, 306850],
+      hoh:    [66200, 579600],
+    },
+    // Not used by the calculation, recorded because the worksheet's deduction
+    // line is typed and this is what it should agree with.
+    standardDeduction: { single: 16100, mfj: 32200, mfs: 16100, hoh: 24150 },
+  },
 };
 
 const round = (x) => Math.round(x * 100) / 100;
@@ -102,6 +135,8 @@ export function federalTax({ taxableIncome, filingStatus, year, preferentialInco
     marginalRate: marginalBand[1],
     effectiveRate: total > 0 ? round((tax / total) * 1000) / 10 : 0,
     reviewed: !!table.reviewed,
+    sourced: !!table.sourced,
+    source: table.source,
     year,
   };
 }

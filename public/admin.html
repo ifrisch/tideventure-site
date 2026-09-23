@@ -1185,7 +1185,9 @@ function tpRender(computed, values) {
       tc.textContent = `Federal tax calculated from ${r.year} brackets: ${tpMoney(r.ordinaryTax)} on ${tpMoney(r.ordinaryIncome)} of ordinary income`
         + (r.preferentialIncome ? `, plus ${tpMoney(r.preferentialTax)} on ${tpMoney(r.preferentialIncome)} of long-term gains and qualified dividends` : '')
         + `. Marginal ${(r.marginalRate * 100).toFixed(0)}%, effective ${r.effectiveRate}%.`
-        + (r.reviewed ? '' : ' These rate figures have NOT been reviewed by a CPA — check them before relying on this.');
+        + (r.reviewed ? '' : (r.sourced
+            ? ` Rates transcribed from ${r.source.split('.')[0]}. — accurate to the source, but not yet checked by you.`
+            : ' These rate figures were NOT taken from the Revenue Procedure — verify them before relying on this.'));
     }
   }
   document.getElementById('tpResults').style.display = 'block';
