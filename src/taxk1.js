@@ -190,18 +190,34 @@ export function aggregateK1s(k1s = []) {
   const perK1 = [];
   for (const k1 of (Array.isArray(k1s) ? k1s : [])) {
     const hasDetail = k1 && k1.values && Object.keys(k1.values).length > 0;
+    const row = cols(k1);
     if (hasDetail) {
       const c = computeK1(k1.values);
-      perK1.push({ name: k1.name || '', ein: k1.ein || '', hasDetail: true, computed: c });
+      perK1.push({ name: k1.name || '', ein: k1.ein || '', hasDetail: true, computed: c, row });
+      // PRIOR comes from the K-1 detail, because that is what a K-1 is: last
+      // year's filed figures.
+      //
+      // CURRENT does NOT. There is no K-1 for a year that has not been filed —
+      // the current column is a prediction of the company's ordinary income,
+      // revised through the year as a single figure per entity. Deriving it from
+      // detail would mean re-entering a whole K-1 to change one estimate, and
+      // would leave the line uneditable where it most needs editing. So the
+      // per-entity row figure governs the current column, and the detail governs
+      // the prior one.
       for (const key of Object.keys(totals)) {
         totals[key].prior = round(totals[key].prior + c.flows[key].prior);
+      }
+      totals.scorp.baseline = round(totals.scorp.baseline + row.baseline);
+      // The non-S-corp flows still follow the detail's own current figures, so a
+      // refined projection of K-1 interest or gains is not lost.
+      for (const key of Object.keys(totals)) {
+        if (key === 'scorp') continue;
         totals[key].baseline = round(totals[key].baseline + c.flows[key].baseline);
       }
     } else {
-      const s = cols(k1);
-      perK1.push({ name: k1?.name || '', ein: k1?.ein || '', hasDetail: false, summary: s });
-      totals.scorp.prior = round(totals.scorp.prior + s.prior);
-      totals.scorp.baseline = round(totals.scorp.baseline + s.baseline);
+      perK1.push({ name: k1?.name || '', ein: k1?.ein || '', hasDetail: false, summary: row, row });
+      totals.scorp.prior = round(totals.scorp.prior + row.prior);
+      totals.scorp.baseline = round(totals.scorp.baseline + row.baseline);
     }
   }
   return { totals, perK1 };

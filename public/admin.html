@@ -373,9 +373,7 @@
 
         <div class="block">
           <div class="block-hdr"><h3>Lines</h3>
-            <label style="font-size:0.78rem;font-weight:500;color:#6b7280;display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
-              <input type="checkbox" id="tpShowAll"> Show all lines
-            </label>
+            <span style="font-size:0.78rem;color:#6b7280;">Click a section to open it. Totals update as you type.</span>
           </div>
           <div style="overflow-x:auto;">
             <table id="tpTable" style="width:100%;border-collapse:collapse;font-size:0.84rem;">
@@ -563,6 +561,7 @@ function tpRenderOwners(allocations) {
     </tr>`;
   }).join('') || '<tr><td colspan="6" style="padding:1rem;color:#9ca3af;">No owners yet — add one so the entity tax lands on somebody\'s return.</td></tr>';
 
+  body.querySelectorAll('[data-k1f],[data-k1v]').forEach(el => el.addEventListener('input', tpScheduleRecalc));
   body.querySelectorAll('[data-own]').forEach(el => {
     el.addEventListener('change', () => {
       const i = Number(el.dataset.i), f = el.dataset.own;
@@ -937,15 +936,18 @@ function tpRenderK1s(computedK1) {
     const open = tpK1Open.has(i);
     const net = c && c.hasDetail ? c.computed.lines.net_profit : null;
     const summary = net
-      ? `${tpMoney(net.prior)} &rarr; <strong>${tpMoney(net.baseline)}</strong> <span style="color:#9ca3af;">net profit (loss)</span>`
-      : '<span style="color:#9ca3af;">summary figure only &mdash; expand to enter detail</span>';
+      ? `last year <strong>${tpMoney(net.prior)}</strong> <span style="color:#9ca3af;">from the K-1 detail</span>`
+      : '<span style="color:#9ca3af;">no detail entered &mdash; expand to add it</span>';
     const detail = open ? tpK1DetailHtml(i, k1) : '';
     return `<div style="border-top:1px solid #e5e7eb;">
       <div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 1rem;flex-wrap:wrap;">
         <button data-k1toggle="${i}" class="btn-sm" style="width:1.8rem;padding:0.15rem;">${open ? '&minus;' : '+'}</button>
         <input data-k1f="name" data-i="${i}" value="${esc(k1.name || '')}" placeholder="Entity name" style="width:230px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;">
         <input data-k1f="ein" data-i="${i}" value="${esc(k1.ein || '')}" placeholder="EIN" style="width:120px;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;">
-        <span style="font-size:0.84rem;margin-left:auto;">${summary}</span>
+        <span style="font-size:0.78rem;color:#6b7280;margin-left:auto;">${summary}</span>
+        <label style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">This year
+          <input data-k1f="baseline" data-i="${i}" value="${k1.baseline ?? 0}" title="Projected net profit (loss) for this entity — the figure you revise through the year"
+                 style="width:110px;text-align:right;padding:0.3rem;border:1px solid #0d3f5e;border-radius:4px;margin-left:0.3rem;font-weight:600;"></label>
         <button data-k1rm="${i}" class="btn-sm" style="padding:0.2rem 0.5rem;">Remove</button>
       </div>
       ${detail}
@@ -1014,7 +1016,11 @@ function tpK1DetailHtml(i, k1) {
 function tpCollectK1s() {
   document.querySelectorAll('[data-k1f]').forEach(el => {
     const i = Number(el.dataset.i);
-    if (tpK1s[i]) tpK1s[i][el.dataset.k1f] = el.value;
+    if (!tpK1s[i]) return;
+    const f = el.dataset.k1f;
+    tpK1s[i][f] = (f === 'prior' || f === 'baseline')
+      ? (Number(String(el.value).replace(/[$,\s]/g, '')) || 0)
+      : el.value;
   });
   document.querySelectorAll('[data-k1meta]').forEach(el => {
     const i = Number(el.dataset.i);
@@ -1070,45 +1076,73 @@ async function loadTaxProjTab() {
   }
 }
 
+const tpOpenSections = new Set();
+
 function tpRender(computed, values) {
   tpLastComputed = computed;
-  const showAll = document.getElementById('tpShowAll').checked;
   const status = document.getElementById('tpStatus').value;
   const spouseShown = status === 'mfj';
   const body = document.getElementById('tpBody');
+  const sections = tpSchema.sections || [];
   const rows = [];
 
+  // Walk the lines once, handing each to the section it falls in. Sections are
+  // defined by the line they end on, so a new line lands in the right place
+  // without a second list to keep in step.
+  let si = 0;
+  const buckets = sections.map(sec => ({ sec, lines: [] }));
   for (const line of tpSchema.lines) {
-    if (line.spouse && !spouseShown) continue;
-    const v = computed.lines[line.k] || { prior: 0, baseline: 0, diff: 0 };
-    const isZero = !v.prior && !v.diff && !v.baseline;
-    if (!showAll && isZero && !line.major && line.t !== 'header') continue;
+    if (si < buckets.length) buckets[si].lines.push(line);
+    if (sections[si] && line.k === sections[si].endsWith) si++;
+  }
 
-    if (line.t === 'header') {
-      rows.push(`<tr><td colspan="4" style="padding:0.6rem 0.75rem;padding-left:${0.75 + line.depth * 1.1}rem;font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
-      continue;
+  for (const b of buckets) {
+    const endLine = b.lines[b.lines.length - 1];
+    const tot = endLine ? (computed.lines[endLine.k] || { prior: 0, baseline: 0, diff: 0 }) : null;
+    const open = tpOpenSections.has(b.sec.id);
+    rows.push(`<tr data-sectoggle="${esc(b.sec.id)}" style="background:#eef2f6;cursor:pointer;border-top:1px solid #d7dee6;">
+      <td style="padding:0.55rem 0.75rem;font-weight:700;font-size:0.82rem;">${open ? '&minus;' : '+'} ${esc(b.sec.label)}</td>
+      <td style="text-align:right;padding:0.55rem 0.75rem;font-weight:700;">${tot ? tpMoney(tot.prior) : ''}</td>
+      <td style="text-align:right;padding:0.55rem 0.75rem;color:#6b7280;">${tot ? tpMoney(tot.diff) : ''}</td>
+      <td style="text-align:right;padding:0.55rem 0.75rem;font-weight:700;">${tot ? tpMoney(tot.baseline) : ''}</td></tr>`);
+    if (!open) continue;
+
+    for (const line of b.lines) {
+      if (line.spouse && !spouseShown) continue;
+      const v = computed.lines[line.k] || { prior: 0, baseline: 0, diff: 0 };
+      if (line.t === 'header') {
+        rows.push(`<tr><td colspan="4" style="padding:0.5rem 0.75rem;padding-left:${0.75 + line.depth * 1.1}rem;font-size:0.66rem;font-weight:700;text-transform:uppercase;color:#9ca3af;letter-spacing:0.04em;">${esc(line.l)}</td></tr>`);
+        continue;
+      }
+      const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
+      const isTaxRule = line.t === 'taxrule';
+      const fromK1 = line.t === 'k1agg';
+      const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : (fromK1 ? 'background:#f0f9ff;' : ''));
+      const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'net' || line.t === 'group' ? 'font-weight:600;' : '');
+      const pad = 0.75 + (line.depth || 0) * 1.1;
+      const title = line.note ? ` title="${esc(line.note)}"` : '';
+      const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.66rem;font-weight:700;">&#9650; needs tax law</span>'
+        : (fromK1 ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&#8627; from K-1</span>'
+        : (line.t === 'group' ? ' <span style="color:#0369a1;font-size:0.66rem;font-weight:700;">&#8627; per entity below</span>' : ''));
+      const cell = (col) => editable
+        ? `<td style="text-align:right;padding:0.25rem 0.5rem;"><input data-tp="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
+        : `<td style="text-align:right;padding:0.4rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
+      rows.push(`<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
+        `<td style="padding:0.4rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
+        cell('prior') +
+        `<td style="text-align:right;padding:0.4rem 0.75rem;color:${v.diff ? '#6b7280' : '#d1d5db'};">${tpMoney(v.diff)}</td>` +
+        cell('baseline') + `</tr>`);
     }
-
-    const editable = line.t === 'input' || line.t === 'memo' || line.t === 'taxrule';
-    const isTaxRule = line.t === 'taxrule';
-    const bg = isTaxRule ? 'background:#fffbeb;' : (line.major ? 'background:#f8fafc;' : '');
-    const weight = line.major ? 'font-weight:700;' : (line.t === 'sum' || line.t === 'net' || line.t === 'group' ? 'font-weight:600;' : '');
-    const pad = 0.75 + line.depth * 1.1;
-    const title = line.note ? ` title="${esc(line.note)}"` : '';
-    const marker = isTaxRule ? ' <span style="color:#b45309;font-size:0.68rem;font-weight:700;">▲ needs tax law</span>' : '';
-    const cell = (col) => editable
-      ? `<td style="text-align:right;padding:0.3rem 0.5rem;"><input data-tp="${esc(line.k)}" data-col="${col}" value="${v[col] || 0}" style="width:110px;text-align:right;padding:0.3rem;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"></td>`
-      : `<td style="text-align:right;padding:0.45rem 0.75rem;${weight}">${tpMoney(v[col])}</td>`;
-    // Difference is always read-only: it is baseline minus prior, never typed.
-    const diffCell = `<td style="text-align:right;padding:0.45rem 0.75rem;color:${v.diff ? '#6b7280' : '#d1d5db'};">${tpMoney(v.diff)}</td>`;
-
-    rows.push(
-      `<tr style="${bg}border-bottom:1px solid #f1f5f9;"${title}>` +
-      `<td style="padding:0.45rem 0.75rem;padding-left:${pad}rem;${weight}">${esc(line.l)}${marker}</td>` +
-      cell('prior') + diffCell + cell('baseline') + `</tr>`
-    );
   }
   body.innerHTML = rows.join('');
+
+  body.querySelectorAll('[data-sectoggle]').forEach(tr => tr.addEventListener('click', () => {
+    const id = tr.dataset.sectoggle;
+    tpOpenSections.has(id) ? tpOpenSections.delete(id) : tpOpenSections.add(id);
+    tpRedraw();
+  }));
+  // Typing anywhere in the sheet recalculates; the server still decides totals.
+  body.querySelectorAll('input[data-tp]').forEach(el => el.addEventListener('input', tpScheduleRecalc));
 
   const t = computed.totals.baseline;
   document.getElementById('tpTotalTax').textContent = '$' + tpMoney(t.totalTax);
@@ -1121,10 +1155,9 @@ function tpRender(computed, values) {
   document.getElementById('tpResults').style.display = 'block';
 }
 
-// Re-draw without losing anything typed but not yet saved. Values the CPA has
-// entered are carried into the redraw; the computed rows around them keep their
-// last server-calculated figures until Save, which is the only thing that
-// recomputes. Nothing in the browser is ever the authority on a total.
+// Re-draw from the last server result without a round trip — used when only the
+// view changes (a section opened, filing status switched). Anything typed but
+// not yet recalculated is carried across so it is not lost.
 function tpRedraw() {
   if (!tpLastComputed) return;
   const typed = tpCollect();
@@ -1134,6 +1167,43 @@ function tpRedraw() {
   }
   tpValues = typed;
   tpRender(merged, typed);
+}
+
+// Recalculate shortly after typing stops. The browser never works out a total
+// itself — it sends what has been entered and redraws what comes back, so the
+// figures on screen are always the ones the save would produce.
+let tpRecalcTimer = null;
+function tpScheduleRecalc() {
+  clearTimeout(tpRecalcTimer);
+  const msg = document.getElementById('tpMsg');
+  if (msg) msg.textContent = 'Recalculating…';
+  tpRecalcTimer = setTimeout(tpRecalcNow, 400);
+}
+
+async function tpRecalcNow() {
+  const token = sessionStorage.getItem('tv_admin_token');
+  tpCollectK1s();
+  tpGroups.k1s = tpK1s;
+  const payload = {
+    filingStatus: document.getElementById('tpStatus').value,
+    values: tpCollect(),
+    groups: tpGroups,
+    state: document.getElementById('tpState').value || null,
+    stateValues: tpCollect('data-tps'),
+    paidBy: document.getElementById('tpPaidBy').value,
+  };
+  try {
+    const res = await fetch('/api/admin/tax-projection/compute', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await res.json();
+    if (!res.ok) { document.getElementById('tpMsg').textContent = d.error || 'Could not recalculate.'; return; }
+    tpValues = payload.values;
+    tpRender(d.computed, payload.values);
+    tpRenderState(d.state);
+    document.getElementById('tpMsg').textContent = 'Updated — not saved yet.';
+  } catch { document.getElementById('tpMsg').textContent = 'Could not reach the server to recalculate.'; }
 }
 
 function tpCollect(attr = 'data-tp') {
@@ -1283,8 +1353,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addOwner) addOwner.addEventListener('click', () => { tpOwners.push({ name: '', email: '', ownershipPercent: 0, allocatedPte: null }); tpRenderOwners([]); });
   // Toggling visibility must not write anything — it only changes which rows
   // are drawn, from the figures already on screen.
-  const all = document.getElementById('tpShowAll');
-  if (all) all.addEventListener('change', tpRedraw);
   // Changing filing status re-draws so spouse rows appear or disappear.
   const st = document.getElementById('tpStatus');
   if (st) st.addEventListener('change', tpRedraw);

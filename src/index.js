@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS } from './taxworksheet.js';
+import { LINES, GROUPS, FILING_STATUSES, isValidFilingStatus, computeWorksheet, TAXRULE_KEYS, SECTIONS } from './taxworksheet.js';
 import { K1_LINES, K1_LINE_BY_KEY } from './taxk1.js';
 import { STATES, PAID_BY, STATE_LINES, computeStateWorksheet } from './taxstate.js';
 import { ENTITY_TYPES, ENTITY_STATES, ENTITY_LINES, computeEntityWorksheet } from './taxentity.js';
@@ -1243,7 +1243,7 @@ async function handleFetch(request, env) {
       return json(200, { lines: LINES, groups: GROUPS, filingStatuses: FILING_STATUSES, taxruleKeys: TAXRULE_KEYS,
         states: STATES, paidBy: PAID_BY, stateLines: STATE_LINES,
         entityTypes: ENTITY_TYPES, entityStates: ENTITY_STATES, entityLines: ENTITY_LINES,
-        k1Lines: K1_LINES });
+        k1Lines: K1_LINES, sections: SECTIONS });
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'GET' && isAdmin(email)) {
@@ -1258,6 +1258,41 @@ async function handleFetch(request, env) {
         ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy })
         : null;
       return json(200, { exists: true, ...saved, computed, state });
+    }
+
+    // Recalculate without saving, so the figures update as they are typed and
+    // the server stays the only thing that decides what a total is. A separate
+    // route rather than a flag on the save, because "show me" and "write it
+    // down" should not be one action.
+    if (url.pathname === '/api/admin/tax-projection/compute' && method === 'POST' && isAdmin(email)) {
+      try {
+        const body = await request.json();
+        if (!isValidFilingStatus(body.filingStatus)) return json(400, { error: 'Invalid filing status' });
+        const known = new Set(LINES.map(l => l.k));
+        const values = {};
+        for (const [k, v] of Object.entries(body.values || {})) {
+          if (!known.has(k)) continue;
+          values[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
+        }
+        const groups = {};
+        for (const g of GROUPS) {
+          groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : []).slice(0, 50);
+        }
+        const computed = computeWorksheet(values, groups, body.filingStatus);
+        const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;
+        const stateValues = {};
+        if (stateCode) {
+          const knownState = new Set(STATE_LINES[stateCode].map(l => l.k));
+          for (const [k, v] of Object.entries(body.stateValues || {})) {
+            if (!knownState.has(k)) continue;
+            stateValues[k] = { prior: Number(v?.prior) || 0, baseline: Number(v?.baseline) || 0 };
+          }
+        }
+        const state = stateCode
+          ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: body.paidBy })
+          : null;
+        return json(200, { computed, state });
+      } catch (e) { return json(500, { error: e.message }); }
     }
 
     if (url.pathname === '/api/admin/tax-projection' && method === 'PUT' && isAdmin(email)) {

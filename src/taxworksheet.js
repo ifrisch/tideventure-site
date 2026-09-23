@@ -300,6 +300,16 @@ export const LINES = [
   { k: 'underpayment_penalty', l: 'Underpayment penalty', t: 'taxrule', depth: 0, note: 'Form 2210.' },
 ];
 
+// Collapsible groupings for the UI. Defined by the line each section ends on,
+// so adding a line puts it in the right section without another list to update.
+export const SECTIONS = [
+  { id: 'income',      label: 'Income',                    endsWith: 'total_income' },
+  { id: 'adjustments', label: 'Adjustments and AGI',       endsWith: 'agi' },
+  { id: 'deductions',  label: 'Deductions and taxable income', endsWith: 'taxable_income' },
+  { id: 'tax',         label: 'Tax and credits',           endsWith: 'other_taxes' },
+  { id: 'payments',    label: 'Payments and result',       endsWith: 'underpayment_penalty' },
+];
+
 export const LINE_BY_KEY = Object.fromEntries(LINES.map(l => [l.k, l]));
 
 // Lines whose value requires knowing tax law — the only ones that can go stale.
