@@ -758,14 +758,15 @@ async function tpImportRead(id, name) {
     const buf = await res.arrayBuffer();
     const pages = await tpImportMod.extractLines(buf);
     const { found, missed } = tpImportMod.matchForm1040(pages);
+    const k1Result = tpImportMod.matchScheduleK1(pages);
     tpImportFindings = found;
-    tpImportRender(name, pages, found, missed);
+    tpImportRender(name, pages, found, missed, k1Result.k1s);
   } catch (e) {
     result.innerHTML = `<div style="padding:1rem;color:#b91c1c;font-size:0.84rem;">Could not read that PDF: ${esc(e.message)}<br><br>If it is a scan rather than a generated PDF there is no text layer to read, and the figures have to be entered by hand.</div>`;
   }
 }
 
-function tpImportRender(name, pages, findings, missed) {
+function tpImportRender(name, pages, findings, missed, detectedK1s) {
   const result = document.getElementById('tpImportResult');
   const lineCount = pages.reduce((s, p) => s + p.lines.length, 0);
 
@@ -839,6 +840,20 @@ function tpImportRender(name, pages, findings, missed) {
       <button id="tpCopyMasked" class="btn-sm" style="margin-top:0.6rem;">Copy the form's wording (numbers hidden)</button>
       <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.4rem;line-height:1.6;">Copies the text of every line in the PDF with each digit replaced by #. That is enough to repair a pattern &mdash; matching keys off the wording, never the amount &mdash; without the figures leaving this machine.</div>
     </div>` : ''}
+    ${(detectedK1s && detectedK1s.length) ? `<div style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#0d3f5e;margin-bottom:0.5rem;">Schedule K-1 detected (${detectedK1s.length})</div>
+      ${detectedK1s.map((k, ki) => {
+        const net = (k.values.ordinary_income || 0) - (k.values.sec179_deduction || 0);
+        const boxes = Object.entries(k.values).map(([key, v]) => `${esc(key)}: ${tpMoney(v)}`).join(' &nbsp;·&nbsp; ');
+        return `<div style="border:1px solid #e5e7eb;border-radius:5px;padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+          <div style="font-size:0.84rem;"><strong>Page ${k.page}</strong>${k.ein ? ` &nbsp;EIN ${esc(k.ein)}` : ''}${k.ownership != null ? ` &nbsp;${k.ownership}% ownership` : ''}</div>
+          <div style="font-size:0.84rem;margin-top:0.3rem;">Ordinary income less Section 179 = <strong>${tpMoney(net)}</strong> net profit (loss)</div>
+          <div style="font-size:0.75rem;color:#6b7280;margin-top:0.35rem;line-height:1.6;">${boxes}</div>
+          <button data-fillk1="${ki}" class="btn-sm" style="margin-top:0.5rem;">Fill this K-1's detail</button>
+        </div>`;
+      }).join('')}
+      <div style="font-size:0.75rem;color:#9ca3af;line-height:1.6;">Matched to an existing K-1 by EIN where possible, otherwise added as a new one. Only the prior-year column is written.</div>
+    </div>` : ''}
     <details style="padding:0.75rem 1rem;border-top:1px solid #e5e7eb;">
       <summary style="cursor:pointer;font-size:0.8rem;color:#6b7280;">Show the raw extracted text</summary>
       <pre style="max-height:320px;overflow:auto;background:#f8fafc;padding:0.75rem;border-radius:4px;font-size:0.72rem;line-height:1.5;white-space:pre-wrap;margin-top:0.5rem;">${esc(pages.map(p => `— page ${p.page} —\n` + p.lines.join('\n')).join('\n\n'))}</pre>
@@ -849,12 +864,40 @@ function tpImportRender(name, pages, findings, missed) {
   const importable = findings.filter(f => isTyped(f.worksheet)).length;
   const note = document.getElementById('tpImportCoverage');
   if (note) note.textContent = `${importable} of ${findings.length} recognised figures can be written to the worksheet; the rest are totals it works out for itself.`;
+  (document.querySelectorAll('[data-fillk1]') || []).forEach(b =>
+    b.addEventListener('click', () => tpFillK1FromPdf(detectedK1s[Number(b.dataset.fillk1)])));
   const copyBtn = document.getElementById('tpCopyMasked');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
     const masked = pages.map(p => `— page ${p.page} —\n` + p.lines.map(tpImportMod.maskAmounts).join('\n')).join('\n\n');
     try { await navigator.clipboard.writeText(masked); copyBtn.textContent = 'Copied — numbers replaced with #'; }
     catch { copyBtn.textContent = 'Could not copy — open the raw text below instead'; }
   });
+}
+
+// Write a detected K-1 into the worksheet's own K-1 model rather than into DOM
+// inputs, so it works whether or not that K-1's panel happens to be expanded.
+function tpFillK1FromPdf(detected) {
+  if (!detected) return;
+  tpCollectK1s();
+  const digits = (v) => String(v || '').replace(/\D/g, '');
+  let idx = detected.ein ? tpK1s.findIndex(k => digits(k.ein) && digits(k.ein) === digits(detected.ein)) : -1;
+  if (idx === -1) { tpK1s.push({ name: '', ein: detected.ein || '', prior: 0, baseline: 0, values: {} }); idx = tpK1s.length - 1; }
+  const k1 = tpK1s[idx];
+  k1.values = k1.values || {};
+  if (detected.ein && !k1.ein) k1.ein = detected.ein;
+  let n = 0;
+  for (const [key, amount] of Object.entries(detected.values)) {
+    const existing = k1.values[key] || { prior: 0, baseline: 0 };
+    k1.values[key] = { prior: amount, baseline: existing.baseline || 0 };
+    n++;
+  }
+  if (detected.ownership != null) {
+    const o = k1.values.ownership_percent || { prior: 0, baseline: 0 };
+    k1.values.ownership_percent = { prior: detected.ownership, baseline: o.baseline || detected.ownership };
+  }
+  tpK1Open.add(idx);
+  tpRenderK1s([]);
+  document.getElementById('tpMsg').textContent = `Filled ${n} K-1 box${n === 1 ? '' : 'es'} into the prior-year column of "${k1.name || k1.ein || 'K-1 ' + (idx + 1)}". Review, then Save draft.`;
 }
 
 // Writes into the prior-year inputs only, and leaves the current-year column
