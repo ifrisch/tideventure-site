@@ -18,6 +18,21 @@
 // digit, so `reviewed` stays false until a human with professional
 // responsibility has actually looked.
 
+// OBBBA senior deduction, IRC sec. 151(d)(5)(C). A flat statutory amount — not
+// inflation-indexed — for tax years 2025 through 2028.
+const SENIOR_DEDUCTION = {
+  perPerson: 6000,
+  // The reduced amount is 6% of MAGI above the threshold. The $150,000
+  // threshold applies ONLY to a joint return (sec. 151(d)(5)(C)(iii)(I);
+  // Schedule 1-A line 32). A qualifying surviving spouse takes the joint
+  // standard deduction and joint brackets but the $75,000 senior threshold,
+  // because they do not file a joint return — the first research pass got
+  // this wrong and two independent verifiers caught it.
+  thresholdJoint: 150000,
+  thresholdOther: 75000,
+  rate: 0.06,
+};
+
 export const TAX_YEARS = {
   2025: {
     sourced: true,
@@ -45,6 +60,14 @@ export const TAX_YEARS = {
       mfs:    [48350, 300000],
       hoh:    [64750, 566700],
     },
+    // As AMENDED by the OBBBA: Rev. Proc. 2025-32 sec. 3.01 replaced the 2025
+    // base amounts. The aged/blind and dependent figures come from Rev. Proc.
+    // 2024-40 secs. 2.15(2) and 2.15(3), which that amendment left in force.
+    standardDeduction: { single: 15750, mfj: 31500, mfs: 15750, hoh: 23625 },
+    additionalPerUnit:  { single: 2000, hoh: 2000, mfj: 1600, mfs: 1600 },
+    dependentFloor: 1350,
+    dependentAddon: 450,
+    senior: SENIOR_DEDUCTION,
   },
   2026: {
     sourced: true,
@@ -72,9 +95,12 @@ export const TAX_YEARS = {
       mfs:    [49450, 306850],
       hoh:    [66200, 579600],
     },
-    // Not used by the calculation, recorded because the worksheet's deduction
-    // line is typed and this is what it should agree with.
+    // Rev. Proc. 2025-32 sec. 4.14(1)-(3).
     standardDeduction: { single: 16100, mfj: 32200, mfs: 16100, hoh: 24150 },
+    additionalPerUnit:  { single: 2050, hoh: 2050, mfj: 1650, mfs: 1650 },
+    dependentFloor: 1350,
+    dependentAddon: 450,
+    senior: SENIOR_DEDUCTION,
   },
 };
 
@@ -144,6 +170,63 @@ export function federalTax({ taxableIncome, filingStatus, year, preferentialInco
     source: table.source,
     year,
   };
+}
+
+// Standard deduction, IRC sec. 63(c). Returns the amount for line 12e BEFORE the
+// comparison with itemized deductions, which the worksheet does.
+//
+// `barred` is the sec. 63(c)(6) case — married filing separately where either
+// spouse itemizes, a nonresident alien, or a short year. It zeroes the ENTIRE
+// standard deduction, including the aged/blind additional amount: sec. 63(c)(1)
+// defines the standard deduction as the sum of both, so zeroing only the base
+// would leave a phantom deduction. The first research pass made that mistake.
+export function standardDeduction({ year, filingStatus, taxpayer65 = false, spouse65 = false,
+  taxpayerBlind = false, spouseBlind = false, isDependent = false, earnedIncome = 0, barred = false }) {
+  const t = TAX_YEARS[year];
+  if (!t || !t.standardDeduction) return { available: false, reason: `No ${year} standard deduction loaded.` };
+  const base0 = t.standardDeduction[filingStatus];
+  if (base0 == null) return { available: false, reason: `No ${year} standard deduction for "${filingStatus}".` };
+  if (barred) return { available: true, amount: 0, base: 0, units: 0, note: 'Barred under sec. 63(c)(6) — the whole standard deduction is zero.' };
+
+  // A dependent's basic amount is capped at the greater of the floor or earned
+  // income plus the add-on, and never above the normal base.
+  const base = isDependent
+    ? Math.min(base0, Math.max(t.dependentFloor, (Number(earnedIncome) || 0) + t.dependentAddon))
+    : base0;
+
+  // Spouse units count only on a joint return here. On a separate return they
+  // can count when the spouse had no gross income and is nobody's dependent
+  // (sec. 63(f)(1)(B)); that case is not modelled.
+  const units = (taxpayer65 ? 1 : 0) + (taxpayerBlind ? 1 : 0)
+              + (filingStatus === 'mfj' ? (spouse65 ? 1 : 0) + (spouseBlind ? 1 : 0) : 0);
+  const perUnit = t.additionalPerUnit[filingStatus];
+  return { available: true, amount: round(base + units * perUnit), base, units, perUnit };
+}
+
+// OBBBA senior deduction, sec. 151(d)(5)(C). Reported on Schedule 1-A.
+//
+// ORDERING MATTERS: this must come off BEFORE the qualified business income
+// deduction's 20%-of-taxable-income limitation is computed. Form 8995 line 11
+// is "Form 1040 line 11a minus lines 12e and 13b", and 13b is the Schedule 1-A
+// total this lands in. Treating it as independent of the QBI cap overstates the
+// cap. The worksheet puts it inside the deductions line — which is also how
+// ProConnect presents it — so the QBI base is correct by construction.
+//
+// Assumes a valid work-authorised SSN issued before the return due date, which
+// sec. 151(d)(5)(C)(iv) requires; that is not tested.
+export function seniorDeduction({ year, filingStatus, magi = 0, taxpayer65 = false, spouse65 = false }) {
+  const t = TAX_YEARS[year];
+  if (!t || !t.senior) return { available: false, reason: `No ${year} senior deduction loaded.` };
+  // Married taxpayers must file jointly to claim it at all.
+  if (filingStatus === 'mfs') return { available: true, amount: 0, count: 0, note: 'Not allowed on a separate return.' };
+  const count = (taxpayer65 ? 1 : 0) + (filingStatus === 'mfj' && spouse65 ? 1 : 0);
+  if (!count) return { available: true, amount: 0, count: 0 };
+  const threshold = filingStatus === 'mfj' ? t.senior.thresholdJoint : t.senior.thresholdOther;
+  const reduction = Math.max(0, (Number(magi) || 0) - threshold) * t.senior.rate;
+  // The reduction runs against EACH individual's $6,000 separately (Schedule
+  // 1-A computes it once, then enters the one reduced figure per person).
+  const per = Math.max(0, t.senior.perPerson - reduction);
+  return { available: true, amount: round(per * count), count, per: round(per), threshold };
 }
 
 export const availableTaxYears = () => Object.keys(TAX_YEARS).map(Number).sort();

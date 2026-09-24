@@ -1255,7 +1255,7 @@ async function handleFetch(request, env) {
       if (!obj) return json(200, { exists: false });
       const saved = JSON.parse(await obj.text());
       const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus,
-        { calcTax: !!saved.calcTax, year: saved.year, priorYear: saved.priorYear });
+        { calcTax: !!saved.calcTax, year: saved.year, priorYear: saved.priorYear, profile: saved.profile || {} });
       const state = saved.state && STATE_LINES[saved.state]
         ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy })
         : null;
@@ -1281,7 +1281,7 @@ async function handleFetch(request, env) {
           groups[g.key] = (Array.isArray(body.groups?.[g.key]) ? body.groups[g.key] : []).slice(0, 50);
         }
         const computed = computeWorksheet(values, groups, body.filingStatus,
-          { calcTax: !!body.calcTax, year: parseInt(body.year, 10) || undefined, priorYear: parseInt(body.priorYear, 10) || undefined });
+          { calcTax: !!body.calcTax, year: parseInt(body.year, 10) || undefined, priorYear: parseInt(body.priorYear, 10) || undefined, profile: body.profile || {} });
         const stateCode = typeof body.state === 'string' && STATE_LINES[body.state] ? body.state : null;
         const stateValues = {};
         if (stateCode) {
@@ -1364,12 +1364,15 @@ async function handleFetch(request, env) {
         // not a second field here — one number, one place.
         paidBy: PAID_BY.some(p => p.key === body.paidBy) ? body.paidBy : 'individual',
         calcTax: !!body.calcTax,
+        // Facts about the taxpayer that change the standard and senior
+        // deductions. Stored as booleans only, whatever was sent.
+        profile: (() => { const q = body.profile || {}; return { taxpayer65: !!q.taxpayer65, spouse65: !!q.spouse65, taxpayerBlind: !!q.taxpayerBlind, spouseBlind: !!q.spouseBlind, isDependent: !!q.isDependent, standardBarred: !!q.standardBarred }; })(),
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };
       await env.tideventure_documents.put(`taxproj/${client}/${year}`, JSON.stringify(record), { httpMetadata: { contentType: 'application/json' } });
       const computed = computeWorksheet(values, groups, record.filingStatus,
-        { calcTax: record.calcTax, year: record.year, priorYear: record.priorYear });
+        { calcTax: record.calcTax, year: record.year, priorYear: record.priorYear, profile: record.profile });
       const state = stateCode
         ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy })
         : null;

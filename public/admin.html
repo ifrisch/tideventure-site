@@ -268,9 +268,18 @@
           <div id="tpEntityTypeWrap" style="display:none;"><label style="display:block;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:0.25rem;">Entity type</label>
             <select id="tpEntityType" style="padding:0.45rem;min-width:170px;"></select></div>
           <button id="tpLoad" class="btn-sm">Load</button>
-          <label style="font-size:0.78rem;color:#374151;display:flex;align-items:center;gap:0.35rem;cursor:pointer;" title="Work the federal tax out from taxable income using that year's brackets, instead of typing it">
+          <label style="font-size:0.78rem;color:#374151;display:flex;align-items:center;gap:0.35rem;cursor:pointer;" title="Work the standard deduction and federal tax out from the year's published figures, instead of typing them">
             <input type="checkbox" id="tpCalcTax"> Calculate federal tax
           </label>
+          <div id="tpProfile" style="display:flex;gap:0.8rem;flex-wrap:wrap;font-size:0.76rem;color:#374151;width:100%;">
+            <span style="font-weight:700;color:#6b7280;text-transform:uppercase;font-size:0.68rem;">Taxpayer</span>
+            <label><input type="checkbox" data-prof="taxpayer65"> 65 or older</label>
+            <label><input type="checkbox" data-prof="taxpayerBlind"> Blind</label>
+            <label class="tp-spouse-only"><input type="checkbox" data-prof="spouse65"> Spouse 65 or older</label>
+            <label class="tp-spouse-only"><input type="checkbox" data-prof="spouseBlind"> Spouse blind</label>
+            <label><input type="checkbox" data-prof="isDependent"> Claimed as a dependent</label>
+            <label title="Married filing separately where either spouse itemizes: the whole standard deduction is zero"><input type="checkbox" data-prof="standardBarred"> No standard deduction allowed</label>
+          </div>
           <button id="tpRollover" class="btn-sm" title="Copy every prior-year figure into the current-year column as a starting point">Roll prior &rarr; current</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
           <span id="tpMsg" style="font-size:0.8rem;color:#6b7280;"></span>
@@ -287,6 +296,7 @@
             <div><div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;">Safe harbor quarterly</div><div id="tpSafeHarbor" style="font-size:1.5rem;font-weight:700;color:#166534;">—</div>
               <div id="tpSafeHarborBasis" style="font-size:0.72rem;color:#6b7280;margin-top:0.25rem;line-height:1.5;"></div></div>
           </div>
+          <div id="tpDedNote" style="display:none;"></div>
           <div id="tpTaxCalcNote" style="display:none;"></div>
           <div id="tpDivergeNote" style="display:none;"></div>
           <div style="padding:0 1rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
@@ -616,6 +626,12 @@ function tpRenderEntity(computed) {
 // Start the current year from last year's figures. This is how a projection
 // actually begins: everything rolls over, then individual lines get corrected as
 // real numbers arrive. Only entered rows are copied — computed ones follow.
+function tpProfile() {
+  const p = {};
+  document.querySelectorAll('[data-prof]').forEach(el => { p[el.dataset.prof] = el.checked; });
+  return p;
+}
+
 function tpRollover() {
   let n = 0;
   document.querySelectorAll('input[data-col="prior"]').forEach(priorEl => {
@@ -1184,6 +1200,18 @@ function tpRender(computed, values) {
             + manual.map(m => `${esc(m.label)} (${tpMoney(m.value)})`).join('; ') + '.</div>' : '');
     }
   }
+  const dn = document.getElementById('tpDedNote');
+  if (dn) {
+    const d = computed.deductionCalc && computed.deductionCalc.baseline;
+    if (!d) dn.style.display = 'none';
+    else if (!d.available) { dn.style.cssText = 'display:block;margin:0 1rem 0.6rem;font-size:0.79rem;color:#7f1d1d;'; dn.textContent = d.reason; }
+    else {
+      dn.style.cssText = 'display:block;margin:0 1rem 0.6rem;padding:0.5rem 0.75rem;background:#f8fafc;border-left:3px solid #0d3f5e;font-size:0.79rem;color:#374151;line-height:1.6;';
+      dn.textContent = `Deductions: ${d.takesItemized ? 'itemized ' + tpMoney(d.itemized) + ' beats the standard ' + tpMoney(d.standard) : 'standard ' + tpMoney(d.standard) + ' beats itemized ' + tpMoney(d.itemized)}`
+        + (d.senior ? `, plus a ${tpMoney(d.senior)} senior deduction` : '')
+        + (d.other ? `, plus ${tpMoney(d.other)} other` : '') + ` = ${tpMoney(d.total)}.`;
+    }
+  }
   const tc = document.getElementById('tpTaxCalcNote');
   if (tc) {
     const r = computed.taxCalc && computed.taxCalc.baseline;
@@ -1245,6 +1273,7 @@ async function tpRecalcNow() {
     calcTax: document.getElementById('tpCalcTax').checked,
     year: Number(document.getElementById('tpYear').value),
     priorYear: Number(document.getElementById('tpYear').value) - 1,
+    profile: tpProfile(),
   };
   try {
     const res = await fetch('/api/admin/tax-projection/compute', {
@@ -1347,6 +1376,7 @@ async function tpFetch() {
   document.getElementById('tpState').value = d.state || '';
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
   document.getElementById('tpCalcTax').checked = !!d.calcTax;
+  document.querySelectorAll('[data-prof]').forEach(el => { el.checked = !!(d.profile || {})[el.dataset.prof]; });
   tpRender(d.computed, d.values);
   tpRenderK1s(d.computed.k1);
   tpRenderState(d.state);
@@ -1371,6 +1401,7 @@ async function tpSave() {
     stateValues: tpCollect('data-tps'),
     paidBy: document.getElementById('tpPaidBy').value,
     calcTax: document.getElementById('tpCalcTax').checked,
+    profile: tpProfile(),
   };
   const r = await fetch('/api/admin/tax-projection', {
     method: 'PUT',
@@ -1403,6 +1434,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ro) ro.addEventListener('click', loadBackupOrphans);
   const ct = document.getElementById('tpCalcTax');
   if (ct) ct.addEventListener('change', tpScheduleRecalc);
+  document.querySelectorAll('[data-prof]').forEach(el => el.addEventListener('change', tpScheduleRecalc));
+  // Spouse facts only mean something on a joint return.
+  const syncSpouse = () => {
+    const joint = document.getElementById('tpStatus').value === 'mfj';
+    document.querySelectorAll('.tp-spouse-only').forEach(el => { el.style.display = joint ? '' : 'none'; });
+  };
+  const stEl = document.getElementById('tpStatus');
+  if (stEl) stEl.addEventListener('change', syncSpouse);
+  syncSpouse();
   const roll = document.getElementById('tpRollover');
   if (roll) roll.addEventListener('click', tpRollover);
   const kind = document.getElementById('tpKind');

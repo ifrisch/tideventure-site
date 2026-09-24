@@ -34,7 +34,7 @@
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
 import { aggregateK1s } from './taxk1.js';
-import { federalTax } from './taxrates.js';
+import { federalTax, standardDeduction, seniorDeduction } from './taxrates.js';
 
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
@@ -415,6 +415,50 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     out[key] = v;
     return v;
   };
+  // Deductions are UPSTREAM of taxable income, so unlike the tax they cannot be
+  // overwritten after the fact — taxable income would already have been worked
+  // out from the typed figure. They are computed first and placed into the
+  // memo before the main pass, which then reads them like any other line.
+  let deductionCalc = null;
+  if (opts.calcTax) {
+    const p = opts.profile || {};
+    // Itemized deductions are the CPA's own "allowed" figures: the SALT cap,
+    // medical floor and charitable limits stay theirs to apply. Only the
+    // standard deduction and the comparison between the two are computed here.
+    // Mortgage interest is taken as entered; acquisition-debt limits are not.
+    const ITEMIZED = ['mortgage_1098', 'mortgage_no_1098', 'home_office_mortgage', 'points',
+                      'allowed_taxes', 'allowed_medical', 'allowed_charitable', 'casualty_theft', 'other_misc_deductions'];
+    deductionCalc = {};
+    for (const c of col) {
+      const yr = c === 'prior' ? (opts.priorYear || (opts.year ? opts.year - 1 : undefined)) : opts.year;
+      const std = standardDeduction({ year: yr, filingStatus, taxpayer65: !!p.taxpayer65, spouse65: !!p.spouse65,
+        taxpayerBlind: !!p.taxpayerBlind, spouseBlind: !!p.spouseBlind, isDependent: !!p.isDependent,
+        earnedIncome: resolve('total_wages')[c], barred: !!p.standardBarred });
+      if (!std.available) { deductionCalc[c] = { available: false, reason: std.reason }; continue; }
+      const itemized = round(ITEMIZED.reduce((s, k) => s + resolve(k)[c], 0) - resolve('mortgage_credit_adj')[c]);
+      // MAGI is AGI for a client without a foreign earned income exclusion.
+      const senior = seniorDeduction({ year: yr, filingStatus, magi: resolve('agi')[c],
+        taxpayer65: !!p.taxpayer65, spouse65: !!p.spouse65 });
+      const other = resolve('other_deduction')[c];
+      const takesItemized = itemized > std.amount;
+      deductionCalc[c] = {
+        available: true, standard: std.amount, itemized, senior: senior.amount || 0, other,
+        takesItemized, total: round(Math.max(std.amount, itemized) + (senior.amount || 0) + other),
+      };
+    }
+    // Write the computed figures in for whichever columns have rates loaded.
+    const set = (key, pick) => {
+      const cur = out[key] || { prior: 0, baseline: 0 };
+      const next = { prior: cur.prior, baseline: cur.baseline };
+      for (const c of col) if (deductionCalc[c].available) next[c] = pick(deductionCalc[c]);
+      next.diff = round(next.baseline - next.prior);
+      out[key] = next;
+    };
+    set('standard_deduction', d => d.standard);
+    set('senior_deduction', d => d.senior);
+    set('deductions', d => d.total);
+  }
+
   for (const line of LINES) {
     if (line.t === 'header') continue;
     resolve(line.k);
@@ -511,6 +555,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
 
   return {
     lines: out,
+    deductionCalc,
     stillManual,
     thresholdWarnings,
     taxCalc,
