@@ -20,12 +20,17 @@
 
 export const TAX_YEARS = {
   2025: {
-    sourced: false,           // ← NOT taken from the Revenue Procedure; see below
+    sourced: true,
     reviewed: false,
     reviewedBy: null,
     reviewedOn: null,
-    source: 'Reconstructed, not transcribed from Rev. Proc. 2024-40. Weaker than the 2026 table below — verify before use.',
-    // [upTo, rate] — the last band uses Infinity.
+    source: 'Rev. Proc. 2024-40, section 2.01 tables 1-4 (pages 5-6) and section 2.03 (page 7). https://www.irs.gov/pub/irs-drop/rp-24-40.pdf',
+    // [upTo, rate] — the last band uses Infinity. Checked against the Revenue
+    // Procedure's own "base amount plus rate on the excess" form; all 28 bands
+    // and all 8 capital gain breakpoints reproduce exactly.
+    //
+    // Note: the OBBBA amended the 2025 STANDARD DEDUCTION (Rev. Proc. 2025-32
+    // section 3.01) but left these rate tables untouched, so they still govern.
     ordinary: {
       single: [[11925,0.10],[48475,0.12],[103350,0.22],[197300,0.24],[250525,0.32],[626350,0.35],[Infinity,0.37]],
       mfj:    [[23850,0.10],[96950,0.12],[206700,0.22],[394600,0.24],[501050,0.32],[751600,0.35],[Infinity,0.37]],
