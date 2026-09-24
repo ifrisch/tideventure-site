@@ -288,6 +288,7 @@
               <div id="tpSafeHarborBasis" style="font-size:0.72rem;color:#6b7280;margin-top:0.25rem;line-height:1.5;"></div></div>
           </div>
           <div id="tpTaxCalcNote" style="display:none;"></div>
+          <div id="tpDivergeNote" style="display:none;"></div>
           <div style="padding:0 1rem 1rem;font-size:0.78rem;color:#6b7280;line-height:1.6;">
             The projected figure is what this worksheet says they will owe. The safe harbor figure is the minimum pay-in that avoids an underpayment penalty regardless of how the projection turns out. They are different numbers and both matter.
           </div>
@@ -1171,6 +1172,18 @@ function tpRender(computed, values) {
   document.getElementById('tpQuarterly').textContent = '$' + tpMoney(computed.projected.quarterly);
   document.getElementById('tpSafeHarbor').textContent = '$' + tpMoney(computed.safeHarbor.quarterly);
   document.getElementById('tpSafeHarborBasis').textContent = computed.safeHarbor.basis;
+  const dv = document.getElementById('tpDivergeNote');
+  if (dv) {
+    const manual = (computed.stillManual || []).filter(m => m.value);
+    const warn = computed.thresholdWarnings || [];
+    if (!manual.length && !warn.length) { dv.style.display = 'none'; }
+    else {
+      dv.style.cssText = 'display:block;margin:0 1rem 1rem;padding:0.6rem 0.75rem;background:#fffbeb;border-left:3px solid #b45309;font-size:0.79rem;color:#374151;line-height:1.6;';
+      dv.innerHTML = (warn.length ? warn.map(w => `<div style="margin-bottom:0.4rem;">${esc(w)}</div>`).join('') : '')
+        + (manual.length ? `<div><strong>Still entered by hand, so these will not move with income:</strong> `
+            + manual.map(m => `${esc(m.label)} (${tpMoney(m.value)})`).join('; ') + '.</div>' : '');
+    }
+  }
   const tc = document.getElementById('tpTaxCalcNote');
   if (tc) {
     const r = computed.taxCalc && computed.taxCalc.baseline;

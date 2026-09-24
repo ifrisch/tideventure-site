@@ -447,6 +447,32 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     }
   }
 
+  // Lines that still need tax law and are still entered by hand. With the
+  // bracket calculation on it is easy to assume the whole tax responds to
+  // income; these do not, and they are exactly where a comparison against
+  // software that DOES compute them will diverge. Naming them turns an
+  // unexplained difference into an explained one.
+  const stillManual = LINES
+    .filter(l => l.t === 'taxrule')
+    .map(l => ({ key: l.k, label: l.l, value: out[l.k] ? out[l.k].baseline : 0 }));
+
+  // Two taxes that switch on above a threshold and are not computed here. If
+  // income has crossed the line and the figure is still zero, say so — that is
+  // the most likely single reason a total comes in under other software.
+  // Thresholds are statutory and not inflation-indexed; confirm before relying.
+  const NIIT_THRESHOLD = { single: 200000, hoh: 200000, mfj: 250000, mfs: 125000 };
+  const agiNow = out.agi ? out.agi.baseline : 0;
+  const threshold = NIIT_THRESHOLD[filingStatus] ?? 200000;
+  const thresholdWarnings = [];
+  if (agiNow > threshold) {
+    if (!(out.niit && out.niit.baseline)) {
+      thresholdWarnings.push(`AGI of ${Math.round(agiNow).toLocaleString()} is above the ${threshold.toLocaleString()} net investment income tax threshold for this filing status, and the NIIT line is zero. Software that computes it will show more tax than this worksheet.`);
+    }
+    if (!(out.additional_medicare && out.additional_medicare.baseline)) {
+      thresholdWarnings.push(`Additional Medicare tax is zero while income is above its threshold. Same effect: expect a difference against software that computes it.`);
+    }
+  }
+
   // What the supporting detail adds up to, for every category line. Offered as a
   // cross-check beside the typed figure, never written into it.
   const reference = {};
@@ -485,6 +511,8 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
 
   return {
     lines: out,
+    stillManual,
+    thresholdWarnings,
     taxCalc,
     reference,
     k1: k1.perK1,
