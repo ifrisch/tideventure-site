@@ -229,4 +229,43 @@ export function seniorDeduction({ year, filingStatus, magi = 0, taxpayer65 = fal
   return { available: true, amount: round(per * count), count, per: round(per), threshold };
 }
 
+// ── Net investment income tax, IRC sec. 1411 ──
+// Thresholds are written into the statute and are NOT inflation-indexed, so
+// they are the same in every year (confirmed against the 2026 draft Form 8960).
+export const NIIT_THRESHOLD = { single: 200000, hoh: 200000, mfj: 250000, mfs: 125000 };
+export const NIIT_RATE = 0.038;
+
+// 3.8% of the LESSER of net investment income and MAGI over the threshold.
+// The caller decides what is investment income — see taxworksheet.js, where the
+// material-participation question for each K-1 is answered.
+export function netInvestmentIncomeTax({ filingStatus, magi = 0, netInvestmentIncome = 0 }) {
+  const threshold = NIIT_THRESHOLD[filingStatus] ?? 200000;
+  const excess = Math.max(0, (Number(magi) || 0) - threshold);
+  const nii = Math.max(0, Number(netInvestmentIncome) || 0);
+  const base = Math.min(nii, excess);
+  return { tax: Math.round(base * NIIT_RATE), threshold, excess: round(excess), nii: round(nii), base: round(base) };
+}
+
+// ── Additional Medicare tax, IRC secs. 3101(b)(2) and 1401(b)(2) ──
+// Same statutory, unindexed thresholds. Applies to wages and self-employment
+// income only — S corporation distributive income is neither, so it never
+// counts here however large it is.
+export const ADDL_MEDICARE_THRESHOLD = { single: 200000, hoh: 200000, mfj: 250000, mfs: 125000 };
+export const ADDL_MEDICARE_RATE = 0.009;
+
+// Form 8959 order: wages first, then self-employment income against whatever
+// threshold the wages did not use. Self-employment earnings must already be
+// floored PER PERSON before they arrive here — adding a loss for one spouse to
+// a profit for the other and flooring the total lets the loss cancel tax the
+// other spouse owes, which the IRS rules forbid.
+export function additionalMedicareTax({ filingStatus, wages = 0, seEarnings = 0 }) {
+  const threshold = ADDL_MEDICARE_THRESHOLD[filingStatus] ?? 200000;
+  const w = Math.max(0, Number(wages) || 0);
+  const se = Math.max(0, Number(seEarnings) || 0);
+  const onWages = Math.max(0, w - threshold) * ADDL_MEDICARE_RATE;
+  const seThreshold = Math.max(0, threshold - w);
+  const onSe = Math.max(0, se - seThreshold) * ADDL_MEDICARE_RATE;
+  return { tax: round(onWages + onSe), onWages: round(onWages), onSe: round(onSe), threshold };
+}
+
 export const availableTaxYears = () => Object.keys(TAX_YEARS).map(Number).sort();

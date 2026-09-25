@@ -34,7 +34,7 @@
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
 import { aggregateK1s } from './taxk1.js';
-import { federalTax, standardDeduction, seniorDeduction } from './taxrates.js';
+import { federalTax, standardDeduction, seniorDeduction, netInvestmentIncomeTax, additionalMedicareTax } from './taxrates.js';
 
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
@@ -491,13 +491,96 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     }
   }
 
+  // Net investment income tax and additional Medicare tax, when the calculation
+  // is on. Both are statutory with unindexed thresholds, so unlike the brackets
+  // they do not depend on a year's table being loaded.
+  let surtaxCalc = null;
+  if (opts.calcTax) {
+    surtaxCalc = {};
+    const k1Rows = Array.isArray(groups.k1s) ? groups.k1s : [];
+    for (const c of col) {
+      const at = (k) => (out[k] ? out[k][c] : 0);
+
+      // ── What counts as net investment income ──
+      // Interest and ordinary dividends always do, including what arrives on a
+      // K-1: portfolio income is NII even from a business you run.
+      //
+      // K-1 ORDINARY income counts only where the shareholder does NOT
+      // materially participate. For an owner-operator it is excluded, and that
+      // one flag decides the whole line — so it is read per entity from the
+      // K-1's own "passive activity" box rather than assumed.
+      let passiveK1 = 0;
+      k1.perK1.forEach((p, i) => {
+        const raw = k1Rows[i] || {};
+        const passive = !!(raw.flags && raw.flags.passive_activity);
+        if (!passive) return;
+        passiveK1 += c === 'prior'
+          ? (p.hasDetail ? p.computed.flows.scorp.prior : p.row.prior)
+          : p.row.baseline;
+      });
+
+      // Capital gains enter at their LIMITED amount. A net loss can offset
+      // other investment income by at most $3,000 ($1,500 separately) — the
+      // carryover beyond that does not reduce NII this year. Feeding the raw
+      // figure would let a large carryover erase the tax entirely.
+      const capFloor = filingStatus === 'mfs' ? -1500 : -3000;
+      const capital = Math.max(at('capital_gain_income'), capFloor);
+
+      // Rentals and estate/trust income are treated as investment income. The
+      // real-estate-professional and grouping exceptions are not modelled, so
+      // for a client who qualifies this overstates the tax.
+      const gross = at('interest_income') + at('dividend_income') + capital
+                  + at('rental_income') + at('estate_trust_income') + passiveK1;
+
+      // Investment interest and the allocable share of state income tax are
+      // NOT deducted here. That is exact for a client taking the standard
+      // deduction — they are not allowed those deductions at all — and slightly
+      // overstates the tax for an itemizer. Overstating is the safe direction
+      // for an estimate.
+      const niit = netInvestmentIncomeTax({ filingStatus, magi: at('agi'), netInvestmentIncome: gross });
+
+      // ── Additional Medicare tax ──
+      // Wages from every W-2, then self-employment earnings at 92.35%. Each
+      // person's self-employment amount is floored at zero on its own before
+      // anything is combined, so one spouse's loss cannot cancel the other's.
+      const perPersonSe = (amt) => Math.max(0, amt) * 0.9235;
+      const seTaxpayer = perPersonSe(at('business_income') + at('farm_income') + at('other_se_t'));
+      const seSpouse = filingStatus === 'mfj' ? perPersonSe(at('other_se_s')) : 0;
+      const medicare = additionalMedicareTax({ filingStatus, wages: at('total_wages'), seEarnings: seTaxpayer + seSpouse });
+
+      surtaxCalc[c] = { niit, medicare, passiveK1: round(passiveK1), capital: round(capital) };
+    }
+
+    const put = (key, pick) => {
+      const v = out[key] || { prior: 0, baseline: 0 };
+      v.prior = pick(surtaxCalc.prior); v.baseline = pick(surtaxCalc.baseline);
+      v.diff = round(v.baseline - v.prior);
+      out[key] = v;
+    };
+    put('niit', r => r.niit.tax);
+    put('additional_medicare', r => r.medicare.tax);
+
+    // Other taxes is a figure you type, but with the calculation on it has to
+    // include what was just calculated — otherwise the two new taxes would sit
+    // on their own lines and never reach the total. It becomes the sum of its
+    // parts, the rest of which are still whatever was typed.
+    const ot = LINE_BY_KEY.other_taxes;
+    if (ot && ot.of && out.other_taxes) {
+      for (const c of col) out.other_taxes[c] = round(ot.of.reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+      out.other_taxes.diff = round(out.other_taxes.baseline - out.other_taxes.prior);
+    }
+  }
+
   // Lines that still need tax law and are still entered by hand. With the
   // bracket calculation on it is easy to assume the whole tax responds to
   // income; these do not, and they are exactly where a comparison against
   // software that DOES compute them will diverge. Naming them turns an
   // unexplained difference into an explained one.
+  const COMPUTED_NOW = new Set(opts.calcTax
+    ? ['federal_tax', 'standard_deduction', 'senior_deduction', 'deductions', 'niit', 'additional_medicare']
+    : []);
   const stillManual = LINES
-    .filter(l => l.t === 'taxrule')
+    .filter(l => l.t === 'taxrule' && !COMPUTED_NOW.has(l.k))
     .map(l => ({ key: l.k, label: l.l, value: out[l.k] ? out[l.k].baseline : 0 }));
 
   // Two taxes that switch on above a threshold and are not computed here. If
@@ -508,7 +591,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   const agiNow = out.agi ? out.agi.baseline : 0;
   const threshold = NIIT_THRESHOLD[filingStatus] ?? 200000;
   const thresholdWarnings = [];
-  if (agiNow > threshold) {
+  if (agiNow > threshold && !opts.calcTax) {
     if (!(out.niit && out.niit.baseline)) {
       thresholdWarnings.push(`AGI of ${Math.round(agiNow).toLocaleString()} is above the ${threshold.toLocaleString()} net investment income tax threshold for this filing status, and the NIIT line is zero. Software that computes it will show more tax than this worksheet.`);
     }
@@ -556,6 +639,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   return {
     lines: out,
     deductionCalc,
+    surtaxCalc,
     stillManual,
     thresholdWarnings,
     taxCalc,
