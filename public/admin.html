@@ -279,6 +279,7 @@
             <label class="tp-spouse-only"><input type="checkbox" data-prof="spouseBlind"> Spouse blind</label>
             <label><input type="checkbox" data-prof="isDependent"> Claimed as a dependent</label>
             <label title="Married filing separately where either spouse itemizes: the whole standard deduction is zero"><input type="checkbox" data-prof="standardBarred"> No standard deduction allowed</label>
+            <label title="Qualifying dependents, for the Minnesota dependent exemption">Dependents <input type="number" min="0" max="20" data-profnum="dependents" value="0" style="width:48px;padding:0.1rem 0.25rem;border:1px solid #d1d5db;border-radius:3px;"></label>
           </div>
           <button id="tpRollover" class="btn-sm" title="Copy every prior-year figure into the current-year column as a starting point">Roll prior &rarr; current</button>
           <button id="tpSave" class="btn-sm" style="background:#0d3f5e;color:#fff;">Save draft</button>
@@ -629,6 +630,7 @@ function tpRenderEntity(computed) {
 function tpProfile() {
   const p = {};
   document.querySelectorAll('[data-prof]').forEach(el => { p[el.dataset.prof] = el.checked; });
+  document.querySelectorAll('[data-profnum]').forEach(el => { p[el.dataset.profnum] = Number(el.value) || 0; });
   return p;
 }
 
@@ -1377,6 +1379,7 @@ async function tpFetch() {
   document.getElementById('tpPaidBy').value = d.paidBy || 'individual';
   document.getElementById('tpCalcTax').checked = !!d.calcTax;
   document.querySelectorAll('[data-prof]').forEach(el => { el.checked = !!(d.profile || {})[el.dataset.prof]; });
+  document.querySelectorAll('[data-profnum]').forEach(el => { el.value = (d.profile || {})[el.dataset.profnum] || 0; });
   tpRender(d.computed, d.values);
   tpRenderK1s(d.computed.k1);
   tpRenderState(d.state);
@@ -1435,6 +1438,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ct = document.getElementById('tpCalcTax');
   if (ct) ct.addEventListener('change', tpScheduleRecalc);
   document.querySelectorAll('[data-prof]').forEach(el => el.addEventListener('change', tpScheduleRecalc));
+  document.querySelectorAll('[data-profnum]').forEach(el => el.addEventListener('input', tpScheduleRecalc));
   // Spouse facts only mean something on a joint return.
   const syncSpouse = () => {
     const joint = document.getElementById('tpStatus').value === 'mfj';

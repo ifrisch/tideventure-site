@@ -1257,7 +1257,7 @@ async function handleFetch(request, env) {
       const computed = computeWorksheet(saved.values, saved.groups, saved.filingStatus,
         { calcTax: !!saved.calcTax, year: saved.year, priorYear: saved.priorYear, profile: saved.profile || {} });
       const state = saved.state && STATE_LINES[saved.state]
-        ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy })
+        ? computeStateWorksheet(saved.state, saved.stateValues || {}, computed, { paidBy: saved.paidBy, calcTax: !!saved.calcTax, year: saved.year, priorYear: saved.priorYear, filingStatus: saved.filingStatus, profile: saved.profile || {} })
         : null;
       return json(200, { exists: true, ...saved, computed, state });
     }
@@ -1292,7 +1292,7 @@ async function handleFetch(request, env) {
           }
         }
         const state = stateCode
-          ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: body.paidBy })
+          ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: body.paidBy, calcTax: !!body.calcTax, year: parseInt(body.year, 10) || undefined, priorYear: parseInt(body.priorYear, 10) || undefined, filingStatus: body.filingStatus, profile: body.profile || {} })
           : null;
         return json(200, { computed, state });
       } catch (e) { return json(500, { error: e.message }); }
@@ -1366,7 +1366,7 @@ async function handleFetch(request, env) {
         calcTax: !!body.calcTax,
         // Facts about the taxpayer that change the standard and senior
         // deductions. Stored as booleans only, whatever was sent.
-        profile: (() => { const q = body.profile || {}; return { taxpayer65: !!q.taxpayer65, spouse65: !!q.spouse65, taxpayerBlind: !!q.taxpayerBlind, spouseBlind: !!q.spouseBlind, isDependent: !!q.isDependent, standardBarred: !!q.standardBarred }; })(),
+        profile: (() => { const q = body.profile || {}; return { taxpayer65: !!q.taxpayer65, spouse65: !!q.spouse65, taxpayerBlind: !!q.taxpayerBlind, spouseBlind: !!q.spouseBlind, isDependent: !!q.isDependent, standardBarred: !!q.standardBarred, dependents: Math.max(0, Math.min(20, parseInt(q.dependents, 10) || 0)) }; })(),
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };
@@ -1374,7 +1374,7 @@ async function handleFetch(request, env) {
       const computed = computeWorksheet(values, groups, record.filingStatus,
         { calcTax: record.calcTax, year: record.year, priorYear: record.priorYear, profile: record.profile });
       const state = stateCode
-        ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy })
+        ? computeStateWorksheet(stateCode, stateValues, computed, { paidBy: record.paidBy, calcTax: record.calcTax, year: record.year, priorYear: record.priorYear, filingStatus: record.filingStatus, profile: record.profile })
         : null;
       await syncTaxProjectionToD1(env, record, computed);
       await logAudit(env, 'TAXPROJ', auditActor, `Saved ${year} projection for ${client} (${record.status})`);
