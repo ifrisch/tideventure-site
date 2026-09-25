@@ -34,7 +34,7 @@
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
 import { aggregateK1s } from './taxk1.js';
-import { federalTax, standardDeduction, seniorDeduction, netInvestmentIncomeTax, additionalMedicareTax } from './taxrates.js';
+import { federalTax, standardDeduction, seniorDeduction, netInvestmentIncomeTax, additionalMedicareTax, qbiDeduction } from './taxrates.js';
 
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
@@ -459,9 +459,95 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     set('deductions', d => d.total);
   }
 
+  // Net capital gain as sec. 1(h) defines it for BOTH the preferential rates
+  // and the QBI cap: the smaller of net long-term gain and total net gain when
+  // both are positive (Schedule D lines 15 and 16), PLUS qualified dividends —
+  // the client's own and those arriving on a K-1.
+  const netCapitalGain = (c) => {
+    const lt = resolve('net_lt_gain')[c], st = resolve('net_st_gain')[c];
+    const gain = (lt > 0 && lt + st > 0) ? Math.min(lt, lt + st) : 0;
+    const qd = Math.max(0, resolve('qualified_dividends')[c]) + Math.max(0, resolve('qualified_dividends_k1')[c]);
+    return round(gain + qd);
+  };
+
+  // Qualified business income deduction. Upstream of taxable income like the
+  // deductions, so it too is computed before the main pass. The prior column is
+  // worked first so that a net QBI loss last year carries into this year —
+  // the prior column IS last year, so the carryforward needs no separate entry.
+  let qbiCalc = null;
+  if (opts.calcTax) {
+    qbiCalc = {};
+    const k1Rows = Array.isArray(groups.k1s) ? groups.k1s : [];
+    // Deductions attributable to a trade or business reduce its QBI (Reg.
+    // 1.199A-3(b)(1)(vi)): half of SE tax, SE health insurance, and SE
+    // retirement contributions. They are spread across the active profitable
+    // businesses in proportion to their QBI. For a greater-than-2% S
+    // corporation shareholder this includes the SE health insurance deduction —
+    // the IRS form position, which the AICPA disputes.
+    const ATTRIBUTABLE = ['half_se_tax', 'se_health_t', 'se_health_s', 'sep_t', 'sep_s', 'solo401k_t', 'solo401k_s',
+                          'qual_plan_t', 'qual_plan_s', 'simple_t', 'simple_s', 'simple_match_t', 'simple_match_s',
+                          'money_purchase_t', 'money_purchase_s'];
+    let carryIn = 0, reitCarryIn = 0;
+    for (const c of ['prior', 'baseline']) {
+      const yr = c === 'prior' ? (opts.priorYear || (opts.year ? opts.year - 1 : undefined)) : opts.year;
+      const businesses = [];
+      k1.perK1.forEach((p, i) => {
+        const raw = k1Rows[i] || {};
+        const flags = raw.flags || {};
+        const d = p.hasDetail ? p.computed.lines : null;
+        const val = (key) => (d && d[key] ? d[key][c] : 0);
+        // Prior year: the K-1's own Statement A figure where one was entered.
+        // Current year: there is no Statement A for an unfiled year, so the
+        // entity's projected net profit stands in — unless a current-year QBI
+        // figure was deliberately entered in the K-1 detail (i.e. it differs
+        // from the rolled-forward prior one).
+        let q;
+        if (c === 'prior') q = (d && d.qbi && d.qbi.prior) ? d.qbi.prior : p.row.prior;
+        else q = (d && d.qbi && d.qbi.baseline !== d.qbi.prior) ? d.qbi.baseline : p.row.baseline;
+        businesses.push({ name: p.name || `K-1 ${i + 1}`, qbi: q, wages: val('wages_allocable_qbi'), ubia: val('ubia'),
+                          sstb: !!flags.specified_trade, active: !flags.passive_activity });
+      });
+      for (const [key, label] of [['business_income', 'Schedule C'], ['partnership_income', 'Partnerships'], ['farm_income', 'Farm']]) {
+        const q = resolve(key)[c];
+        // Wages and UBIA are not captured for these lines, so above the
+        // threshold their deduction is limited to zero. That understates it for
+        // a sole proprietor with employees, and is noted rather than guessed.
+        if (q) businesses.push({ name: label, qbi: q, wages: 0, ubia: 0, sstb: false, active: true });
+      }
+      const attributable = ATTRIBUTABLE.reduce((s, k) => s + resolve(k)[c], 0);
+      const activePos = businesses.filter(b => b.active && b.qbi > 0);
+      const activePosSum = activePos.reduce((s, b) => s + b.qbi, 0);
+      if (attributable && activePosSum > 0) {
+        for (const b of activePos) b.qbi -= attributable * (b.qbi / activePosSum);
+      }
+      const reit = k1.perK1.reduce((s, p) => s + (p.hasDetail && p.computed.lines.sec199a_reit_dividends
+        ? p.computed.lines.sec199a_reit_dividends[c] : 0), 0);
+      const tiBefore = round(resolve('agi')[c] - resolve('deductions')[c]);
+      const r = qbiDeduction({ year: yr, filingStatus, taxableIncome: tiBefore, netCapitalGain: netCapitalGain(c),
+        businesses, reitPtp: reit, qbiCarryforward: c === 'baseline' ? carryIn : 0,
+        reitCarryforward: c === 'baseline' ? reitCarryIn : 0 });
+      r.attributable = round(attributable);
+      r.taxableIncomeBefore = tiBefore;
+      qbiCalc[c] = r;
+      if (c === 'prior' && r.available) { carryIn = r.newQbiCarryforward; reitCarryIn = r.newReitCarryforward; }
+    }
+    const cur = out.qbi_deduction || { prior: 0, baseline: 0 };
+    const next = { prior: cur.prior, baseline: cur.baseline };
+    for (const c of col) if (qbiCalc[c].available) next[c] = qbiCalc[c].deduction;
+    next.diff = round(next.baseline - next.prior);
+    out.qbi_deduction = next;
+  }
+
   for (const line of LINES) {
     if (line.t === 'header') continue;
     resolve(line.k);
+  }
+
+  // Form 1040 line 15: "If zero or less, enter -0-". A negative taxable income
+  // is not a figure on any return.
+  if (out.taxable_income) {
+    for (const c of col) out.taxable_income[c] = Math.max(0, out.taxable_income[c]);
+    out.taxable_income.diff = round(out.taxable_income.baseline - out.taxable_income.prior);
   }
 
   // Bracket calculation, when switched on. It replaces only the tax category —
@@ -469,8 +555,10 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   // screen can be traced to a year's rate table rather than appearing by magic.
   let taxCalc = null;
   if (opts.calcTax) {
-    const prefOf = (c) => round(Math.max(0, (out.net_lt_gain ? out.net_lt_gain[c] : 0))
-                              + Math.max(0, (out.qualified_dividends ? out.qualified_dividends[c] : 0)));
+    // Same sec. 1(h) figure as the QBI cap. This previously counted only the
+    // client's own qualified dividends, missing those on the K-1, and used the
+    // raw long-term figure without netting a short-term loss against it.
+    const prefOf = (c) => netCapitalGain(c);
     const result = {};
     for (const c of ['prior', 'baseline']) {
       result[c] = federalTax({
@@ -577,7 +665,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   // software that DOES compute them will diverge. Naming them turns an
   // unexplained difference into an explained one.
   const COMPUTED_NOW = new Set(opts.calcTax
-    ? ['federal_tax', 'standard_deduction', 'senior_deduction', 'deductions', 'niit', 'additional_medicare']
+    ? ['federal_tax', 'standard_deduction', 'senior_deduction', 'deductions', 'niit', 'additional_medicare', 'qbi_deduction']
     : []);
   const stillManual = LINES
     .filter(l => l.t === 'taxrule' && !COMPUTED_NOW.has(l.k))
@@ -640,6 +728,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     lines: out,
     deductionCalc,
     surtaxCalc,
+    qbiCalc,
     stillManual,
     thresholdWarnings,
     taxCalc,
