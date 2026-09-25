@@ -1366,7 +1366,7 @@ async function handleFetch(request, env) {
         calcTax: !!body.calcTax,
         // Facts about the taxpayer that change the standard and senior
         // deductions. Stored as booleans only, whatever was sent.
-        profile: (() => { const q = body.profile || {}; return { taxpayer65: !!q.taxpayer65, spouse65: !!q.spouse65, taxpayerBlind: !!q.taxpayerBlind, spouseBlind: !!q.spouseBlind, isDependent: !!q.isDependent, standardBarred: !!q.standardBarred, dependents: Math.max(0, Math.min(20, parseInt(q.dependents, 10) || 0)) }; })(),
+        profile: (() => { const q = body.profile || {}; return { taxpayer65: !!q.taxpayer65, spouse65: !!q.spouse65, taxpayerBlind: !!q.taxpayerBlind, spouseBlind: !!q.spouseBlind, isDependent: !!q.isDependent, standardBarred: !!q.standardBarred, dependents: Math.max(0, Math.min(20, parseInt(q.dependents, 10) || 0)), children: Math.max(0, Math.min(20, parseInt(q.children, 10) || 0)) }; })(),
         updatedAt: new Date().toISOString(),
         updatedBy: email,
       };

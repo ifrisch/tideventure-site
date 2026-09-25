@@ -34,7 +34,8 @@
 // 7,495, so inventing a formula there would silently produce wrong numbers.
 
 import { aggregateK1s } from './taxk1.js';
-import { federalTax, standardDeduction, seniorDeduction, netInvestmentIncomeTax, additionalMedicareTax, qbiDeduction } from './taxrates.js';
+import { federalTax, standardDeduction, seniorDeduction, netInvestmentIncomeTax, additionalMedicareTax, qbiDeduction,
+  schedule1aOther, nonItemizerCharitable, saltCap, childTaxCredit } from './taxrates.js';
 
 export const FILING_STATUSES = [
   { key: 'single', label: 'Single' },
@@ -236,6 +237,11 @@ export const LINES = [
   { k: 'other_misc_deductions', l: 'Other miscellaneous deductions', t: 'input', depth: 1 },
   { k: 'standard_deduction', l: 'Standard deduction', t: 'taxrule', depth: 1, note: 'Varies by filing status and year.' },
   { k: 'senior_deduction', l: 'Senior deduction', t: 'taxrule', depth: 1, note: 'Age-based; varies by filing status and year.' },
+  { k: 'qualified_tips', l: 'Qualified tips received', t: 'memo', depth: 1, note: 'Schedule 1-A. Enter the tips; the deductible amount is worked out.' },
+  { k: 'qualified_overtime', l: 'Qualified overtime premium received', t: 'memo', depth: 1, note: 'Schedule 1-A. The premium portion only (the "half" in time-and-a-half).' },
+  { k: 'car_loan_interest', l: 'Qualified car loan interest paid', t: 'memo', depth: 1, note: 'Schedule 1-A. New US-assembled vehicle, personal use.' },
+  { k: 'schedule_1a_other', l: 'Tips, overtime and car loan deductions', t: 'taxrule', depth: 1, note: 'Schedule 1-A total excluding the senior deduction.' },
+  { k: 'charitable_nonitemizer', l: 'Charitable deduction for non-itemizers', t: 'taxrule', depth: 1, note: '2026 onward, sec. 170(p): cash gifts up to $1,000 ($2,000 joint), standard-deduction filers only.' },
   { k: 'other_deduction', l: 'Other deduction', t: 'input', depth: 1 },
   { k: 'deductions', l: 'Standard or Itemized Deductions', t: 'taxrule', depth: 0, major: true,
     note: 'Larger of itemized or standard, plus senior and other deductions. Enter the figure you are using.' },
@@ -435,15 +441,34 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
         taxpayerBlind: !!p.taxpayerBlind, spouseBlind: !!p.spouseBlind, isDependent: !!p.isDependent,
         earnedIncome: resolve('total_wages')[c], barred: !!p.standardBarred });
       if (!std.available) { deductionCalc[c] = { available: false, reason: std.reason }; continue; }
-      const itemized = round(ITEMIZED.reduce((s, k) => s + resolve(k)[c], 0) - resolve('mortgage_credit_adj')[c]);
-      // MAGI is AGI for a client without a foreign earned income exclusion.
-      const senior = seniorDeduction({ year: yr, filingStatus, magi: resolve('agi')[c],
-        taxpayer65: !!p.taxpayer65, spouse65: !!p.spouse65 });
+      // MAGI is AGI for a client without a foreign earned income exclusion. It
+      // is NOT reduced by the Schedule 1-A deductions themselves, so there is
+      // no circularity.
+      const magi = resolve('agi')[c];
+      // The SALT cap replaces the typed "allowed taxes" with the lesser of what
+      // was paid and the cap for that year and income.
+      const sc = saltCap({ year: yr, filingStatus, magi });
+      const saltPaid = resolve('real_estate_taxes')[c] + resolve('state_local_tax')[c] + resolve('misc_state_local_tax')[c];
+      // If the taxes paid were not broken out, fall back to the "allowed taxes"
+      // figure that was typed — still subject to the cap — rather than deriving
+      // zero from empty lines and quietly discarding what was entered.
+      const saltBase = saltPaid > 0 ? saltPaid : resolve('allowed_taxes')[c];
+      const allowedSalt = sc.available ? round(Math.min(saltBase, sc.cap)) : resolve('allowed_taxes')[c];
+      const itemized = round(ITEMIZED.filter(k => k !== 'allowed_taxes').reduce((s, k) => s + resolve(k)[c], 0)
+                             + allowedSalt - resolve('mortgage_credit_adj')[c]);
+      const senior = seniorDeduction({ year: yr, filingStatus, magi, taxpayer65: !!p.taxpayer65, spouse65: !!p.spouse65 });
+      const s1a = schedule1aOther({ year: yr, filingStatus, magi, tips: resolve('qualified_tips')[c],
+        overtime: resolve('qualified_overtime')[c], carLoanInterest: resolve('car_loan_interest')[c] });
+      const charity = nonItemizerCharitable({ year: yr, filingStatus, cash: resolve('charitable_cash')[c] });
       const other = resolve('other_deduction')[c];
-      const takesItemized = itemized > std.amount;
+      // Itemized against standard PLUS the non-itemizer charitable deduction.
+      const takesItemized = itemized > std.amount + charity.amount;
+      const below = takesItemized ? itemized : std.amount + charity.amount;
+      const s1aAmount = s1a.available ? s1a.amount : 0;
       deductionCalc[c] = {
         available: true, standard: std.amount, itemized, senior: senior.amount || 0, other,
-        takesItemized, total: round(Math.max(std.amount, itemized) + (senior.amount || 0) + other),
+        schedule1a: s1aAmount, charitable: takesItemized ? 0 : charity.amount, allowedSalt, saltCap: sc.cap,
+        takesItemized, total: round(below + (senior.amount || 0) + s1aAmount + other),
       };
     }
     // Write the computed figures in for whichever columns have rates loaded.
@@ -456,6 +481,9 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     };
     set('standard_deduction', d => d.standard);
     set('senior_deduction', d => d.senior);
+    set('allowed_taxes', d => d.allowedSalt);
+    set('schedule_1a_other', d => d.schedule1a);
+    set('charitable_nonitemizer', d => d.charitable);
     set('deductions', d => d.total);
   }
 
@@ -579,6 +607,30 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     }
   }
 
+  // Child tax credit (2026), limited to the tax. Credits is a typed category, so
+  // with the calculation on it becomes the sum of its parts — otherwise the
+  // computed credit would sit on its own line and never reduce the total.
+  let ctcCalc = null;
+  if (opts.calcTax) {
+    ctcCalc = {};
+    for (const c of col) {
+      const yr = c === 'prior' ? (opts.priorYear || (opts.year ? opts.year - 1 : undefined)) : opts.year;
+      ctcCalc[c] = childTaxCredit({ year: yr, filingStatus, magi: out.agi ? out.agi[c] : 0,
+        children: (opts.profile || {}).children, taxLiability: out.federal_tax_before_credits ? out.federal_tax_before_credits[c] : 0 });
+    }
+    if (ctcCalc.baseline.available || ctcCalc.prior.available) {
+      const v = out.child_tax_credit || { prior: 0, baseline: 0 };
+      for (const c of col) if (ctcCalc[c].available) v[c] = ctcCalc[c].amount;
+      v.diff = round(v.baseline - v.prior);
+      out.child_tax_credit = v;
+      const cr = LINE_BY_KEY.credits_nonrefundable;
+      if (cr && cr.of && out.credits_nonrefundable) {
+        for (const c of col) if (ctcCalc[c].available) out.credits_nonrefundable[c] = round(cr.of.reduce((s, k) => s + (out[k] ? out[k][c] : 0), 0));
+        out.credits_nonrefundable.diff = round(out.credits_nonrefundable.baseline - out.credits_nonrefundable.prior);
+      }
+    }
+  }
+
   // Net investment income tax and additional Medicare tax, when the calculation
   // is on. Both are statutory with unindexed thresholds, so unlike the brackets
   // they do not depend on a year's table being loaded.
@@ -665,7 +717,8 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
   // software that DOES compute them will diverge. Naming them turns an
   // unexplained difference into an explained one.
   const COMPUTED_NOW = new Set(opts.calcTax
-    ? ['federal_tax', 'standard_deduction', 'senior_deduction', 'deductions', 'niit', 'additional_medicare', 'qbi_deduction']
+    ? ['federal_tax', 'standard_deduction', 'senior_deduction', 'deductions', 'niit', 'additional_medicare', 'qbi_deduction',
+       'allowed_taxes', 'schedule_1a_other', 'charitable_nonitemizer', 'child_tax_credit']
     : []);
   const stillManual = LINES
     .filter(l => l.t === 'taxrule' && !COMPUTED_NOW.has(l.k))
@@ -729,6 +782,7 @@ export function computeWorksheet(values = {}, groups = {}, filingStatus = 'singl
     deductionCalc,
     surtaxCalc,
     qbiCalc,
+    ctcCalc,
     stillManual,
     thresholdWarnings,
     taxCalc,

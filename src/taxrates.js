@@ -375,4 +375,67 @@ export function qbiDeduction({ year, filingStatus, taxableIncome = 0, netCapital
   };
 }
 
+// ── Other OBBBA provisions ──
+// Figures confirmed by the primary-source verifier against the statute, Rev.
+// Proc. 2025-32 and Pub. 505 (2026). Tips, overtime and car loan interest are
+// statutory, unindexed amounts for tax years 2025 through 2028.
+
+// Schedule 1-A: qualified tips (sec. 224), qualified overtime (sec. 225) and
+// car loan interest (sec. 163(h)(4)). Each phases down with MAGI, and the
+// rounding differs: tips and overtime round the excess DOWN to whole thousands,
+// car loan interest rounds UP ("or portion thereof" appears only in 163(h)(4)).
+// Tips and overtime — like the senior deduction — are disallowed entirely on a
+// separate return; car loan interest is not.
+export function schedule1aOther({ year, filingStatus, magi = 0, tips = 0, overtime = 0, carLoanInterest = 0 }) {
+  if (year < 2025 || year > 2028) return { available: false, reason: `Schedule 1-A deductions apply to 2025-2028, not ${year}.` };
+  const joint = filingStatus === 'mfj', mfs = filingStatus === 'mfs';
+  const m = Math.max(0, Number(magi) || 0);
+  const down = (limit, threshold, per) => Math.max(0, limit - per * Math.floor(Math.max(0, m - threshold) / 1000));
+  const up = (limit, threshold, per) => Math.max(0, limit - per * Math.ceil(Math.max(0, m - threshold) / 1000));
+  const t = mfs ? 0 : Math.min(Math.max(0, Number(tips) || 0), down(25000, joint ? 300000 : 150000, 100));
+  const o = mfs ? 0 : Math.min(Math.max(0, Number(overtime) || 0), down(joint ? 25000 : 12500, joint ? 300000 : 150000, 100));
+  const c = Math.min(Math.max(0, Number(carLoanInterest) || 0), up(10000, joint ? 200000 : 100000, 200));
+  return { available: true, amount: round(t + o + c), tips: round(t), overtime: round(o), carLoan: round(c) };
+}
+
+// Sec. 170(p): from 2026, a non-itemizer may deduct cash gifts to charity up to
+// $1,000 ($2,000 joint). It is taken ON TOP OF the standard deduction, so the
+// standard-versus-itemized choice compares itemized against standard PLUS this.
+export function nonItemizerCharitable({ year, filingStatus, cash = 0 }) {
+  if (year < 2026) return { available: true, amount: 0 };
+  return { available: true, amount: round(Math.min(Math.max(0, Number(cash) || 0), filingStatus === 'mfj' ? 2000 : 1000)) };
+}
+
+// SALT cap, sec. 164(b)(6)-(7) as amended. Phases down by 30% of MAGI over the
+// threshold to a $10,000 floor. Married filing separately is HALF of the
+// joint-return computation — max($5,000, $20,200 - 15% of the excess) for 2026
+// — not the single formula with the MFS figures swapped in, which would apply
+// the phase-down twice. The floor is reached at MAGI 606,333.33 (2026), not the
+// 606,000 the research first gave.
+const SALT = { 2025: { cap: 40000, threshold: 500000 }, 2026: { cap: 40400, threshold: 505000 } };
+export function saltCap({ year, filingStatus, magi = 0 }) {
+  const p = SALT[year];
+  if (!p) return { available: false, reason: `No ${year} SALT cap loaded.` };
+  const full = Math.max(10000, p.cap - 0.30 * Math.max(0, (Number(magi) || 0) - p.threshold));
+  if (filingStatus === 'mfs') {
+    const half = Math.max(5000, p.cap / 2 - 0.15 * Math.max(0, (Number(magi) || 0) - p.threshold / 2));
+    return { available: true, cap: round(half) };
+  }
+  return { available: true, cap: round(full) };
+}
+
+// Child tax credit, 2026: $2,200 per qualifying child, reduced $50 per $1,000
+// (or part) of MAGI over $200,000 ($400,000 joint). The thresholds are fixed by
+// statute and NOT indexed (sec. 24(h)(3) with 24(i)). Only the nonrefundable
+// part is computed — limited to the tax — and the refundable additional credit
+// is not, which understates a refund: the safe direction for an estimate.
+export function childTaxCredit({ year, filingStatus, magi = 0, children = 0, taxLiability = 0 }) {
+  if (year !== 2026) return { available: false, reason: `Child tax credit figures are only loaded for 2026.` };
+  const kids = Math.max(0, Number(children) || 0);
+  if (!kids) return { available: true, amount: 0, credit: 0 };
+  const threshold = filingStatus === 'mfj' ? 400000 : 200000;
+  const credit = Math.max(0, 2200 * kids - 50 * Math.ceil(Math.max(0, (Number(magi) || 0) - threshold) / 1000));
+  return { available: true, credit: round(credit), amount: round(Math.min(credit, Math.max(0, Number(taxLiability) || 0))) };
+}
+
 export const availableTaxYears = () => Object.keys(TAX_YEARS).map(Number).sort();
